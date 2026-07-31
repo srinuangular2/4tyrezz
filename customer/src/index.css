@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-behavior: smooth; }
+::selection { background: #E11D2E; color: white; }
+
+@layer utilities {
+  .skeleton { @apply animate-pulse bg-slate-200 rounded; }
+  .container-px { @apply max-w-[1240px] mx-auto px-4 md:px-8; }
+  .text-gradient { @apply bg-red-gradient bg-clip-text text-transparent; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeUp { animation: fadeUp 0.4s ease both; }
+
+@keyframes kenburns {
+  from { transform: scale(1.06); }
+  to { transform: scale(1); }
+}
+.animate-kenburns { animation: kenburns 6s ease-out both; }
