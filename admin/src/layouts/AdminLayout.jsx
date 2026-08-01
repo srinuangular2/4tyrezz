@@ -4,12 +4,14 @@ import { logout } from '../app/authSlice';
 import {
   DashboardOutlined, PeopleOutline, StorefrontOutlined, DirectionsCarOutlined,
   BrandingWatermarkOutlined, CategoryOutlined, LocationOnOutlined, FactCheckOutlined, LogoutOutlined,
+  ViewCarouselOutlined,
 } from '@mui/icons-material';
 
 const NAV = [
   ['/', 'Dashboard', DashboardOutlined],
   ['/cars', 'Cars', DirectionsCarOutlined],
   ['/approvals', 'Approvals', FactCheckOutlined],
+  ['/banners', 'Banners', ViewCarouselOutlined],
   ['/users', 'Users', PeopleOutline],
   ['/dealers', 'Dealers', StorefrontOutlined],
   ['/brands', 'Brands', BrandingWatermarkOutlined],
@@ -26,7 +28,7 @@ export default function AdminLayout() {
     <div className="min-h-screen flex bg-cream">
       <aside className="w-64 bg-ink text-white flex-shrink-0 flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-white/10">
-          <span className="font-display font-black text-xl">4tyrez<span className="text-ember">z</span></span>
+          <span className="font-display font-bold text-xl">4tyrez<span className="text-ember">z</span></span>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1">
           {NAV.map(([to, label, Icon]) => (

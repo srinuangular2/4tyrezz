@@ -15,9 +15,11 @@ import MyCars from './pages/dashboard/MyCars';
 import Wishlist from './pages/dashboard/Wishlist';
 import Profile from './pages/dashboard/Profile';
 import Leads from './pages/dashboard/Leads';
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   return (
+    <>
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
@@ -44,5 +46,7 @@ export default function App() {
       </main>
       <Footer />
     </div>
+    <Toaster position="top-right" reverseOrder={false} />
+    </>
   );
 }

@@ -7,7 +7,7 @@ router.get('/', ctrl.getCars);
 router.get('/mine', protect, ctrl.myCars);
 router.get('/:id/similar', ctrl.getSimilarCars);
 router.get('/:id', ctrl.getCarById);
-router.post('/', protect, authorize('customer', 'dealer'), uploadCarImages.array('images', 12), ctrl.createCar);
+router.post('/', protect, authorize('customer', 'dealer', 'admin'), uploadCarImages.array('images', 12), ctrl.createCar);
 router.put('/:id', protect, uploadCarImages.array('images', 12), ctrl.updateCar);
 router.delete('/:id', protect, ctrl.deleteCar);
 

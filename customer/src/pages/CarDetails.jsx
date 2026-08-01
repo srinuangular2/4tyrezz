@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../api/axios';
 import CarCard from '../components/CarCard';
+import ImageLightbox from '../components/ImageLightbox';
 import { formatPrice, formatKm } from '../utils/format';
 
 export default function CarDetails() {
@@ -11,11 +12,13 @@ export default function CarDetails() {
   const [car, setCar] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
     setActiveImg(0);
+    setLightboxOpen(false);
     setCar(null);
     api.get(`/cars/${id}`).then((r) => setCar(r.data)).catch(() => setCar('error'));
     api.get(`/cars/${id}/similar`).then((r) => setSimilar(r.data)).catch(() => setSimilar([]));
@@ -44,9 +47,21 @@ export default function CarDetails() {
 
       <div className="grid lg:grid-cols-[1.5fr_1fr] gap-8 items-start">
         <div>
-          <div className="rounded-2xl overflow-hidden border border-slate-100 h-[420px] bg-slate-100 flex items-center justify-center">
+          <div className="relative rounded-2xl overflow-hidden border border-slate-100 h-[420px] bg-slate-100 flex items-center justify-center group">
             {car.images?.length ? (
-              <img src={car.images[activeImg]} alt={car.title} className="w-full h-full object-cover" />
+              <>
+                <img
+                  src={car.images[activeImg]} alt={car.title}
+                  onClick={() => setLightboxOpen(true)}
+                  className="w-full h-full object-cover cursor-zoom-in"
+                />
+                <button
+                  onClick={() => setLightboxOpen(true)}
+                  className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                >
+                  🔍 View full size
+                </button>
+              </>
             ) : (
               <span className="text-slate-400 text-sm">No photos yet</span>
             )}
@@ -60,8 +75,12 @@ export default function CarDetails() {
             </div>
           )}
 
+          {lightboxOpen && car.images?.length > 0 && (
+            <ImageLightbox images={car.images} startIndex={activeImg} onClose={() => setLightboxOpen(false)} />
+          )}
+
           <section className="mt-8">
-            <h3 className="font-display font-extrabold text-xl mb-3">Specifications</h3>
+            <h3 className="font-display font-semibold text-xl mb-3">Specifications</h3>
             <table className="w-full text-sm">
               <tbody>
                 {[
@@ -82,7 +101,7 @@ export default function CarDetails() {
 
           {car.features?.length > 0 && (
             <section className="mt-8">
-              <h3 className="font-display font-extrabold text-xl mb-3">Features</h3>
+              <h3 className="font-display font-semibold text-xl mb-3">Features</h3>
               <div className="flex flex-wrap gap-2">
                 {car.features.map((f) => (
                   <span key={f} className="bg-verify-bg text-verify text-xs font-semibold px-3 py-1.5 rounded-full">✓ {f}</span>
@@ -92,12 +111,12 @@ export default function CarDetails() {
           )}
 
           <section className="mt-8">
-            <h3 className="font-display font-extrabold text-xl mb-3">Description</h3>
+            <h3 className="font-display font-semibold text-xl mb-3">Description</h3>
             <p className="text-sm text-slate2">{car.description || 'No description provided.'}</p>
           </section>
 
           <section className="mt-8">
-            <h3 className="font-display font-extrabold text-xl mb-3">Seller details</h3>
+            <h3 className="font-display font-semibold text-xl mb-3">Seller details</h3>
             <div className="bg-white border border-slate-100 rounded-xl p-4 text-sm">
               <p className="font-semibold">{car.owner?.dealershipName || car.owner?.name || 'Private seller'}</p>
               <p className="text-slate2 mt-1">{car.sellerType === 'dealer' ? 'Verified Dealer' : 'Individual owner'} · {car.city?.name}</p>
@@ -107,12 +126,12 @@ export default function CarDetails() {
 
         <div className="bg-white border border-slate-100 rounded-2xl p-6 lg:sticky lg:top-24">
           <h1 className="font-semibold text-xl">{car.title}</h1>
-          <p className="font-display font-extrabold text-ember text-3xl mt-2">{formatPrice(car.price)}</p>
+          <p className="font-display font-semibold text-ember text-3xl mt-2">{formatPrice(car.price)}</p>
           <span className="inline-block bg-verify-bg text-verify text-xs font-bold px-2.5 py-1 rounded-md mt-2 capitalize">{car.status}</span>
 
           {car.inspectionScore && (
             <div className="flex items-center gap-3 bg-verify-bg rounded-xl p-4 mt-4">
-              <div className="w-12 h-12 rounded-full bg-verify text-white flex items-center justify-center font-display font-extrabold flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-verify text-white flex items-center justify-center font-display font-semibold flex-shrink-0">
                 {car.inspectionScore}
               </div>
               <div>
@@ -133,7 +152,7 @@ export default function CarDetails() {
 
       {similar.length > 0 && (
         <section className="mt-14">
-          <h3 className="font-display font-extrabold text-2xl mb-5">Similar cars</h3>
+          <h3 className="font-display font-semibold text-2xl mb-5">Similar cars</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {similar.map((c) => <CarCard key={c._id} car={c} />)}
           </div>
@@ -145,13 +164,13 @@ export default function CarDetails() {
           <div className="bg-white rounded-2xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
             {sent ? (
               <>
-                <h3 className="font-display font-extrabold text-xl">Message sent!</h3>
+                <h3 className="font-display font-semibold text-xl">Message sent!</h3>
                 <p className="text-sm text-slate2 mt-2">The seller will reach out to you shortly.</p>
                 <button onClick={() => setShowContact(false)} className="w-full bg-ink text-white font-semibold py-2.5 rounded-lg mt-4">Close</button>
               </>
             ) : (
               <form onSubmit={submitContact} className="space-y-3">
-                <h3 className="font-display font-extrabold text-xl mb-1">Contact seller</h3>
+                <h3 className="font-display font-semibold text-xl mb-1">Contact seller</h3>
                 <input name="name" required placeholder="Your name" defaultValue={user?.name} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" />
                 <input name="phone" required placeholder="Your phone" defaultValue={user?.mobile} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" />
                 <textarea name="message" rows="3" placeholder="I'm interested in this car..." className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" />

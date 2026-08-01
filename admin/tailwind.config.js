@@ -3,13 +3,13 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
-      fontFamily: { display: ['"Big Shoulders Display"', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+      fontFamily: { display: ['Poppins', 'sans-serif'], body: ['Montserrat', 'sans-serif'] },
       colors: {
-        ink: { DEFAULT: '#0D1B4C', 2: '#16225E' },
-        ember: { DEFAULT: '#E8491D', dark: '#C93912' },
+        ink: { DEFAULT: '#1C1C1E', 2: '#28282B' },
+        ember: { DEFAULT: '#E11D2E', dark: '#B4101F' },
         verify: { DEFAULT: '#1F9D6C', bg: '#E6F5EE' },
-        cream: '#F4F5F9',
-        slate2: '#5B6478',
+        cream: '#FAFAFA',
+        slate2: '#6B6B72',
       },
     },
   },

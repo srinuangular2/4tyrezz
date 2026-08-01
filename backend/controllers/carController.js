@@ -1,6 +1,7 @@
 const Car = require('../models/Car');
 const Wishlist = require('../models/Wishlist');
 const Lead = require('../models/Lead');
+const User = require('../models/User');
 
 const POPULATE = [
   { path: 'brand', select: 'name slug logo' },
@@ -72,36 +73,126 @@ exports.getSimilarCars = async (req, res) => {
 
 exports.createCar = async (req, res) => {
   const images = (req.files || []).map((f) => `/uploads/cars/${f.filename}`);
+  const isAdmin = req.user.role === 'admin';
+
+  // Admins can create a listing on behalf of a dealer/customer via `owner`
+  // in the payload; everyone else can only create their own listing.
+  let owner = req.user._id;
+  let sellerType = req.user.role === 'dealer' ? 'dealer' : 'individual';
+  if (isAdmin && req.body.owner) {
+    const assignedOwner = await User.findById(req.body.owner);
+    if (!assignedOwner) return res.status(400).json({ message: 'Assigned owner not found' });
+    owner = assignedOwner._id;
+    sellerType = assignedOwner.role === 'dealer' ? 'dealer' : 'individual';
+  } else if (isAdmin) {
+    sellerType = 'dealer';
+  }
+
   const car = await Car.create({
     ...req.body,
     features: req.body.features ? JSON.parse(req.body.features) : [],
     images,
-    owner: req.user._id,
-    sellerType: req.user.role === 'dealer' ? 'dealer' : 'individual',
-    status: 'pending', // every new listing needs admin approval
+    owner,
+    sellerType,
+    // Admin-created listings go live immediately; everyone else's still need review.
+    status: isAdmin ? 'approved' : 'pending',
   });
   res.status(201).json(car);
 };
 
+
 exports.updateCar = async (req, res) => {
-  const car = await Car.findById(req.params.id);
-  if (!car) return res.status(404).json({ message: 'Car not found' });
-  const isOwner = car.owner.toString() === req.user._id.toString();
-  if (!isOwner && req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Not authorized to edit this listing' });
+  try {
+    const car = await Car.findById(req.params.id);
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+
+    const isOwner = car.owner.toString() === req.user._id.toString();
+    if (!isOwner && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to edit this listing' });
+    }
+
+    // 1. Collect newly uploaded files
+    const newImages = (req.files || []).map((f) => `/uploads/cars/${f.filename}`);
+
+    // 2. Parse kept existing images from request body
+    let keptExistingImages = [];
+    
+    if (req.body.existingImages !== undefined && req.body.existingImages !== null) {
+      let raw = req.body.existingImages;
+      
+      if (typeof raw === 'string') {
+        try {
+          // Parse JSON string array sent from frontend
+          const parsed = JSON.parse(raw);
+          keptExistingImages = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (e) {
+          // If it's a plain path string (e.g., when only 1 image remains)
+          keptExistingImages = raw.trim() ? [raw] : [];
+        }
+      } else if (Array.isArray(raw)) {
+        keptExistingImages = raw;
+      }
+    } else {
+      // ONLY fallback to original images if existingImages key was NOT sent at all
+      keptExistingImages = car.images;
+    }
+
+    // Combine remaining existing images with newly uploaded images
+    const finalImages = [...keptExistingImages, ...newImages];
+
+    // 3. Prepare update document
+    const updateData = {
+      title: req.body.title,
+      brand: req.body.brand || null,
+      model: req.body.model || null,
+      variant: req.body.variant,
+      year: req.body.year,
+      price: req.body.price,
+      fuel: req.body.fuel,
+      transmission: req.body.transmission,
+      bodyType: req.body.bodyType,
+      kmDriven: req.body.kmDriven,
+      ownership: req.body.ownership,
+      color: req.body.color,
+      city: req.body.city || null,
+      description: req.body.description,
+      owner: req.body.owner || car.owner,
+      images: finalImages, // Completely overrides the images array in MongoDB
+    };
+
+    if (req.body.features) {
+      try {
+        updateData.features = JSON.parse(req.body.features);
+      } catch (e) {
+        updateData.features = [];
+      }
+    }
+
+    if (req.user.role !== 'admin') {
+      updateData.status = 'pending';
+    }
+
+    // Debugging output in server console
+    console.log('=== UPDATE CAR IMAGES DEBUG ===');
+    console.log('Received raw existingImages:', req.body.existingImages);
+    console.log('Parsed kept images count:', keptExistingImages.length);
+    console.log('New uploads count:', newImages.length);
+    console.log('Saving final images count:', finalImages.length);
+
+    // 4. Force MongoDB update
+    const updatedCar = await Car.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).populate(POPULATE);
+
+    res.json(updatedCar);
+  } catch (error) {
+    console.error('Update car error:', error);
+    res.status(500).json({ message: error.message || 'Server error updating car' });
   }
-
-  const newImages = (req.files || []).map((f) => `/uploads/cars/${f.filename}`);
-  const body = { ...req.body };
-  if (body.features) body.features = JSON.parse(body.features);
-  if (newImages.length) body.images = [...car.images, ...newImages];
-  // Any edit by a non-admin sends the listing back for re-approval.
-  if (req.user.role !== 'admin') body.status = 'pending';
-
-  Object.assign(car, body);
-  await car.save();
-  res.json(car);
 };
+
 
 exports.deleteCar = async (req, res) => {
   const car = await Car.findById(req.params.id);

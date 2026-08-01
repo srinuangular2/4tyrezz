@@ -6,11 +6,32 @@ html { scroll-behavior: smooth; }
 ::selection { background: #E11D2E; color: white; }
 
 @layer utilities {
-  .skeleton { @apply animate-pulse bg-slate-200 rounded; }
-  .container-px { @apply max-w-[1240px] mx-auto px-4 md:px-8; }
-  .text-gradient { @apply bg-red-gradient bg-clip-text text-transparent; }
+  /* 1. Define custom utilities first */
+  .bg-red-gradient {
+    background: linear-gradient(180deg, #ff0000 0%, #ed0000 100%); /* Replace with your desired hex colors */
+  }
+
+  /* 2. Apply utilities now that bg-red-gradient is registered */
+  /* .text-brand-red { 
+    @apply bg-red-gradient bg-clip-text text-transparent; 
+  } */
+
+  .skeleton { 
+    @apply animate-pulse bg-slate-200 rounded; 
+  }
+
+  .container-px { 
+    @apply max-w-[1240px] mx-auto px-4 md:px-8; 
+  }
 }
 
+@layer utilities {
+  .text-brand-red {
+    color: #E11D2E; /* Your primary brand red */
+  }
+}
+
+/* Custom Animations */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }

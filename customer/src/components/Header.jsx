@@ -24,7 +24,7 @@ export default function Header() {
         <div className="container-px h-[72px] flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="font-display font-black text-2xl tracking-tight">
-              4tyre<span className="text-gradient">zz</span>
+              4tyre<span className="text-brand-red">zz</span>
             </Link>
             <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold text-ink/70">
               <div className="relative" onMouseEnter={() => setMegaOpen(true)} onMouseLeave={() => setMegaOpen(false)}>
@@ -92,7 +92,7 @@ export default function Header() {
       {mobileOpen && (
         <div className="fixed inset-0 z-[90] bg-white p-6 lg:hidden animate-fadeUp">
           <div className="flex justify-between items-center mb-8">
-            <span className="font-display font-black text-2xl">4tyre<span className="text-gradient">zz</span></span>
+            <span className="font-display font-black text-2xl">4tyre<span className="text-brand-red">zz</span></span>
             <button onClick={() => setMobileOpen(false)}><Close /></button>
           </div>
           <nav className="flex flex-col gap-5 text-lg font-semibold">

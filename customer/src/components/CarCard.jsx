@@ -31,11 +31,11 @@ export default function CarCard({ car }) {
         {car.isFeatured && (
           <span className="absolute top-3 left-3 bg-red-gradient text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md">Featured</span>
         )}
-        {car.inspectionScore && (
+        {/* {car.inspectionScore && (
           <div className="absolute -bottom-4 right-4 w-11 h-11 rounded-full bg-red-gradient text-white border-[3px] border-white flex items-center justify-center font-display font-extrabold text-sm shadow-lg">
             {car.inspectionScore}
           </div>
-        )}
+        )} */}
         <button
           onClick={handleWishlist}
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 flex items-center justify-center hover:bg-white hover:scale-110 transition shadow-sm"
@@ -44,8 +44,8 @@ export default function CarCard({ car }) {
         </button>
       </div>
       <div className="p-4 pt-6">
-        <h3 className="font-semibold text-[15px] leading-snug line-clamp-1 font-display">{car.title}</h3>
-        <p className="font-display font-extrabold text-gradient text-xl mt-1.5">{formatPrice(car.price)}</p>
+        <h3 className="text-[15px] leading-snug line-clamp-1 font-display">{car.title}</h3>
+        <p className="font-display font-semibold text-brand-red text-lg mt-1.5">{formatPrice(car.price)}</p>
         <p className="text-xs text-slate2 mt-2">
           {car.year} <span className="mx-1.5 text-slate-300">•</span> {car.fuel} <span className="mx-1.5 text-slate-300">•</span> {formatKm(car.kmDriven)}
         </p>
