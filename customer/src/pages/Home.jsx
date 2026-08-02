@@ -1,10 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState ,useRef} from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
 import CarCard from '../components/CarCard';
 import { CarGridSkeleton } from '../components/Skeletons';
 import HeroCarousel from '../components/HeroCarousel';
+
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Autoplay } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 const BUDGETS = [
   { label: 'Under ₹3 Lakh', max: 300000 },
@@ -35,6 +42,9 @@ export default function Home() {
   const [premium, setPremium] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState({ city: '', budget: '', fuel: '' });
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+  const displayedBrands = brands.slice(0, 10);
 
   useEffect(() => {
     Promise.all([
@@ -93,13 +103,17 @@ export default function Home() {
       </section>
 
       {/* ---- Stat strip ---- */}
-      <div className="bg-white border-b border-slate-100 grid grid-cols-2 md:grid-cols-4">
+      <div className="bg-white border-b border-slate-100 ">
+        <div className='container-px'>
+          <div className='grid grid-cols-2 md:grid-cols-4'>
         {[['1,200+', 'Cars inspected'], ['40+', 'Verified dealers'], ['18', 'Cities live'], ['91%', 'Avg. inspection score']].map(([n, l], i) => (
           <div key={l} className={`text-center py-7 ${i < 3 ? 'border-r border-slate-100' : ''}`}>
             <div className="font-display font-black text-3xl text-ink">{n}</div>
             <div className="text-xs font-semibold text-slate2 mt-1">{l}</div>
           </div>
         ))}
+        </div>
+        </div>
       </div>
 
       <Section eyebrow="Fresh on the lot" title="Featured Cars" viewAllHref="/cars?isFeatured=true">
@@ -107,13 +121,125 @@ export default function Home() {
       </Section>
 
       <Section eyebrow="Shop by brand" title="Popular Brands" bg>
-        <div className="flex flex-wrap gap-3">
-          {brands.filter((b) => b.isPopular).map((b) => (
-            <Link key={b._id} to={`/cars?brand=${b._id}`} className="bg-white border border-slate-200 rounded-xl px-6 py-3 font-display font-bold text-ink hover:border-ember hover:text-ember transition">
-              {b.name}
-            </Link>
-          ))}
+    
+          <div className="flex items-center gap-3">
+          
+
+          {/* View All Link */}
+          <Link
+            to="/cars"
+            className="text-ember font-bold text-sm hover:underline flex items-center gap-1 group shrink-0"
+          >
+            View all
+            <span className="group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
         </div>
+      
+
+
+        <div className="relative group px-4">
+        {/* Left Floating Arrow */}
+        <button
+          ref={prevRef}
+          aria-label="Previous brands"
+          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-700 hover:bg-ember hover:text-white hover:border-ember transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <svg className="w-5 h-5 fill-current" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+
+        {/* Right Floating Arrow */}
+        <button
+          ref={nextRef}
+          aria-label="Next brands"
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-700 hover:bg-ember hover:text-white hover:border-ember transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <svg className="w-5 h-5 fill-current" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+      {/* Brand Swiper Carousel */}
+      <Swiper
+          modules={[Navigation, Autoplay]}
+          spaceBetween={16}
+          slidesPerView={2}
+          autoplay={{ delay: 3500, disableOnInteraction: false }}
+          onBeforeInit={(swiper) => {
+            swiper.params.navigation.prevEl = prevRef.current;
+            swiper.params.navigation.nextEl = nextRef.current;
+          }}
+          navigation={{
+            prevEl: prevRef.current,
+            nextEl: nextRef.current,
+          }}
+          breakpoints={{
+            480: { slidesPerView: 3, spaceBetween: 16 },
+            640: { slidesPerView: 4, spaceBetween: 16 },
+            768: { slidesPerView: 5, spaceBetween: 20 },
+            1024: { slidesPerView: 6, spaceBetween: 20 },
+          }}
+          className="w-full !py-2"
+        >
+          {displayedBrands.map((b) => (
+            <SwiperSlide key={b._id}>
+              <Link
+                to={`/cars?brand=${b._id}`}
+                className="bg-white border border-slate-200 hover:border-ember rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-center transition-all duration-200 hover:shadow-md group/card h-28"
+              >
+                {b.logo ? (
+                  <img
+                    src={
+                      b.logo.startsWith('http')
+                        ? b.logo
+                        : `http://localhost:5000${b.logo}`
+                    }
+                    alt={b.name}
+                    className="h-10 w-auto object-contain transition-transform group-hover/card:scale-105"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-400">
+                    {b.name.substring(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <span className="font-display font-bold text-xs text-slate-800 group-hover/card:text-ember line-clamp-1">
+                  {b.name}
+                </span>
+              </Link>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+       
+</div>
+
+
+{/* <div className="flex flex-wrap gap-3">
+{brands.map((b) => (
+    <Link 
+      key={b._id} 
+      to={`/cars?brand=${b._id}`} 
+      className="bg-white border border-slate-200 rounded-xl px-6 py-3 font-display font-bold text-ink hover:border-ember hover:text-ember transition text-center"
+    >
+      {b.logo && (
+        <img 
+          src={b.logo.startsWith('http') ? b.logo : `http://localhost:5000${b.logo}`} 
+          alt={b.name} 
+          className="h-12 object-contain"
+        />
+      )}
+      <br/>
+      {b.name}
+    </Link>
+  ))}
+</div> */}
       </Section>
 
       <Section eyebrow="Just listed" title="Latest Cars" viewAllHref="/cars?sort=-createdAt">
@@ -200,7 +326,7 @@ function Section({ eyebrow, title, children, bg, viewAllHref }) {
         <div className="flex justify-between items-end mb-6">
           <div>
             <p className="text-ember font-display font-bold uppercase tracking-widest text-xs">{eyebrow}</p>
-            <h2 className="font-display font-extrabold text-2xl sm:text-3xl mt-1">{title}</h2>
+            <h2 className="font-display font-bold text-2xl sm:text-3xl mt-1">{title}</h2>
           </div>
           {viewAllHref && <Link to={viewAllHref} className="text-ember font-semibold text-sm whitespace-nowrap">View all →</Link>}
         </div>

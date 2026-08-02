@@ -8,6 +8,7 @@ export default function Brands() {
       fields={[
         { name: 'name', placeholder: 'Brand name (e.g. Maruti Suzuki)', required: true },
         { name: 'logo', type: 'file' },
+        { name: 'isPopular', label: 'Popular Brand', type: 'checkbox' }, // 👈 Add this field
       ]}
     />
   );

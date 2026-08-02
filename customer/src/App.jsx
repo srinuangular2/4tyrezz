@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import { fetchWishlist } from './app/wishlistSlice';
 
 import Home from './pages/Home';
 import Listing from './pages/Listing';
@@ -17,7 +20,17 @@ import Profile from './pages/dashboard/Profile';
 import Leads from './pages/dashboard/Leads';
 import { Toaster } from 'react-hot-toast';
 
+
 export default function App() {
+  const dispatch = useDispatch();
+  const { user } = useSelector((s) => s.auth);
+
+  // Load wishlist once at app start (not just when the Wishlist page is
+  // visited) so heart icons everywhere reflect saved state immediately.
+  useEffect(() => {
+    if (user) dispatch(fetchWishlist());
+  }, [user, dispatch]);
+
   return (
     <>
     <div className="min-h-screen flex flex-col">
@@ -34,19 +47,21 @@ export default function App() {
           <Route path="/blog" element={<Blog />} />
 
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route path="my-cars" element={<MyCars />} />
-            <Route path="inventory" element={<MyCars />} />
-            <Route path="add-car" element={<AddEditCar />} />
-            <Route path="edit-car/:id" element={<AddEditCar />} />
-            <Route path="wishlist" element={<Wishlist />} />
-            <Route path="leads" element={<Leads />} />
+            {/* Dealer-only: listing management */}
+            <Route path="inventory" element={<ProtectedRoute roles={['dealer']}><MyCars /></ProtectedRoute>} />
+            <Route path="add-car" element={<ProtectedRoute roles={['dealer']}><AddEditCar /></ProtectedRoute>} />
+            <Route path="edit-car/:id" element={<ProtectedRoute roles={['dealer']}><AddEditCar /></ProtectedRoute>} />
+            <Route path="leads" element={<ProtectedRoute roles={['dealer']}><Leads /></ProtectedRoute>} />
+            {/* User-only */}
+            <Route path="wishlist" element={<ProtectedRoute roles={['customer']}><Wishlist /></ProtectedRoute>} />
+            {/* Shared */}
             <Route path="profile" element={<Profile />} />
           </Route>
         </Routes>
       </main>
       <Footer />
     </div>
-    <Toaster position="top-right" reverseOrder={false} />
-    </>
+     <Toaster position="top-right" reverseOrder={false} />
+     </>
   );
 }

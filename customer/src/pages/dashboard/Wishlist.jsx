@@ -11,6 +11,7 @@ export default function Wishlist() {
   useEffect(() => { dispatch(fetchWishlist()); }, [dispatch]);
 
   if (status === 'idle' || status === 'loading') return <CarGridSkeleton count={4} />;
+  if (status === 'failed') return <p className="text-red-600 text-sm">Couldn't load your wishlist. Please refresh the page.</p>;
   if (items.length === 0) return <p className="text-slate2 text-sm">Nothing saved yet — tap the heart on any car to add it here.</p>;
 
   return (
