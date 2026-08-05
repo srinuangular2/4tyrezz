@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
+import { notifyNewCarAdded } from '../App';
 
 const empty = {
   title: '', brand: '', model: '', variant: '', year: '', price: '',
@@ -104,9 +105,6 @@ export default function AddEditCar() {
     );
 
     const data = new FormData();
-    // Skip empty strings (not just null/undefined) — Mongoose throws a
-    // CastError trying to coerce '' into a Number field like `seats`,
-    // `registrationYear`, or `engineDisplacement` when left blank.
     Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) data.append(k, v); });
     data.append('features', JSON.stringify(features));
     data.append('existingImages', JSON.stringify(existingImages));
@@ -114,22 +112,34 @@ export default function AddEditCar() {
     images.forEach((img) => data.append('images', img));
 
     try {
+      let res;
       if (isEdit) {
-        await api.put(`/cars/${id}`, data);
+        res = await api.put(`/cars/${id}`, data);
       } else {
-        await api.post('/cars', data);
+        res = await api.post('/cars', data);
       }
 
-      // 1. Dismiss the loading toast first
+      // 1. Dismiss loading toast
       toast.dismiss(loadingToast);
 
-      // 2. Trigger a fresh success toast
+      // 2. Trigger standard success toast
       toast.success(
         isEdit ? `${carName} updated successfully!` : `${carName} listed successfully!`
       );
 
-      // 3. Navigate back
-      navigate('/dashboard/my-cars');
+      // 3. Trigger global demo pop-up notification for newly created cars
+      if (!isEdit) {
+        const createdCar = res?.data || {
+          title: carName,
+          year: form.year,
+          price: form.price,
+          images: images.length > 0 ? [URL.createObjectURL(images[0])] : [],
+        };
+        notifyNewCarAdded(createdCar);
+      }
+
+      // 4. Navigate back to dashboard inventory
+      navigate('/dashboard/inventory');
     } catch (err) {
       console.error('Failed to save listing:', err);
       toast.error(err.response?.data?.message || 'Failed to save listing details', { id: loadingToast });
@@ -293,7 +303,7 @@ export default function AddEditCar() {
           </div>
         </Fieldset>
 
-        <button disabled={saving} className="w-full bg-ember hover:bg-ember-dark text-white font-semibold py-3.5 rounded-lg">
+        <button disabled={saving} className="w-full bg-ember hover:bg-ember-dark text-white font-semibold py-3.5 rounded-lg cursor-pointer">
           {saving ? 'Publishing…' : isEdit ? 'Save changes' : 'Publish listing'}
         </button>
       </form>

@@ -9,6 +9,7 @@ import ScrollStrip from '../components/ScrollStrip';
 import ReportAdModal from '../components/ReportAdModal';
 import { Heart } from '../components/icons';
 import { toggleWishlist } from '../app/wishlistSlice';
+import WhatsAppConnectButton from '../components/WhatsAppConnectButton';
 
 export default function CarDetails() {
   const { id } = useParams();
@@ -526,9 +527,10 @@ export default function CarDetails() {
             Contact seller
           </button>
 
-          <button className="w-full border-2 border-slate-800 text-slate-800 font-semibold py-3 rounded-xl mt-3 hover:bg-slate-800 hover:text-white transition">
+          <WhatsAppConnectButton car={car} />
+          {/* <button className="w-full border-2 border-slate-800 text-slate-800 font-semibold py-3 rounded-xl mt-3 hover:bg-slate-800 hover:text-white transition">
             Book a physical inspection
-          </button>
+          </button> */}
 
           <div className="flex justify-between mt-6 pt-4 border-t border-slate-100 text-xs font-medium text-slate-500">
             <button onClick={() => setShowReport(true)} className="hover:text-ember transition flex items-center gap-1">

@@ -4,6 +4,7 @@ import { Heart } from './icons';
 import { formatPrice, formatKm } from '../utils/format';
 import { toggleWishlist } from '../app/wishlistSlice';
 
+
 export default function CarCard({ car }) {
   const dispatch = useDispatch();
   const wishlistIds = useSelector((s) => s.wishlist?.ids || []);

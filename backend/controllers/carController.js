@@ -544,7 +544,6 @@
 // };
 
 
-
 const Car = require('../models/Car');
 const CarModel = require('../models/CarModel');
 const Brand = require('../models/Brand');
@@ -552,6 +551,7 @@ const City = require('../models/City');
 const Wishlist = require('../models/Wishlist');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
+const { sendWhatsAppTemplate } = require('../utils/whatsapp');
 
 const POPULATE = [
   { path: 'brand', select: 'name slug logo' },
@@ -650,9 +650,7 @@ exports.getSimilarCars = async (req, res) => {
   res.json(similar);
 };
 
-// GET /api/cars/:id/recommended — cars in a similar price band, distinct
-// from the "similar" set (which matches on brand/body type instead).
-// Mirrors CarDekho's "Recommended Cars" strip on the detail page.
+// GET /api/cars/:id/recommended
 exports.getRecommendedCars = async (req, res) => {
   const car = await Car.findById(req.params.id);
   if (!car) return res.status(404).json({ message: 'Car not found' });
@@ -665,9 +663,7 @@ exports.getRecommendedCars = async (req, res) => {
   res.json(recommended);
 };
 
-// GET /api/cars/:id/similar-models — other models from the same brand, with
-// a starting price and available-car count, like CarDekho's "Similar Car
-// Models" strip (e.g. "Maruti Suzuki Dzire — Starting @ ₹3.31 Lakh — 21 cars").
+// GET /api/cars/:id/similar-models
 exports.getSimilarModels = async (req, res) => {
   const car = await Car.findById(req.params.id);
   if (!car) return res.status(404).json({ message: 'Car not found' });
@@ -691,30 +687,73 @@ exports.getSimilarModels = async (req, res) => {
   );
 };
 
+// POST /api/cars — Create Car & Dispatch WhatsApp Alerts
 exports.createCar = async (req, res) => {
-  const images = (req.files || []).map((f) => `/uploads/cars/${f.filename}`);
-  const isAdmin = req.user.role === 'admin';
+  try {
+    const images = (req.files || []).map((f) => `/uploads/cars/${f.filename}`);
+    const isAdmin = req.user.role === 'admin';
 
-  let owner = req.user._id;
-  let sellerType = req.user.role === 'dealer' ? 'dealer' : 'individual';
-  if (isAdmin && req.body.owner) {
-    const assignedOwner = await User.findById(req.body.owner);
-    if (!assignedOwner) return res.status(400).json({ message: 'Assigned owner not found' });
-    owner = assignedOwner._id;
-    sellerType = assignedOwner.role === 'dealer' ? 'dealer' : 'individual';
-  } else if (isAdmin) {
-    sellerType = 'dealer';
+    let owner = req.user._id;
+    let sellerType = req.user.role === 'dealer' ? 'dealer' : 'individual';
+    if (isAdmin && req.body.owner) {
+      const assignedOwner = await User.findById(req.body.owner);
+      if (!assignedOwner) return res.status(400).json({ message: 'Assigned owner not found' });
+      owner = assignedOwner._id;
+      sellerType = assignedOwner.role === 'dealer' ? 'dealer' : 'individual';
+    } else if (isAdmin) {
+      sellerType = 'dealer';
+    }
+
+    const car = await Car.create({
+      ...req.body,
+      features: req.body.features ? JSON.parse(req.body.features) : [],
+      images,
+      owner,
+      sellerType,
+      status: isAdmin ? 'approved' : 'pending',
+    });
+
+    const populatedCar = await Car.findById(car._id).populate(POPULATE);
+
+    // WHATSAPP BROADCAST (Target Numbers: 919160415851 & 916304135959)
+    if (isAdmin) {
+      const targetNumbers = [
+        process.env.PRIMARY_CONTACT_PHONE || '919160415851',
+        process.env.SECONDARY_CONTACT_PHONE || '916304135959',
+      ];
+
+      const carImage = images[0]
+        ? `${process.env.CLIENT_URL || 'https://4tyrezz.com'}${images[0]}`
+        : 'https://4tyrezz.com/placeholder-car.jpg';
+
+      targetNumbers.forEach((mobile) => {
+        sendWhatsAppTemplate({
+          to: mobile,
+          templateName: 'new_car_alert',
+          components: [
+            {
+              type: 'header',
+              parameters: [{ type: 'image', image: { link: carImage } }],
+            },
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: 'Valued Customer' },
+                { type: 'text', text: `${populatedCar.year || ''} ${populatedCar.title || 'Car'}` },
+                { type: 'text', text: `${populatedCar.price || 0}` },
+                { type: 'text', text: `https://4tyrezz.com/cars/${populatedCar._id}` },
+              ],
+            },
+          ],
+        }).catch((err) => console.error(`WhatsApp dispatch failed for ${mobile}:`, err.message));
+      });
+    }
+
+    res.status(201).json(populatedCar);
+  } catch (error) {
+    console.error('Error creating car:', error);
+    res.status(500).json({ message: error.message || 'Server error creating car' });
   }
-
-  const car = await Car.create({
-    ...req.body,
-    features: req.body.features ? JSON.parse(req.body.features) : [],
-    images,
-    owner,
-    sellerType,
-    status: isAdmin ? 'approved' : 'pending',
-  });
-  res.status(201).json(car);
 };
 
 exports.updateCar = async (req, res) => {
@@ -784,12 +823,6 @@ exports.updateCar = async (req, res) => {
       updateData.status = 'pending';
     }
 
-    console.log('=== UPDATE CAR IMAGES DEBUG ===');
-    console.log('Received raw existingImages:', req.body.existingImages);
-    console.log('Parsed kept images count:', keptExistingImages.length);
-    console.log('New uploads count:', newImages.length);
-    console.log('Saving final images count:', finalImages.length);
-
     const updatedCar = await Car.findByIdAndUpdate(
       req.params.id,
       { $set: updateData },
@@ -833,6 +866,44 @@ exports.toggleWishlist = async (req, res) => {
 exports.myWishlist = async (req, res) => {
   const items = await Wishlist.find({ user: req.user._id }).populate({ path: 'car', populate: POPULATE });
   res.json(items.map((i) => i.car).filter(Boolean));
+};
+
+// POST /api/cars/connect-whatsapp — Send Wishlist/Car Card Details to User's WhatsApp
+exports.connectCarOnWhatsApp = async (req, res) => {
+  try {
+    const { userName, userMobile, car } = req.body;
+
+    const targetMobile = userMobile || process.env.SECONDARY_CONTACT_PHONE || '916304135959';
+    const carUrl = `https://4tyrezz.com/cars/${car.id || car._id}`;
+    const imageUrl = car.imageUrl || (car.images && car.images[0]) || 'https://4tyrezz.com/placeholder-car.jpg';
+
+    await sendWhatsAppTemplate({
+      to: targetMobile,
+      templateName: 'car_inquiry_connect',
+      components: [
+        {
+          type: 'header',
+          parameters: [{ type: 'image', image: { link: imageUrl } }],
+        },
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: userName || 'Valued Customer' },
+            { type: 'text', text: `${car.year || ''}` },
+            { type: 'text', text: `${car.make || car.brand?.name || 'Car'}` },
+            { type: 'text', text: `${car.model || car.title || ''}` },
+            { type: 'text', text: `${car.price || 0}` },
+            { type: 'text', text: carUrl },
+          ],
+        },
+      ],
+    });
+
+    return res.status(200).json({ success: true, message: 'WhatsApp notification sent successfully!' });
+  } catch (error) {
+    console.error('WhatsApp Connect error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to send WhatsApp message' });
+  }
 };
 
 // ---- Leads ----
