@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Cars from './pages/Cars';
 import Approvals from './pages/Approvals';
 import Banners from './pages/Banners';
+import Reports from './pages/Reports';
 import CarForm from './pages/CarForm';
 import Users from './pages/Users';
 import Dealers from './pages/Dealers';
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="cars/edit/:id" element={<CarForm />} />
         <Route path="approvals" element={<Approvals />} />
         <Route path="banners" element={<Banners />} />
+        <Route path="reports" element={<Reports />} />
         <Route path="users" element={<Users />} />
         <Route path="dealers" element={<Dealers />} />
         <Route path="brands" element={<Brands />} />

@@ -13,6 +13,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/cars', require('./routes/carRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api', require('./routes/referenceRoutes')); // /api/brands, /api/models, /api/cities
 app.use('/api/admin', require('./routes/adminRoutes'));

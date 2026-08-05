@@ -1,4 +1,4 @@
-import { useEffect, useState ,useRef} from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
@@ -9,48 +9,77 @@ import HeroCarousel from '../components/HeroCarousel';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
 
 const BUDGETS = [
   { label: 'Under ₹3 Lakh', max: 300000 },
-  { label: '₹3 – 5 Lakh', min: 300000, max: 500000 },
-  { label: '₹5 – 10 Lakh', min: 500000, max: 1000000 },
-  { label: '₹10 – 20 Lakh', min: 1000000, max: 2000000 },
+  { label: '₹3 – ₹5 Lakh', min: 300000, max: 500000 },
+  { label: '₹5 – ₹10 Lakh', min: 500000, max: 1000000 },
+  { label: '₹10 – ₹20 Lakh', min: 1000000, max: 2000000 },
   { label: 'Above ₹20 Lakh', min: 2000000 },
 ];
+
 const FUEL_TYPES = ['Petrol', 'Diesel', 'CNG', 'Electric'];
-const BODY_TYPES = ['Hatchback', 'Sedan', 'SUV', 'MUV'];
+
+const BODY_TYPES = [
+  { name: 'Hatchback', icon: '🚗' },
+  { name: 'Sedan', icon: '🚘' },
+  { name: 'SUV', icon: '🚙' },
+  { name: 'MUV', icon: '🚐' }
+];
+
+const FEATURED_DEALERS = [
+  { name: "Metro Auto Hub", city: "Hyderabad", inventory: "42 Vehicles", rating: "4.9 ★", badge: "Premium Partner" },
+  { name: "Apex Pre-Owned Cars", city: "Bangalore", inventory: "38 Vehicles", rating: "4.8 ★", badge: "Verified Dealer" },
+  { name: "Royal Motor World", city: "Mumbai", inventory: "55 Vehicles", rating: "4.9 ★", badge: "Platinum Partner" },
+  { name: "Deccan Wheels & Co.", city: "Secunderabad", inventory: "29 Vehicles", rating: "4.7 ★", badge: "Verified Dealer" },
+  { name: "Speedway Automobiles", city: "Chennai", inventory: "34 Vehicles", rating: "4.8 ★", badge: "Verified Dealer" },
+  { name: "Elite Car Studio", city: "Pune", inventory: "23 Vehicles", rating: "4.9 ★", badge: "Premium Partner" },
+];
 
 const TESTIMONIALS = [
-  { name: 'Ananya R.', city: 'Hyderabad', text: 'The inspection report gave me real confidence — found a Nexon with zero surprises.' },
-  { name: 'Vikram S.', city: 'Bengaluru', text: 'Sold my old Swift in 4 days through the C2B route. Dealers bid on it directly.' },
-  { name: 'Priya M.', city: 'Chennai', text: 'Loved that the inspection score was right on the listing, not buried in a PDF.' },
+  { name: 'Ananya R.', role: 'Verified Buyer', text: 'The 15-point inspection gave me real confidence. Found a Nexon with zero hidden issues!', rating: 5 },
+  { name: 'Vikram S.', role: 'Verified Seller', text: 'Sold my Swift in 4 days through the dealer network. Very smooth process.', rating: 5 },
+  { name: 'Priya M.', role: 'Verified Buyer', text: 'The inspection score right on the listing saved me so much time driving around.', rating: 5 },
+  { name: 'Kiran K.', role: 'Verified Buyer', text: 'Great platform! Transparent deal and zero hidden costs.', rating: 5 },
 ];
+
 const FAQS = [
-  { q: 'How does the inspection work?', a: 'Every car is checked across 15 points — engine, tyres, electricals, body and odometer — by a 4tyrezz inspector before it can be listed.' },
-  { q: 'Can I sell my car directly to a buyer?', a: 'Yes — list it yourself (C2C), or post it once and let our dealer network bid on it (C2B).' },
-  { q: 'Is the OTP login secure?', a: 'Yes, login is mobile number + one-time password only — no passwords to remember or leak.' },
+  { q: 'How does the 15-point inspection work?', a: 'Every used car undergoes a thorough inspection covering engine health, tyre wear, electricals, chassis integrity, and odometer verification before listing.' },
+  { q: 'Can I sell my car directly to a buyer?', a: 'Yes! You can list directly to buyers (C2C) or post once and receive competitive offers from verified local dealers (C2B).' },
+  { q: 'Are all listed used cars verified?', a: 'Yes, every listing includes a transparent inspection score and verified seller badge.' },
 ];
 
 export default function Home() {
   const navigate = useNavigate();
-  const { brands, cities } = useReferenceData();
+  const { brands } = useReferenceData();
+
   const [featured, setFeatured] = useState([]);
   const [latest, setLatest] = useState([]);
   const [premium, setPremium] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState({ city: '', budget: '', fuel: '' });
-  const prevRef = useRef(null);
-  const nextRef = useRef(null);
+
+  // Search Widget States
+  const [filterMode, setFilterMode] = useState('budget');
+  const [selectedBudget, setSelectedBudget] = useState('');
+  const [selectedBrand, setSelectedBrand] = useState('');
+  const [selectedBody, setSelectedBody] = useState('');
+
+  const brandPrevRef = useRef(null);
+  const brandNextRef = useRef(null);
+  const dealerPrevRef = useRef(null);
+  const dealerNextRef = useRef(null);
+  const testPrevRef = useRef(null);
+  const testNextRef = useRef(null);
+
   const displayedBrands = brands.slice(0, 10);
 
   useEffect(() => {
     Promise.all([
-      api.get('/cars', { params: { isFeatured: true, limit: 4 } }),
-      api.get('/cars', { params: { sort: '-createdAt', limit: 8 } }),
-      api.get('/cars', { params: { isPremium: true, limit: 4 } }),
+      api.get('/cars', { params: { isFeatured: true, limit: 10 } }),
+      api.get('/cars', { params: { sort: '-createdAt', limit: 10 } }),
+      api.get('/cars', { params: { isPremium: true, limit: 10 } }),
     ]).then(([f, l, p]) => {
       setFeatured(f.data.cars);
       setLatest(l.data.cars);
@@ -59,276 +88,542 @@ export default function Home() {
     }).catch(() => setLoading(false));
   }, []);
 
-  const search = (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (q.city) params.set('city', q.city);
-    if (q.fuel) params.set('fuel', q.fuel);
-    if (q.budget) {
-      const b = BUDGETS[q.budget];
+
+    if (filterMode === 'budget' && selectedBudget !== '') {
+      const b = BUDGETS[selectedBudget];
       if (b.min) params.set('minPrice', b.min);
       if (b.max) params.set('maxPrice', b.max);
+    } else if (filterMode === 'brand' && selectedBrand) {
+      params.set('brand', selectedBrand);
     }
+
+    if (selectedBody) params.set('bodyType', selectedBody);
+
     navigate(`/cars?${params.toString()}`);
   };
 
   return (
-    <>
-      {/* ---- Hero ---- */}
-      <HeroCarousel />
+    <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased selection:bg-[#fe0100] selection:text-white">
+      
+      {/* ---- HERO SECTION ---- */}
+      <section className="relative w-full bg-slate-900 overflow-hidden">
+        <div className="w-full relative z-0">
+          <HeroCarousel />
+        </div>
 
-      <section className="container-px pt-6">
-        <form onSubmit={search} className="bg-white rounded-2xl p-4 shadow-card border border-slate-100 grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <select value={q.city} onChange={(e) => setQ({ ...q, city: e.target.value })} className="border border-slate-200 rounded-lg px-3 py-3 text-sm">
-            <option value="">Any city</option>
-            {cities.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
-          <select value={q.budget} onChange={(e) => setQ({ ...q, budget: e.target.value })} className="border border-slate-200 rounded-lg px-3 py-3 text-sm">
-            <option value="">Any budget</option>
-            {BUDGETS.map((b, i) => <option key={b.label} value={i}>{b.label}</option>)}
-          </select>
-          <select value={q.fuel} onChange={(e) => setQ({ ...q, fuel: e.target.value })} className="border border-slate-200 rounded-lg px-3 py-3 text-sm">
-            <option value="">Any fuel type</option>
-            {FUEL_TYPES.map((f) => <option key={f}>{f}</option>)}
-          </select>
-          <button className="bg-red-gradient hover:opacity-90 text-white font-display font-bold rounded-lg py-3 transition">Search cars</button>
-        </form>
-        <div className="flex flex-wrap gap-5 mt-5 pb-2">
-          {['15-point manual inspection', 'Verified dealers only', 'Book inspection before you pay', 'Chat directly with the seller'].map((t) => (
-            <span key={t} className="flex items-center gap-2 text-xs font-semibold text-slate2">
-              <span className="w-2 h-2 rounded-full bg-verify" /> {t}
-            </span>
-          ))}
+        {/* Search Panel Overlaid on the Left */}
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center hidden">
+          <div className="container-px mx-auto px-4 sm:px-6 lg:px-12 w-full">
+            <div className="pointer-events-auto max-w-sm sm:max-w-md bg-white/90 backdrop-blur-md border border-white/80 rounded-2xl p-6 sm:p-7 shadow-2xl">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-4">
+                Find your right used car
+              </h1>
+
+              <div className="flex items-center gap-6 mb-4 text-xs font-bold text-slate-700">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="filterMode"
+                    value="budget"
+                    checked={filterMode === 'budget'}
+                    onChange={() => setFilterMode('budget')}
+                    className="accent-[#fe0100] w-4 h-4 cursor-pointer"
+                  />
+                  <span>By Budget</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="filterMode"
+                    value="brand"
+                    checked={filterMode === 'brand'}
+                    onChange={() => setFilterMode('brand')}
+                    className="accent-[#fe0100] w-4 h-4 cursor-pointer"
+                  />
+                  <span>By Brand</span>
+                </label>
+              </div>
+
+              <form onSubmit={handleSearch} className="space-y-3">
+                {filterMode === 'budget' ? (
+                  <div>
+                    <select
+                      value={selectedBudget}
+                      onChange={(e) => setSelectedBudget(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#fe0100] focus:ring-1 focus:ring-[#fe0100] shadow-xs cursor-pointer"
+                    >
+                      <option value="">Select Budget</option>
+                      {BUDGETS.map((b, i) => (
+                        <option key={b.label} value={i}>
+                          {b.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <select
+                      value={selectedBrand}
+                      onChange={(e) => setSelectedBrand(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#fe0100] focus:ring-1 focus:ring-[#fe0100] shadow-xs cursor-pointer"
+                    >
+                      <option value="">Select Brand</option>
+                      {brands.map((b) => (
+                        <option key={b._id} value={b._id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <select
+                    value={selectedBody}
+                    onChange={(e) => setSelectedBody(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#fe0100] focus:ring-1 focus:ring-[#fe0100] shadow-xs cursor-pointer"
+                  >
+                    <option value="">All Vehicle Types</option>
+                    {BODY_TYPES.map((b) => (
+                      <option key={b.name} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{ backgroundColor: '#fe0100' }}
+                  className="w-full hover:brightness-90 text-white font-black rounded-xl py-3.5 transition-all text-sm cursor-pointer shadow-lg uppercase tracking-wide mt-2"
+                >
+                  Search
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ---- Stat strip ---- */}
-      <div className="bg-white border-b border-slate-100 ">
-        <div className='container-px'>
-          <div className='grid grid-cols-2 md:grid-cols-4'>
-        {[['1,200+', 'Cars inspected'], ['40+', 'Verified dealers'], ['18', 'Cities live'], ['91%', 'Avg. inspection score']].map(([n, l], i) => (
-          <div key={l} className={`text-center py-7 ${i < 3 ? 'border-r border-slate-100' : ''}`}>
-            <div className="font-display font-black text-3xl text-ink">{n}</div>
-            <div className="text-xs font-semibold text-slate2 mt-1">{l}</div>
+      {/* ---- KEY METRICS ---- */}
+      <section className="py-8 bg-white border-b border-slate-200">
+        <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-x divide-slate-100">
+            {[
+              ['1,200+', 'Used Cars Inspected'],
+              ['40+', 'Verified Dealers'],
+              ['100%', 'Inspected Listings'],
+              ['91%', 'Avg. Inspection Score']
+            ].map(([num, label], idx) => (
+              <div key={label} className={idx === 0 ? '' : 'pl-4'}>
+                <div className="font-black text-2xl sm:text-3xl text-slate-900 tracking-tight">{num}</div>
+                <div className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">{label}</div>
+              </div>
+            ))}
           </div>
-        ))}
         </div>
-        </div>
-      </div>
+      </section>
 
-      <Section eyebrow="Fresh on the lot" title="Featured Cars" viewAllHref="/cars?isFeatured=true">
-        {loading ? <CarGridSkeleton /> : <Grid cars={featured} />}
+      {/* ---- FEATURED CARS SLIDER ---- */}
+      <Section eyebrow="Featured Inventory" title="Popular Pre-Owned Cars" viewAllHref="/cars?isFeatured=true">
+        {loading ? <CarGridSkeleton /> : <CarSlider cars={featured} />}
       </Section>
 
-      <Section eyebrow="Shop by brand" title="Popular Brands" bg>
-    
-          <div className="flex items-center gap-3">
-          
-
-          {/* View All Link */}
-          <Link
-            to="/cars"
-            className="text-ember font-bold text-sm hover:underline flex items-center gap-1 group shrink-0"
+      {/* ---- POPULAR BRANDS ---- */}
+      <Section eyebrow="Explore By Make" title="Popular Brands" bg>
+        <div className="relative px-2">
+          <button
+            ref={brandPrevRef}
+            aria-label="Previous brands"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
           >
-            View all
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
+            ‹
+          </button>
+          <button
+            ref={brandNextRef}
+            aria-label="Next brands"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+          >
+            ›
+          </button>
+
+          <Swiper
+            modules={[Navigation, Autoplay]}
+            spaceBetween={16}
+            slidesPerView={2}
+            autoplay={{ delay: 3500, disableOnInteraction: false }}
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = brandPrevRef.current;
+              swiper.params.navigation.nextEl = brandNextRef.current;
+            }}
+            navigation={{ prevEl: brandPrevRef.current, nextEl: brandNextRef.current }}
+            breakpoints={{
+              480: { slidesPerView: 3 },
+              640: { slidesPerView: 4 },
+              768: { slidesPerView: 5 },
+              1024: { slidesPerView: 6 },
+            }}
+            className="w-full !py-2"
+          >
+            {displayedBrands.map((b) => (
+              <SwiperSlide key={b._id}>
+                <Link
+                  to={`/cars?brand=${b._id}`}
+                  className="bg-white border border-slate-200 hover:border-[#fe0100] rounded-xl p-4 flex flex-col items-center justify-center gap-3 text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 card-item h-28 [&:hover_span]:text-[#fe0100] [&:hover_img]:scale-105"
+                >
+                  {b.logo ? (
+                    <img
+                      src={b.logo.startsWith('http') ? b.logo : `http://localhost:5000${b.logo}`}
+                      alt={b.name}
+                      className="h-9 w-auto object-contain transition-transform duration-200"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600">
+                      {b.name.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="font-extrabold text-xs text-slate-900 transition-colors duration-200 line-clamp-1">
+                    {b.name}
+                  </span>
+                </Link>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
-      
-
-
-        <div className="relative group px-4">
-        {/* Left Floating Arrow */}
-        <button
-          ref={prevRef}
-          aria-label="Previous brands"
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-700 hover:bg-ember hover:text-white hover:border-ember transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-        >
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-
-        {/* Right Floating Arrow */}
-        <button
-          ref={nextRef}
-          aria-label="Next brands"
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-700 hover:bg-ember hover:text-white hover:border-ember transition-all shadow-md disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-        >
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-      {/* Brand Swiper Carousel */}
-      <Swiper
-          modules={[Navigation, Autoplay]}
-          spaceBetween={16}
-          slidesPerView={2}
-          autoplay={{ delay: 3500, disableOnInteraction: false }}
-          onBeforeInit={(swiper) => {
-            swiper.params.navigation.prevEl = prevRef.current;
-            swiper.params.navigation.nextEl = nextRef.current;
-          }}
-          navigation={{
-            prevEl: prevRef.current,
-            nextEl: nextRef.current,
-          }}
-          breakpoints={{
-            480: { slidesPerView: 3, spaceBetween: 16 },
-            640: { slidesPerView: 4, spaceBetween: 16 },
-            768: { slidesPerView: 5, spaceBetween: 20 },
-            1024: { slidesPerView: 6, spaceBetween: 20 },
-          }}
-          className="w-full !py-2"
-        >
-          {displayedBrands.map((b) => (
-            <SwiperSlide key={b._id}>
-              <Link
-                to={`/cars?brand=${b._id}`}
-                className="bg-white border border-slate-200 hover:border-ember rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-center transition-all duration-200 hover:shadow-md group/card h-28"
-              >
-                {b.logo ? (
-                  <img
-                    src={
-                      b.logo.startsWith('http')
-                        ? b.logo
-                        : `http://localhost:5000${b.logo}`
-                    }
-                    alt={b.name}
-                    className="h-10 w-auto object-contain transition-transform group-hover/card:scale-105"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-400">
-                    {b.name.substring(0, 2).toUpperCase()}
-                  </div>
-                )}
-                <span className="font-display font-bold text-xs text-slate-800 group-hover/card:text-ember line-clamp-1">
-                  {b.name}
-                </span>
-              </Link>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-       
-</div>
-
-
-{/* <div className="flex flex-wrap gap-3">
-{brands.map((b) => (
-    <Link 
-      key={b._id} 
-      to={`/cars?brand=${b._id}`} 
-      className="bg-white border border-slate-200 rounded-xl px-6 py-3 font-display font-bold text-ink hover:border-ember hover:text-ember transition text-center"
-    >
-      {b.logo && (
-        <img 
-          src={b.logo.startsWith('http') ? b.logo : `http://localhost:5000${b.logo}`} 
-          alt={b.name} 
-          className="h-12 object-contain"
-        />
-      )}
-      <br/>
-      {b.name}
-    </Link>
-  ))}
-</div> */}
       </Section>
 
-      <Section eyebrow="Just listed" title="Latest Cars" viewAllHref="/cars?sort=-createdAt">
-        {loading ? <CarGridSkeleton /> : <Grid cars={(latest || []).slice(0, 4)} />}
+      {/* ---- LATEST CARS ---- */}
+      <Section eyebrow="Fresh Listings" title="Latest Used Cars" viewAllHref="/cars?sort=-createdAt">
+        {loading ? <CarGridSkeleton /> : <CarSlider cars={latest} />}
       </Section>
 
-      <Section eyebrow="Top picks" title="Premium Cars" bg viewAllHref="/cars?isPremium=true">
-        {loading ? <CarGridSkeleton /> : <Grid cars={premium} />}
+      {/* ---- PREMIUM VEHICLES ---- */}
+      <Section eyebrow="Exclusive Inventory" title="Premium Pre-Owned Vehicles" bg viewAllHref="/cars?isPremium=true">
+        {loading ? <CarGridSkeleton /> : <CarSlider cars={premium} />}
       </Section>
 
-      <Section eyebrow="Explore" title="Browse by budget, fuel & body type">
+      {/* ---- BROWSE BY CATEGORY ---- */}
+      <Section eyebrow="Find Your Style" title="Browse By Category">
         <div className="grid md:grid-cols-3 gap-6">
-          <BrowseCard title="By Budget" items={BUDGETS.map((b) => b.label)} onClick={(i) => {
-            const b = BUDGETS[i]; const p = new URLSearchParams();
-            if (b.min) p.set('minPrice', b.min); if (b.max) p.set('maxPrice', b.max);
-            navigate(`/cars?${p}`);
-          }} />
-          <BrowseCard title="By Fuel Type" items={FUEL_TYPES} onClick={(i) => navigate(`/cars?fuel=${FUEL_TYPES[i]}`)} />
-          <BrowseCard title="By Body Type" items={BODY_TYPES} onClick={(i) => navigate(`/cars?bodyType=${BODY_TYPES[i]}`)} />
+          <CategoryBox
+            title="Browse by Budget"
+            badge="Price"
+            items={BUDGETS.map((b) => b.label)}
+            onSelect={(i) => {
+              const b = BUDGETS[i];
+              const p = new URLSearchParams();
+              if (b.min) p.set('minPrice', b.min);
+              if (b.max) p.set('maxPrice', b.max);
+              navigate(`/cars?${p}`);
+            }}
+          />
+          <CategoryBox
+            title="Browse by Fuel"
+            badge="Engine"
+            items={FUEL_TYPES}
+            onSelect={(i) => navigate(`/cars?fuel=${FUEL_TYPES[i]}`)}
+          />
+          <CategoryBox
+            title="Browse by Body Style"
+            badge="Design"
+            items={BODY_TYPES.map((b) => b.name)}
+            onSelect={(i) => navigate(`/cars?bodyType=${BODY_TYPES[i].name}`)}
+          />
         </div>
       </Section>
 
-      <Section eyebrow="Why 4tyrezz" title="What 'inspected' actually means" bg>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 rounded-2xl overflow-hidden">
+      {/* ---- 4-STEP VERIFICATION PROCESS ---- */}
+      <Section eyebrow="Quality First" title="4-Step Verification Process" bg>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            ['01', 'Booking', "Buyer or seller books a slot; inspector confirms a time and location."],
-            ['02', '15-point checklist', 'Engine, tyres, electricals, body and odometer are checked and photographed.'],
-            ['03', 'Scoring', 'Every car gets a score out of 100 — shown right on the listing.'],
-            ['04', 'Signed report', 'A downloadable inspection report is attached for both sides.'],
-          ].map(([n, t, d]) => (
-            <div key={n} className="bg-white p-6">
-              <div className="font-display font-black text-2xl text-ember">{n}</div>
-              <h4 className="font-semibold mt-2">{t}</h4>
-              <p className="text-sm text-slate2 mt-1">{d}</p>
+            ['01', 'Slot Booking', 'Book an appointment at your convenience online or over the phone.'],
+            ['02', '15-Point Inspection', 'Engine, chassis, tyres, electronics & paper verification.'],
+            ['03', 'Automated Scoring', 'An algorithmic inspection score generated instantly.'],
+            ['04', 'Digital Certificate', 'Download transparent report before taking a test drive.']
+          ].map(([step, header, desc]) => (
+            <div
+              key={step}
+              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-lg hover:border-[#fe0100]/30 transition-all relative overflow-hidden flex flex-col justify-between [&:hover_.step-num]:bg-[#fe0100]"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="step-num w-10 h-10 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center text-sm transition-colors">
+                  {step}
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                  Verified
+                </span>
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-base">{header}</h3>
+                <p className="text-xs text-slate-500 mt-2 leading-relaxed font-medium">{desc}</p>
+              </div>
             </div>
           ))}
         </div>
       </Section>
 
-      <Section eyebrow="Testimonials" title="What buyers & sellers say">
-        <div className="grid md:grid-cols-3 gap-5">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="bg-white border border-slate-100 rounded-2xl p-6 shadow-soft">
-              <p className="text-sm text-slate2">&ldquo;{t.text}&rdquo;</p>
-              <p className="text-sm font-semibold mt-4">{t.name} <span className="text-slate2 font-normal">· {t.city}</span></p>
-            </div>
-          ))}
+      {/* ---- FEATURED DEALERS SLIDER ---- */}
+      <Section eyebrow="Verified Partners" title="Featured Commercial Dealer Network">
+        <div className="relative px-2">
+          <button
+            ref={dealerPrevRef}
+            aria-label="Previous dealers"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+          >
+            ‹
+          </button>
+          <button
+            ref={dealerNextRef}
+            aria-label="Next dealers"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+          >
+            ›
+          </button>
+
+          <Swiper
+            modules={[Navigation, Autoplay]}
+            spaceBetween={20}
+            slidesPerView={1}
+            autoplay={{ delay: 4000, disableOnInteraction: false }}
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = dealerPrevRef.current;
+              swiper.params.navigation.nextEl = dealerNextRef.current;
+            }}
+            navigation={{ prevEl: dealerPrevRef.current, nextEl: dealerNextRef.current }}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 3 },
+            }}
+            className="w-full !py-2"
+          >
+            {FEATURED_DEALERS.map((dealer) => (
+              <SwiperSlide key={dealer.name} className="h-auto">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-[#fe0100]/50 transition-all flex flex-col justify-between h-full space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
+                        {dealer.badge}
+                      </span>
+                      <span className="text-xs font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md">
+                        {dealer.rating}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-base leading-snug">{dealer.name}</h4>
+                      <p className="text-xs font-semibold text-slate-400 mt-0.5">{dealer.city}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-600">{dealer.inventory}</span>
+                    <Link to="/cars" className="font-black text-[#fe0100] hover:underline cursor-pointer">
+                      View Showroom →
+                    </Link>
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       </Section>
 
-      <Section eyebrow="FAQs" title="Common questions" bg>
-        <div className="max-w-2xl space-y-3">
+      {/* ---- TESTIMONIALS ---- */}
+      <Section eyebrow="Reviews" title="What Buyers & Sellers Say" bg>
+        <div className="relative px-2">
+          <button
+            ref={testPrevRef}
+            aria-label="Previous testimonials"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+          >
+            ‹
+          </button>
+          <button
+            ref={testNextRef}
+            aria-label="Next testimonials"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+          >
+            ›
+          </button>
+
+          <Swiper
+            modules={[Navigation, Autoplay]}
+            spaceBetween={20}
+            slidesPerView={1}
+            autoplay={{ delay: 4000, disableOnInteraction: false }}
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = testPrevRef.current;
+              swiper.params.navigation.nextEl = testNextRef.current;
+            }}
+            navigation={{ prevEl: testPrevRef.current, nextEl: testNextRef.current }}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 3 },
+            }}
+            className="w-full !py-2"
+          >
+            {TESTIMONIALS.map((t) => (
+              <SwiperSlide key={t.name} className="h-auto">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex gap-0.5 text-amber-500 text-xs">
+                        {'★'.repeat(t.rating)}
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                        {t.role}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">&ldquo;{t.text}&rdquo;</p>
+                  </div>
+                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                      {t.name[0]}
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-xs text-slate-900 block leading-tight">{t.name}</span>
+                    </div>
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      </Section>
+
+      {/* ---- FAQS ---- */}
+      <Section eyebrow="Help Center" title="Frequently Asked Questions">
+        <div className="max-w-3xl space-y-3">
           {FAQS.map((f) => (
-            <details key={f.q} className="bg-white border border-slate-100 rounded-xl p-5 group">
-              <summary className="font-semibold cursor-pointer list-none flex justify-between items-center">
-                {f.q}
-                <span className="text-ember group-open:rotate-45 transition">+</span>
+            <details key={f.q} className="bg-white border border-slate-200 rounded-xl p-5 group cursor-pointer shadow-xs [&_summary::-webkit-details-marker]:none">
+              <summary className="font-extrabold text-slate-900 flex justify-between items-center text-sm sm:text-base">
+                <span>{f.q}</span>
+                <span className="w-7 h-7 rounded-full bg-slate-100 group-open:bg-[#fe0100] group-open:text-white flex items-center justify-center text-slate-700 font-bold text-sm transition-colors">
+                  +
+                </span>
               </summary>
-              <p className="text-sm text-slate2 mt-3">{f.a}</p>
+              <p className="text-xs sm:text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100 leading-relaxed font-medium">{f.a}</p>
             </details>
           ))}
         </div>
       </Section>
 
-      <div className="container-px pb-16">
-        <div className="bg-ember rounded-2xl p-10 md:p-12 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div>
-            <h2 className="font-display font-black text-white text-3xl">Have a car to sell?</h2>
-            <p className="text-white/85 mt-1">List it in minutes — set your price, add photos, and we'll help you find a verified buyer.</p>
+      {/* ---- MOBILE APP DOWNLOAD SECTION ---- */}
+      <div className="container-px mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-2xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-8 border border-slate-800">
+          <div className="max-w-xl relative z-10 text-center md:text-left">
+            <span style={{ color: '#fe0100' }} className="text-xs font-extrabold uppercase tracking-wider bg-red-950/80 px-3 py-1 rounded-md border border-red-800/50">
+              Experience On The Go
+            </span>
+            <h2 className="font-black text-white text-2xl sm:text-4xl mt-3 tracking-tight">
+              Download Our Mobile App
+            </h2>
+            <p className="text-slate-300 mt-3 text-xs sm:text-sm leading-relaxed font-medium">
+              Browse verified listings, schedule inspections, and list your car directly from your phone. Available on iOS and Android.
+            </p>
           </div>
-          <Link to="/dashboard/add-car" className="bg-white/15 hover:bg-white/25 text-white font-semibold px-6 py-3 rounded-lg whitespace-nowrap">
-            List your car →
-          </Link>
+          
+          <div className="flex flex-col sm:flex-row gap-4 relative z-10 w-full sm:w-auto justify-center">
+            {/* Apple App Store */}
+            <a
+              href="#"
+              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl px-5 py-3 flex items-center gap-3 transition-all shadow-md hover:scale-[1.02]"
+            >
+              <svg className="w-7 h-7 fill-current transition-transform" viewBox="0 0 24 24">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.32c.62-.75 1.04-1.8 0.92-2.84-.9.04-2 .6-2.63 1.34-.56.65-1.06 1.71-.92 2.73 1.01.08 2.02-.48 2.63-1.23z"/>
+              </svg>
+              <div className="text-left">
+                <div className="text-[10px] uppercase font-medium text-slate-400">Download on the</div>
+                <div className="text-sm font-extrabold text-white tracking-wide">App Store</div>
+              </div>
+            </a>
+
+            {/* Google Play Store */}
+            <a
+              href="#"
+              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl px-5 py-3 flex items-center gap-3 transition-all shadow-md hover:scale-[1.02]"
+            >
+              <svg className="w-7 h-7 fill-current transition-transform" viewBox="0 0 24 24">
+                <path d="M3 20.5v-17c0-.55.33-.82.8-.52l12.4 8.5c.4.28.4.74 0 1.02L3.8 21.02c-.47.3-.8.03-.8-.52zM17.8 11.2 5.5 2.8l10.5 10.5c.35-.35.35-.91 0-1.26zm0 1.6L16 14.3l-10.5 10.5 12.3-8.4c.35-.35.35-.91 0-1.26z"/>
+              </svg>
+              <div className="text-left">
+                <div className="text-[10px] uppercase font-medium text-slate-400">Get it on</div>
+                <div className="text-sm font-extrabold text-white tracking-wide">Google Play</div>
+              </div>
+            </a>
+          </div>
         </div>
       </div>
-    </>
+    </div>
+  );
+}
+
+function CarSlider({ cars }) {
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+
+  if (!cars?.length) return <p className="text-slate-500 font-medium text-sm py-4">No vehicles available right now.</p>;
+  
+  return (
+    <div className="relative px-2">
+      <button
+        ref={prevRef}
+        aria-label="Previous cars"
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+      >
+        ‹
+      </button>
+      <button
+        ref={nextRef}
+        aria-label="Next cars"
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+      >
+        ›
+      </button>
+
+      <Swiper
+        modules={[Autoplay, Navigation]}
+        spaceBetween={20}
+        slidesPerView={1}
+        autoplay={{ delay: 4500, disableOnInteraction: false }}
+        onBeforeInit={(swiper) => {
+          swiper.params.navigation.prevEl = prevRef.current;
+          swiper.params.navigation.nextEl = nextRef.current;
+        }}
+        navigation={{ prevEl: prevRef.current, nextEl: nextRef.current }}
+        breakpoints={{
+          640: { slidesPerView: 2 },
+          1024: { slidesPerView: 4 },
+        }}
+        className="w-full !py-2"
+      >
+        {cars.map((c) => (
+          <SwiperSlide key={c._id} className="h-auto">
+            <CarCard car={c} />
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </div>
   );
 }
 
 function Section({ eyebrow, title, children, bg, viewAllHref }) {
   return (
-    <section className={bg ? 'bg-white py-14' : 'py-14'}>
-      <div className="container-px">
-        <div className="flex justify-between items-end mb-6">
+    <section className={bg ? 'bg-white py-16 border-y border-slate-200' : 'py-16'}>
+      <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-end mb-8">
           <div>
-            <p className="text-ember font-display font-bold uppercase tracking-widest text-xs">{eyebrow}</p>
-            <h2 className="font-display font-bold text-2xl sm:text-3xl mt-1">{title}</h2>
+            <p style={{ color: '#fe0100' }} className="font-black uppercase tracking-wider text-xs">{eyebrow}</p>
+            <h2 className="font-black text-slate-900 text-2xl sm:text-3xl mt-1 tracking-tight">{title}</h2>
           </div>
-          {viewAllHref && <Link to={viewAllHref} className="text-ember font-semibold text-sm whitespace-nowrap">View all →</Link>}
+          {viewAllHref && (
+            <Link to={viewAllHref} style={{ color: '#fe0100' }} className="hover:brightness-90 font-extrabold text-sm flex items-center gap-1 group">
+              <span>View All</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </Link>
+          )}
         </div>
         {children}
       </div>
@@ -336,25 +631,30 @@ function Section({ eyebrow, title, children, bg, viewAllHref }) {
   );
 }
 
-function Grid({ cars }) {
-  if (!cars?.length) return <p className="text-slate2 text-sm">Nothing here yet.</p>;
+function CategoryBox({ title, badge, items, onSelect }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      {cars.map((c) => <CarCard key={c._id} car={c} />)}
-    </div>
-  );
-}
-
-function BrowseCard({ title, items, onClick }) {
-  return (
-    <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-soft">
-      <h4 className="font-semibold mb-3">{title}</h4>
-      <div className="flex flex-col gap-1">
-        {items.map((item, i) => (
-          <button key={item} onClick={() => onClick(i)} className="text-left text-sm text-slate2 hover:text-ember py-1.5 border-b border-slate-50 last:border-0">
-            {item}
-          </button>
-        ))}
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 className="font-black text-slate-900 text-base">{title}</h3>
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+            {badge}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 gap-1.5">
+          {items.map((item, idx) => (
+            <button
+              key={item}
+              onClick={() => onSelect(idx)}
+              className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 hover:text-[#fe0100] transition-all flex items-center justify-between group cursor-pointer border border-transparent hover:border-slate-200/60"
+            >
+              <span>{item}</span>
+              <span className="text-slate-300 group-hover:text-[#fe0100] group-hover:translate-x-0.5 transition-all font-bold">
+                →
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

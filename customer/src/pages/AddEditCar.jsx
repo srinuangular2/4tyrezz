@@ -8,6 +8,7 @@ const empty = {
   title: '', brand: '', model: '', variant: '', year: '', price: '',
   fuel: 'Petrol', transmission: 'Manual', bodyType: 'Hatchback',
   kmDriven: '', ownership: 1, color: '', city: '', description: '',
+  insuranceType: '', seats: '', registrationYear: '', rto: '', engineDisplacement: '',
 };
 const FEATURE_OPTIONS = ['Power Steering', 'Power Windows', 'ABS', 'Airbags', 'Rear Camera', 'Touchscreen', 'Alloy Wheels', 'Sunroof'];
 
@@ -35,6 +36,8 @@ export default function AddEditCar() {
           transmission: c.transmission || 'Manual', bodyType: c.bodyType || 'Hatchback',
           kmDriven: c.kmDriven || '', ownership: c.ownership || 1, color: c.color || '',
           city: c.city?._id || c.city || '', description: c.description || '',
+          insuranceType: c.insuranceType || '', seats: c.seats || '', registrationYear: c.registrationYear || '',
+          rto: c.rto || '', engineDisplacement: c.engineDisplacement || '',
         });
         setFeatures(c.features || []);
         setExistingImages(c.images || []);
@@ -92,36 +95,39 @@ export default function AddEditCar() {
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
-  
+
     const brandObj = brands.find((b) => b._id === form.brand);
     const carName = form.title || (brandObj ? `${brandObj.name} car` : 'Car');
-  
+
     const loadingToast = toast.loading(
       isEdit ? `Updating ${carName} details...` : `Creating ${carName} listing...`
     );
-  
+
     const data = new FormData();
-    Object.entries(form).forEach(([k, v]) => data.append(k, v ?? ''));
+    // Skip empty strings (not just null/undefined) — Mongoose throws a
+    // CastError trying to coerce '' into a Number field like `seats`,
+    // `registrationYear`, or `engineDisplacement` when left blank.
+    Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) data.append(k, v); });
     data.append('features', JSON.stringify(features));
     data.append('existingImages', JSON.stringify(existingImages));
-  
+
     images.forEach((img) => data.append('images', img));
-  
+
     try {
       if (isEdit) {
         await api.put(`/cars/${id}`, data);
       } else {
         await api.post('/cars', data);
       }
-  
+
       // 1. Dismiss the loading toast first
       toast.dismiss(loadingToast);
-  
+
       // 2. Trigger a fresh success toast
       toast.success(
         isEdit ? `${carName} updated successfully!` : `${carName} listed successfully!`
       );
-  
+
       // 3. Navigate back
       navigate('/dashboard/my-cars');
     } catch (err) {
@@ -190,6 +196,22 @@ export default function AddEditCar() {
               ))}
             </div>
           </div>
+        </Fieldset>
+
+        <Fieldset title="Overview details (optional)">
+          <p className="text-xs text-slate2 -mt-1">Shown on the car detail page's Overview tab — leave blank if unknown.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Select label="Insurance" name="insuranceType" value={form.insuranceType} onChange={change}>
+              <option value="">Not specified</option>
+              <option>Comprehensive</option><option>Third Party</option><option>Expired</option><option>None</option>
+            </Select>
+            <Input label="Seats" name="seats" type="number" value={form.seats} onChange={change} placeholder="5" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Registration year" name="registrationYear" type="number" value={form.registrationYear} onChange={change} placeholder="e.g. 2020" />
+            <Input label="RTO" name="rto" value={form.rto} onChange={change} placeholder="e.g. Hyderabad" />
+          </div>
+          <Input label="Engine displacement (cc)" name="engineDisplacement" type="number" value={form.engineDisplacement} onChange={change} placeholder="1197" />
         </Fieldset>
 
         <Fieldset title="Pricing & location">

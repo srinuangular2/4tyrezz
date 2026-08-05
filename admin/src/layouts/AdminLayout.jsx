@@ -4,7 +4,7 @@ import { logout } from '../app/authSlice';
 import {
   DashboardOutlined, PeopleOutline, StorefrontOutlined, DirectionsCarOutlined,
   BrandingWatermarkOutlined, CategoryOutlined, LocationOnOutlined, FactCheckOutlined, LogoutOutlined,
-  ViewCarouselOutlined,
+  ViewCarouselOutlined,FlagOutlined
 } from '@mui/icons-material';
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   ['/cars', 'Cars', DirectionsCarOutlined],
   ['/approvals', 'Approvals', FactCheckOutlined],
   ['/banners', 'Banners', ViewCarouselOutlined],
+  ['/reports', 'Reported Ads', FlagOutlined],
   ['/users', 'Users', PeopleOutline],
   ['/dealers', 'Dealers', StorefrontOutlined],
   ['/brands', 'Brands', BrandingWatermarkOutlined],

@@ -7,6 +7,7 @@ const empty = {
   title: '', brand: '', model: '', variant: '', year: '', price: '',
   fuel: 'Petrol', transmission: 'Manual', bodyType: 'Hatchback',
   kmDriven: '', ownership: 1, color: '', city: '', description: '', owner: '',
+  insuranceType: '', seats: '', registrationYear: '', rto: '', engineDisplacement: '',
 };
 const FEATURE_OPTIONS = ['Power Steering', 'Power Windows', 'ABS', 'Airbags', 'Rear Camera', 'Touchscreen', 'Alloy Wheels', 'Sunroof'];
 
@@ -28,6 +29,8 @@ export default function CarForm() {
     api.get('/brands').then((r) => setBrands(r.data));
     api.get('/models').then((r) => setModels(r.data));
     api.get('/cities').then((r) => setCities(r.data));
+     // Both dealers and individual customers can be picked as the listing owner —
+    // dealers for stock, customers for listing on their behalf.
     Promise.all([
       api.get('/admin/users', { params: { role: 'dealer', limit: 100 } }),
       api.get('/admin/users', { params: { role: 'customer', limit: 100 } }),
@@ -43,6 +46,8 @@ export default function CarForm() {
         price: c.price || '', fuel: c.fuel || 'Petrol', transmission: c.transmission || 'Manual', bodyType: c.bodyType || 'Hatchback',
         kmDriven: c.kmDriven || '', ownership: c.ownership || 1, color: c.color || '', city: c.city?._id || c.city || '',
         description: c.description || '', owner: c.owner?._id || '',
+        insuranceType: c.insuranceType || '', seats: c.seats || '', registrationYear: c.registrationYear || '',
+        rto: c.rto || '', engineDisplacement: c.engineDisplacement || '',
       });
       setFeatures(c.features || []);
       setExistingImages(c.images || []);
@@ -96,29 +101,80 @@ export default function CarForm() {
     toast.success('Description generated!');
   };
 
+  // const submit = async (e) => {
+  //   e.preventDefault();
+  //   setSaving(true);
+  
+  //   // Get car name or fallback to title / brand name
+  //   const brandObj = brands.find((b) => b._id === form.brand);
+  //   const carName = form.title || (brandObj ? `${brandObj.name} car` : 'Car');
+  
+  //   const loadingToast = toast.loading(
+  //     isEdit ? `Updating ${carName} details...` : `Creating ${carName} listing...`
+  //   );
+  
+  //   const data = new FormData();
+  // Object.entries(form).forEach(([k, v]) => { if (v !== '' && v != null) data.append(k, v); });
+  //   Object.keys(form).forEach((key) => {
+  //     const val = form[key];
+  //     const valueToSend = typeof val === 'object' && val !== null ? (val._id || '') : (val ?? '');
+  //     data.append(key, valueToSend);
+  //   });
+  
+  //   data.append('features', JSON.stringify(features));
+  //   data.append('existingImages', JSON.stringify(existingImages));
+  
+  //   images.forEach((img) => {
+  //     data.append('images', img);
+  //   });
+  
+  //   try {
+  //     if (isEdit) {
+  //       await api.put(`/cars/${id}`, data);
+  //       toast.success(`Your ${carName} details updated successfully!`, { id: loadingToast });
+  //     } else {
+  //       await api.post('/cars', data);
+  //       toast.success(`Your ${carName} listing created successfully!`, { id: loadingToast });
+  //     }
+  //     navigate('/cars');
+  //   } catch (err) {
+  //     console.error('Failed to save car:', err);
+  //     toast.error(err.response?.data?.message || 'Failed to save car details', { id: loadingToast });
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
+
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
   
-    // Get car name or fallback to title / brand name
-    const brandObj = brands.find((b) => b._id === form.brand);
+    // 1. Resolve car name for personalized toast notifications
+    const brandObj = brands.find((b) => b._id === (form.brand?._id || form.brand));
     const carName = form.title || (brandObj ? `${brandObj.name} car` : 'Car');
   
+    // 2. Show loading toast
     const loadingToast = toast.loading(
       isEdit ? `Updating ${carName} details...` : `Creating ${carName} listing...`
     );
   
     const data = new FormData();
   
+    // 3. Clean and append form fields (handles primitive values & populated object IDs)
     Object.keys(form).forEach((key) => {
       const val = form[key];
-      const valueToSend = typeof val === 'object' && val !== null ? (val._id || '') : (val ?? '');
-      data.append(key, valueToSend);
+      if (val !== '' && val !== null && val !== undefined) {
+        // Extract _id if field is a populated object, otherwise send scalar value
+        const valueToSend = typeof val === 'object' && val !== null ? (val._id || '') : val;
+        data.append(key, valueToSend);
+      }
     });
   
-    data.append('features', JSON.stringify(features));
-    data.append('existingImages', JSON.stringify(existingImages));
+    // 4. Append JSON features and retained existing images
+    data.append('features', JSON.stringify(features || []));
+    data.append('existingImages', JSON.stringify(existingImages || []));
   
+    // 5. Append new image files
     images.forEach((img) => {
       data.append('images', img);
     });
@@ -131,10 +187,15 @@ export default function CarForm() {
         await api.post('/cars', data);
         toast.success(`Your ${carName} listing created successfully!`, { id: loadingToast });
       }
+      
+      // Navigate back to cars listing
       navigate('/cars');
     } catch (err) {
       console.error('Failed to save car:', err);
-      toast.error(err.response?.data?.message || 'Failed to save car details', { id: loadingToast });
+      toast.error(
+        err.response?.data?.message || 'Failed to save car details',
+        { id: loadingToast }
+      );
     } finally {
       setSaving(false);
     }
@@ -209,6 +270,25 @@ export default function CarForm() {
             </div>
           </div>
         </Fieldset>
+
+
+        <Fieldset title="Overview details (optional)">
+          <p className="text-xs text-slate2 -mt-1">Shown on the car detail page's Overview tab — leave blank if unknown.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Select label="Insurance" name="insuranceType" value={form.insuranceType} onChange={change}>
+              <option value="">Not specified</option>
+              <option>Comprehensive</option><option>Third Party</option><option>Expired</option><option>None</option>
+            </Select>
+            <Input label="Seats" name="seats" type="number" value={form.seats} onChange={change} placeholder="5" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Registration year" name="registrationYear" type="number" value={form.registrationYear} onChange={change} placeholder="e.g. 2020" />
+            <Input label="RTO" name="rto" value={form.rto} onChange={change} placeholder="e.g. Hyderabad" />
+          </div>
+          <Input label="Engine displacement (cc)" name="engineDisplacement" type="number" value={form.engineDisplacement} onChange={change} placeholder="1197" />
+        </Fieldset>
+
+
 
         <Fieldset title="Pricing & location">
           <div className="grid grid-cols-2 gap-3">

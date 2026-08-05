@@ -11,7 +11,8 @@ import Listing from './pages/Listing';
 import CarDetails from './pages/CarDetails';
 import AddEditCar from './pages/AddEditCar';
 import DealerLogin from './pages/DealerLogin';
-import { About, Contact, FAQs, Blog } from './pages/Static';
+import { About, Contact, FAQs, Blog,Careers,Terms,Privacy,CorporatePolicies } from './pages/Static';
+
 
 import DashboardLayout from './pages/dashboard/DashboardLayout';
 import MyCars from './pages/dashboard/MyCars';
@@ -45,6 +46,11 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/faqs" element={<FAQs />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/corporate-policies" element={<CorporatePolicies />} />
+
 
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             {/* Dealer-only: listing management */}

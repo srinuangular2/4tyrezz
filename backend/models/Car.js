@@ -19,6 +19,13 @@ const carSchema = new mongoose.Schema(
     features: [{ type: String }],
     description: { type: String, default: '' },
     inspectionScore: { type: Number, default: null },
+     // Optional "Car Overview" fields to match the reference detail-page layout.
+    // All optional so existing listings created before this change stay valid.
+    insuranceType: { type: String, enum: ['Comprehensive', 'Third Party', 'Expired', 'None', ''], default: '' },
+    seats: { type: Number, default: null },
+    registrationYear: { type: Number, default: null }, // may differ from manufacture `year`
+    rto: { type: String, default: '' }, // registering authority, e.g. "Hyderabad"
+    engineDisplacement: { type: Number, default: null }, // in cc
     status: { type: String, enum: ['pending', 'approved', 'rejected', 'sold'], default: 'pending' },
     isFeatured: { type: Boolean, default: false },
     isPremium: { type: Boolean, default: false },
