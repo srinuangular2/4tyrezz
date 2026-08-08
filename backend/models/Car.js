@@ -19,13 +19,41 @@ const carSchema = new mongoose.Schema(
     features: [{ type: String }],
     description: { type: String, default: '' },
     inspectionScore: { type: Number, default: null },
-     // Optional "Car Overview" fields to match the reference detail-page layout.
-    // All optional so existing listings created before this change stay valid.
+
+    // Optional "Car Overview" fields to match the reference detail-page layout
     insuranceType: { type: String, enum: ['Comprehensive', 'Third Party', 'Expired', 'None', ''], default: '' },
     seats: { type: Number, default: null },
     registrationYear: { type: Number, default: null }, // may differ from manufacture `year`
     rto: { type: String, default: '' }, // registering authority, e.g. "Hyderabad"
     engineDisplacement: { type: Number, default: null }, // in cc
+
+    // --- CARDEKHO STYLE INSIGHTS & RTO DATA ---
+    quickInsights: {
+      goodBuyReason: { type: String, default: '' },
+      marketPriceMin: { type: Number, default: null },
+      marketPriceMax: { type: Number, default: null },
+      condition: {
+        accidental: { type: String, default: 'No' },
+        odometerTampered: { type: String, default: 'No' },
+        insuranceStatus: { type: String, default: 'Valid' },
+        kmCondition: { type: String, default: 'Normal' },
+      },
+      fitForYou: { type: String, default: '' },
+      thingsToCheck: [{ type: String }],
+    },
+
+    rtoDetails: {
+      rcNumber: { type: String, default: '' }, // e.g. "KA01MG****"
+      rcStatus: { type: String, default: 'Active' }, // e.g. "Active", "NOC ISSUED"
+      registrationDate: { type: String, default: '' },
+      rtoLocation: { type: String, default: '' },
+      insuranceExpiryDate: { type: String, default: '' },
+      insuranceCompany: { type: String, default: '' },
+      engineCapacityCC: { type: Number, default: null },
+      puccValidUpto: { type: String, default: '' },
+      fitnessValidUpto: { type: String, default: '' },
+    },
+
     status: { type: String, enum: ['pending', 'approved', 'rejected', 'sold'], default: 'pending' },
     isFeatured: { type: Boolean, default: false },
     isPremium: { type: Boolean, default: false },

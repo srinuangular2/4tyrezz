@@ -1,6 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..800;1,300..800&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Set Montserrat as the default font across the entire admin panel */
+  html, body, input, select, textarea, button, label {
+    font-family: 'Montserrat', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Apply Poppins automatically to all headings and table headers */
+  h1, h2, h3, h4, h5, h6, th, .font-display {
+    font-family: 'Poppins', sans-serif;
+  }
+}
 
 @layer utilities {
   .skeleton { @apply animate-pulse bg-slate-200 rounded; }

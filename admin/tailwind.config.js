@@ -3,7 +3,12 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
-      fontFamily: { display: ['Poppins', 'sans-serif'], body: ['Montserrat', 'sans-serif'] },
+      fontFamily: { 
+        // Overriding 'sans' sets Montserrat as the global default font across the entire app
+        sans: ['Montserrat', 'sans-serif'],
+        display: ['Poppins', 'sans-serif'], 
+        body: ['Montserrat', 'sans-serif'] 
+      },
       colors: {
         ink: { DEFAULT: '#1C1C1E', 2: '#28282B' },
         ember: { DEFAULT: '#E11D2E', dark: '#B4101F' },
