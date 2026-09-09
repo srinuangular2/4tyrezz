@@ -17,6 +17,7 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api', require('./routes/referenceRoutes')); // /api/brands, /api/models, /api/cities
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/cities', require('./routes/cityRoutes'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

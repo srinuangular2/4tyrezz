@@ -2,19 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
 html { scroll-behavior: smooth; }
 ::selection { background: #E11D2E; color: white; }
 
 @layer utilities {
-  /* 1. Define custom utilities first */
   .bg-red-gradient {
-    background: linear-gradient(180deg, #ff0000 0%, #ed0000 100%); /* Replace with your desired hex colors */
+    background: linear-gradient(180deg, #ff0000 0%, #ed0000 100%);
   }
 
-  /* 2. Apply utilities now that bg-red-gradient is registered */
-  /* .text-brand-red { 
-    @apply bg-red-gradient bg-clip-text text-transparent; 
-  } */
+  .text-brand-red {
+    color: #E11D2E;
+  }
 
   .skeleton { 
     @apply animate-pulse bg-slate-200 rounded; 
@@ -22,12 +30,6 @@ html { scroll-behavior: smooth; }
 
   .container-px { 
     @apply max-w-[1240px] mx-auto px-4 md:px-8; 
-  }
-}
-
-@layer utilities {
-  .text-brand-red {
-    color: #E11D2E; /* Your primary brand red */
   }
 }
 

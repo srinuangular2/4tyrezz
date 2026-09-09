@@ -4,8 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Poppins', 'sans-serif'],
-        body: ['Montserrat', 'sans-serif'],
+        body: ['Poppins', 'sans-serif'],
+        display: ['Montserrat', 'sans-serif'],
       },
       colors: {
         // Approved theme: white-dominant with a single red accent.
