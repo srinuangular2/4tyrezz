@@ -3,11 +3,12 @@ import api from '../api/axios';
 
 export const fetchWishlist = createAsyncThunk('wishlist/fetch', async () => {
   const { data } = await api.get('/cars/wishlist/mine');
-  return data;
+  const list = Array.isArray(data) ? data : data?.data || [];
+  return list.filter(Boolean);
 });
 
 export const toggleWishlist = createAsyncThunk('wishlist/toggle', async (carId) => {
-  await api.post(`/cars/${carId}/wishlist`);
+  await api.post('/user/wishlist/toggle', { carId });
   return carId;
 });
 

@@ -5,10 +5,18 @@ import useReferenceData from '../hooks/useReferenceData';
 import CarCard from '../components/CarCard';
 import { CarGridSkeleton } from '../components/Skeletons';
 import HeroCarousel from '../components/HeroCarousel';
-
+import QuickServices from '../components/QuickServices';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
-
+import SellCarCTA from '../components/SellCarCTA';
+import FinanceCTA from '../components/FinanceCTA';
+import TestimonialCard from '../components/TestimonialCard';
+import FaqsSection from '../components/FaqsSection';
+import HowItWorks from '../components/HowItWorks';
+import CarBannerSection from '../components/CarBannerSection';
+import WhatsAppFloat from '../components/WhatsAppFloat';
+import LastViewedCars from '../components/LastViewedCars';
+import { mediaUrl } from './profile/hubUtils';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -38,26 +46,96 @@ const FEATURED_DEALERS = [
   { name: "Elite Car Studio", city: "Pune", inventory: "23 Vehicles", rating: "4.9 ★", badge: "Premium Partner" },
 ];
 
-const TESTIMONIALS = [
-  { name: 'Ananya R.', role: 'Verified Buyer', text: 'The 15-point inspection gave me real confidence. Found a Nexon with zero hidden issues!', rating: 5 },
-  { name: 'Vikram S.', role: 'Verified Seller', text: 'Sold my Swift in 4 days through the dealer network. Very smooth process.', rating: 5 },
-  { name: 'Priya M.', role: 'Verified Buyer', text: 'The inspection score right on the listing saved me so much time driving around.', rating: 5 },
-  { name: 'Kiran K.', role: 'Verified Buyer', text: 'Great platform! Transparent deal and zero hidden costs.', rating: 5 },
-];
+function mapDealerCard(d) {
+  const count = Number(d.inventory);
+  return {
+    _id: d.id || d._id,
+    name: d.name,
+    city: d.city,
+    inventory: Number.isFinite(count) ? `${count} Vehicles` : (d.inventory || '25+ Vehicles'),
+    rating: d.rating != null ? String(d.rating) : '4.9',
+    badge: d.badge || 'Verified Dealer',
+    logo: d.avatar || d.logo || d.image,
+  };
+}
 
-const FAQS = [
-  { q: 'How does the 15-point inspection work?', a: 'Every used car undergoes a thorough inspection covering engine health, tyre wear, electricals, chassis integrity, and odometer verification before listing.' },
-  { q: 'Can I sell my car directly to a buyer?', a: 'Yes! You can list directly to buyers (C2C) or post once and receive competitive offers from verified local dealers (C2B).' },
-  { q: 'Are all listed used cars verified?', a: 'Yes, every listing includes a transparent inspection score and verified seller badge.' },
-];
+
+
+function Section({ eyebrow, title, viewAllHref, children, bg, className = '' }) {
+  const renderFormattedTitle = (content) => {
+    if (!content) return null;
+    
+    // If title is already JSX (e.g. <>FEATURED <span className="font-black">CARS</span></>), render it directly
+    if (typeof content !== 'string') {
+      return content;
+    }
+
+    const words = content.trim().split(' ');
+    if (words.length <= 1) return <span className="font-normal">{content}</span>;
+    
+    const lastWord = words.pop();
+    const mainText = words.join(' ');
+    
+    return (
+      <span className="font-normal text-slate-800">
+        {mainText} <span className="font-black text-slate-900">{lastWord}</span>
+      </span>
+    );
+  };
+
+  return (
+    <section className={`${bg ? 'bg-white' : ''} py-12  ${className}`}>
+      <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
+        {(eyebrow || title || viewAllHref) && (
+          <div className="flex items-end justify-between pb-3 mb-5 border-b border-slate-100">
+            <div>
+              {eyebrow && (
+                <p className="text-[14px] font-medium text-[#909294] uppercase tracking-[5px] font-display mb-3">
+                  {eyebrow}
+                </p>
+              )}
+              {title && (
+                <h2 className="text-3xl sm:text-4xl uppercase tracking-tight font-display">
+                  {renderFormattedTitle(title)}
+                </h2>
+              )}
+            </div>
+            {viewAllHref && (
+              <Link
+                to={viewAllHref}
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-black hover:text-[#3083ff] transition-all group font-display uppercase tracking-wider mb-1"
+              >
+                <span>View All</span>
+                <svg
+                  className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </Link>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const navigate = useNavigate();
   const { brands } = useReferenceData();
-
   const [featured, setFeatured] = useState([]);
   const [latest, setLatest] = useState([]);
   const [premium, setPremium] = useState([]);
+  const [dealers, setDealers] = useState(FEATURED_DEALERS);
   const [loading, setLoading] = useState(true);
 
   // Search Widget States
@@ -72,20 +150,29 @@ export default function Home() {
   const dealerNextRef = useRef(null);
   const testPrevRef = useRef(null);
   const testNextRef = useRef(null);
-
-  const displayedBrands = brands.slice(0, 10);
+  const displayedBrands = brands.slice(0, 12);
 
   useEffect(() => {
+    let cancelled = false;
     Promise.all([
-      api.get('/cars', { params: { isFeatured: true, limit: 10 } }),
-      api.get('/cars', { params: { sort: '-createdAt', limit: 10 } }),
-      api.get('/cars', { params: { isPremium: true, limit: 10 } }),
-    ]).then(([f, l, p]) => {
-      setFeatured(f.data.cars);
-      setLatest(l.data.cars);
-      setPremium(p.data.cars);
+      api.get('/cars', { params: { isFeatured: true, limit: 10 } }).catch(() => ({ data: { cars: [] } })),
+      api.get('/cars', { params: { sort: '-createdAt', limit: 10 } }).catch(() => ({ data: { cars: [] } })),
+      api.get('/cars', { params: { isPremium: true, limit: 10 } }).catch(() => ({ data: { cars: [] } })),
+      api.get('/dealers', { params: { limit: 12 } }).catch(() => ({ data: { data: [] } })),
+    ]).then(([f, l, p, d]) => {
+      if (cancelled) return;
+      const latestCars = l.data?.cars || [];
+      const featuredCars = f.data?.cars?.length ? f.data.cars : latestCars;
+      setFeatured(featuredCars);
+      setLatest(latestCars);
+      setPremium(p.data?.cars || []);
+      const liveDealers = (d.data?.data || []).map(mapDealerCard).filter((row) => row.name);
+      if (liveDealers.length) setDealers(liveDealers);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const handleSearch = (e) => {
@@ -99,15 +186,12 @@ export default function Home() {
     } else if (filterMode === 'brand' && selectedBrand) {
       params.set('brand', selectedBrand);
     }
-
     if (selectedBody) params.set('bodyType', selectedBody);
-
     navigate(`/cars?${params.toString()}`);
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased selection:bg-[#fe0100] selection:text-white">
-      
+    <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased selection:bg-[#3083ff] selection:text-white">
       {/* ---- HERO SECTION ---- */}
       <section className="relative w-full bg-slate-900 overflow-hidden">
         <div className="w-full relative z-0">
@@ -130,7 +214,7 @@ export default function Home() {
                     value="budget"
                     checked={filterMode === 'budget'}
                     onChange={() => setFilterMode('budget')}
-                    className="accent-[#fe0100] w-4 h-4 cursor-pointer"
+                    className="accent-[#3083ff] w-4 h-4 cursor-pointer"
                   />
                   <span>By Budget</span>
                 </label>
@@ -141,7 +225,7 @@ export default function Home() {
                     value="brand"
                     checked={filterMode === 'brand'}
                     onChange={() => setFilterMode('brand')}
-                    className="accent-[#fe0100] w-4 h-4 cursor-pointer"
+                    className="accent-[#3083ff] w-4 h-4 cursor-pointer"
                   />
                   <span>By Brand</span>
                 </label>
@@ -153,7 +237,7 @@ export default function Home() {
                     <select
                       value={selectedBudget}
                       onChange={(e) => setSelectedBudget(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#fe0100] focus:ring-1 focus:ring-[#fe0100] shadow-xs cursor-pointer"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#3083ff] focus:ring-1 focus:ring-[#3083ff] shadow-xs cursor-pointer"
                     >
                       <option value="">Select Budget</option>
                       {BUDGETS.map((b, i) => (
@@ -168,7 +252,7 @@ export default function Home() {
                     <select
                       value={selectedBrand}
                       onChange={(e) => setSelectedBrand(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#fe0100] focus:ring-1 focus:ring-[#fe0100] shadow-xs cursor-pointer"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#3083ff] focus:ring-1 focus:ring-[#3083ff] shadow-xs cursor-pointer"
                     >
                       <option value="">Select Brand</option>
                       {brands.map((b) => (
@@ -184,7 +268,7 @@ export default function Home() {
                   <select
                     value={selectedBody}
                     onChange={(e) => setSelectedBody(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#fe0100] focus:ring-1 focus:ring-[#fe0100] shadow-xs cursor-pointer"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-xs sm:text-sm font-extrabold text-slate-800 focus:outline-none focus:border-[#3083ff] focus:ring-1 focus:ring-[#3083ff] shadow-xs cursor-pointer"
                   >
                     <option value="">All Vehicle Types</option>
                     {BODY_TYPES.map((b) => (
@@ -197,7 +281,7 @@ export default function Home() {
 
                 <button
                   type="submit"
-                  style={{ backgroundColor: '#fe0100' }}
+                  style={{ backgroundColor: '#3083ff' }}
                   className="w-full hover:brightness-90 text-white font-black rounded-xl py-3.5 transition-all text-sm cursor-pointer shadow-lg uppercase tracking-wide mt-2"
                 >
                   Search
@@ -208,109 +292,99 @@ export default function Home() {
         </div>
       </section>
 
+
+
       {/* ---- KEY METRICS ---- */}
-      <section className="py-8 bg-white border-b border-slate-200">
+      <section className="py-16 bg-white">
         <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-x divide-slate-100">
-            {[
-              ['1,200+', 'Used Cars Inspected'],
-              ['40+', 'Verified Dealers'],
-              ['100%', 'Inspected Listings'],
-              ['91%', 'Avg. Inspection Score']
-            ].map(([num, label], idx) => (
-              <div key={label} className={idx === 0 ? '' : 'pl-4'}>
-                <div className="font-black text-2xl sm:text-3xl text-slate-900 tracking-tight">{num}</div>
-                <div className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">{label}</div>
-              </div>
-            ))}
-          </div>
+          <QuickServices />
         </div>
       </section>
 
-      {/* ---- FEATURED CARS SLIDER ---- */}
-      <Section eyebrow="Featured Inventory" title="Popular Pre-Owned Cars" viewAllHref="/cars?isFeatured=true">
-        {loading ? <CarGridSkeleton /> : <CarSlider cars={featured} />}
-      </Section>
+      <LastViewedCars />
 
-      {/* ---- POPULAR BRANDS ---- */}
-      <Section eyebrow="Explore By Make" title="Popular Brands" bg>
-        <div className="relative px-2">
-          <button
-            ref={brandPrevRef}
-            aria-label="Previous brands"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
-          >
-            ‹
-          </button>
-          <button
-            ref={brandNextRef}
-            aria-label="Next brands"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
-          >
-            ›
-          </button>
+      {/* ---- FEATURED CARS SLIDER ---- */} 
+        <Section className='bg-gradient-to-b from-blue-50/70' eyebrow="FEATURED" title={<>FEATURED <span className="font-black">CARS</span></>} viewAllHref="/cars?isFeatured=true">
+          {loading ? <CarGridSkeleton /> : <CarSlider cars={featured} />}
+        </Section>
 
-          <Swiper
-            modules={[Navigation, Autoplay]}
-            spaceBetween={16}
-            slidesPerView={2}
-            autoplay={{ delay: 3500, disableOnInteraction: false }}
-            onBeforeInit={(swiper) => {
-              swiper.params.navigation.prevEl = brandPrevRef.current;
-              swiper.params.navigation.nextEl = brandNextRef.current;
-            }}
-            navigation={{ prevEl: brandPrevRef.current, nextEl: brandNextRef.current }}
-            breakpoints={{
-              480: { slidesPerView: 3 },
-              640: { slidesPerView: 4 },
-              768: { slidesPerView: 5 },
-              1024: { slidesPerView: 6 },
-            }}
-            className="w-full !py-2"
-          >
-            {displayedBrands.map((b) => (
-              <SwiperSlide key={b._id}>
-                <Link
-                  to={`/cars?brand=${b._id}`}
-                  className="bg-white border border-slate-200 hover:border-[#fe0100] rounded-xl p-4 flex flex-col items-center justify-center gap-3 text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 card-item h-28 [&:hover_span]:text-[#fe0100] [&:hover_img]:scale-105"
-                >
-                  {b.logo ? (
-                    <img
-                      src={b.logo.startsWith('http') ? b.logo : `http://localhost:5000${b.logo}`}
-                      alt={b.name}
-                      className="h-9 w-auto object-contain transition-transform duration-200"
-                    />
-                  ) : (
-                    <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-600">
-                      {b.name.substring(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="font-extrabold text-xs text-slate-900 transition-colors duration-200 line-clamp-1">
-                    {b.name}
-                  </span>
-                </Link>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      </Section>
-
-      {/* ---- LATEST CARS ---- */}
-      <Section eyebrow="Fresh Listings" title="Latest Used Cars" viewAllHref="/cars?sort=-createdAt">
+{/* ---- LATEST CARS ---- */}
+     <Section className='bg-white' eyebrow="Fresh Listings" title={<>Latest <span className="font-black"> Used Cars</span></>}  viewAllHref="/cars?sort=-createdAt">
         {loading ? <CarGridSkeleton /> : <CarSlider cars={latest} />}
       </Section>
 
+      {/* ---- POPULAR BRANDS ---- */}
+      <CarBannerSection/>
+
+      
+<Section eyebrow="all brands" title="Popular Brands" bg>
+  <div className="flex flex-col gap-8">
+    {/* Top 12 Brands Glassmorphism Grid */}
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      {displayedBrands.slice(0, 12).map((b) => (
+        <Link
+          key={b._id}
+          to={`/cars?brand=${b._id}`}
+          className="group relative flex flex-col items-center justify-center gap-3 p-5 h-32 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] hover:shadow-[0_16px_32px_0_rgba(37,99,235,0.18)] hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+        >
+          {/* Subtle Radiant Top Accent Beam on Hover */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* Logo Container */}
+          <div className="h-10 w-full flex items-center justify-center">
+            {b.logo ? (
+              <img
+                src={mediaUrl(b.logo)}
+                alt={b.name}
+                className="max-h-10 max-w-[80%] object-contain transition-transform duration-300 group-hover:scale-110"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-xl bg-slate-900/5 border border-slate-900/10 flex items-center justify-center text-xs font-black text-slate-700 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                {b.name.substring(0, 2).toUpperCase()}
+              </div>
+            )}
+          </div>
+
+          {/* Brand Name */}
+          <span className="font-bold text-xs text-slate-800 group-hover:text-blue-600 transition-colors duration-300 tracking-tight line-clamp-1">
+            {b.name}
+          </span>
+        </Link>
+      ))}
+    </div>
+
+    {/* View All Brands CTA Button */}
+    <div className="flex justify-center mt-2">
+      <Link
+        to="/brands"
+        className="group relative inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-slate-900/90 text-white font-bold text-sm backdrop-blur-md border border-white/20 shadow-lg hover:bg-blue-600 hover:shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all duration-300"
+      >
+        <span>View All Brands</span>
+        <span className="text-base font-black transition-transform duration-300 group-hover:translate-x-1">
+          →
+        </span>
+      </Link>
+    </div>
+  </div>
+</Section>
+
+
       {/* ---- PREMIUM VEHICLES ---- */}
-      <Section eyebrow="Exclusive Inventory" title="Premium Pre-Owned Vehicles" bg viewAllHref="/cars?isPremium=true">
+      {/* <Section eyebrow="Exclusive Inventory" title="Premium Pre-Owned Vehicles" bg viewAllHref="/cars?isPremium=true">
         {loading ? <CarGridSkeleton /> : <CarSlider cars={premium} />}
-      </Section>
+      </Section> */}
 
       {/* ---- BROWSE BY CATEGORY ---- */}
-      <Section eyebrow="Find Your Style" title="Browse By Category">
-        <div className="grid md:grid-cols-3 gap-6">
+      <Section eyebrow="Find Your Style" title="Browse By Category" className='bg-gradient-to-b from-blue-50/70'>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <CategoryBox
-            title="Browse by Budget"
+            title="By Budget"
             badge="Price"
+            icon={
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
             items={BUDGETS.map((b) => b.label)}
             onSelect={(i) => {
               const b = BUDGETS[i];
@@ -321,241 +395,186 @@ export default function Home() {
             }}
           />
           <CategoryBox
-            title="Browse by Fuel"
+            title="By Fuel Type"
             badge="Engine"
+            icon={
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            }
             items={FUEL_TYPES}
             onSelect={(i) => navigate(`/cars?fuel=${FUEL_TYPES[i]}`)}
           />
           <CategoryBox
-            title="Browse by Body Style"
-            badge="Design"
+            title="By Body Style"
+            badge="Segment"
+            icon={
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1" />
+              </svg>
+            }
             items={BODY_TYPES.map((b) => b.name)}
             onSelect={(i) => navigate(`/cars?bodyType=${BODY_TYPES[i].name}`)}
           />
         </div>
       </Section>
 
-      {/* ---- 4-STEP VERIFICATION PROCESS ---- */}
-      <Section eyebrow="Quality First" title="4-Step Verification Process" bg>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            ['01', 'Slot Booking', 'Book an appointment at your convenience online or over the phone.'],
-            ['02', '15-Point Inspection', 'Engine, chassis, tyres, electronics & paper verification.'],
-            ['03', 'Automated Scoring', 'An algorithmic inspection score generated instantly.'],
-            ['04', 'Digital Certificate', 'Download transparent report before taking a test drive.']
-          ].map(([step, header, desc]) => (
-            <div
-              key={step}
-              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-lg hover:border-[#fe0100]/30 transition-all relative overflow-hidden flex flex-col justify-between [&:hover_.step-num]:bg-[#fe0100]"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="step-num w-10 h-10 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center text-sm transition-colors">
-                  {step}
-                </span>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
-                  Verified
-                </span>
-              </div>
-              <div>
-                <h3 className="font-extrabold text-slate-900 text-base">{header}</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed font-medium">{desc}</p>
-              </div>
-            </div>
-          ))}
+
+
+        <div className='container-px mx-auto px-4 sm:px-6 lg:px-8'>
+          <SellCarCTA/>
         </div>
-      </Section>
+
+
 
       {/* ---- FEATURED DEALERS SLIDER ---- */}
-      <Section eyebrow="Verified Partners" title="Featured Commercial Dealer Network">
-        <div className="relative px-2">
-          <button
-            ref={dealerPrevRef}
-            aria-label="Previous dealers"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
-          >
-            ‹
-          </button>
-          <button
-            ref={dealerNextRef}
-            aria-label="Next dealers"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
-          >
-            ›
-          </button>
+      <Section eyebrow="Verified Partners"  title={<>our verified<span className="font-black">  Dealers</span></>} >
+  <div className="relative px-2">
+    {/* Swiper Navigation Buttons */}
+    <button
+      ref={dealerPrevRef}
+      aria-label="Previous dealers"
+      className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 w-10 h-10 rounded-2xl border border-white/80 bg-white/80 backdrop-blur-md text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all duration-300 shadow-lg flex items-center justify-center font-bold text-lg cursor-pointer"
+    >
+      ‹
+    </button>
+    <button
+      ref={dealerNextRef}
+      aria-label="Next dealers"
+      className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 w-10 h-10 rounded-2xl border border-white/80 bg-white/80 backdrop-blur-md text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all duration-300 shadow-lg flex items-center justify-center font-bold text-lg cursor-pointer"
+    >
+      ›
+    </button>
 
-          <Swiper
-            modules={[Navigation, Autoplay]}
-            spaceBetween={20}
-            slidesPerView={1}
-            autoplay={{ delay: 4000, disableOnInteraction: false }}
-            onBeforeInit={(swiper) => {
-              swiper.params.navigation.prevEl = dealerPrevRef.current;
-              swiper.params.navigation.nextEl = dealerNextRef.current;
-            }}
-            navigation={{ prevEl: dealerPrevRef.current, nextEl: dealerNextRef.current }}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-            }}
-            className="w-full !py-2"
-          >
-            {FEATURED_DEALERS.map((dealer) => (
-              <SwiperSlide key={dealer.name} className="h-auto">
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-[#fe0100]/50 transition-all flex flex-col justify-between h-full space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
-                        {dealer.badge}
-                      </span>
-                      <span className="text-xs font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md">
-                        {dealer.rating}
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-base leading-snug">{dealer.name}</h4>
-                      <p className="text-xs font-semibold text-slate-400 mt-0.5">{dealer.city}</p>
-                    </div>
-                  </div>
+    <Swiper
+      modules={[Navigation, Autoplay]}
+      spaceBetween={24}
+      slidesPerView={1}
+      autoplay={{ delay: 4000, disableOnInteraction: false }}
+      onBeforeInit={(swiper) => {
+        swiper.params.navigation.prevEl = dealerPrevRef.current;
+        swiper.params.navigation.nextEl = dealerNextRef.current;
+      }}
+      navigation={{ prevEl: dealerPrevRef.current, nextEl: dealerNextRef.current }}
+      breakpoints={{
+        640: { slidesPerView: 2 },
+        1024: { slidesPerView: 3 },
+      }}
+      className="w-full !py-4"
+    >
+      {dealers.map((dealer) => (
+        <SwiperSlide key={dealer._id || dealer.name} className="h-auto">
+          <div className="group relative flex flex-col justify-between h-full p-6 rounded-3xl bg-white/40 backdrop-blur-xl border border-white/70 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] hover:shadow-[0_20px_40px_0_rgba(48,131,255,0.18)] hover:border-[#3083ff]/50 hover:-translate-y-1.5 transition-all duration-500 overflow-hidden">
+            
+            {/* Top Glowing Beam Accent */}
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-400 via-[#3083ff] to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-600">{dealer.inventory}</span>
-                    <Link to="/cars" className="font-black text-[#fe0100] hover:underline cursor-pointer">
-                      View Showroom →
-                    </Link>
+            <div>
+              {/* Header Badges & Rating */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-[#3083ff]/10 text-[#3083ff] border border-[#3083ff]/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3083ff] animate-pulse" />
+                  {dealer.badge || 'Verified Partner'}
+                </span>
+
+                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                  <span className="text-amber-500 text-xs">★</span>
+                  <span className="text-xs font-black text-amber-600">
+                    {dealer.rating || '4.9'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Dealer Profile Information */}
+              <div className="flex items-center gap-4 my-2">
+                {/* Dealer Avatar / Logo Container */}
+                <div className="relative w-14 h-14 rounded-2xl bg-white shadow-md border border-slate-100 p-1 shrink-0 group-hover:scale-105 transition-transform duration-300">
+                  {dealer.logo || dealer.image ? (
+                    <img
+                      src={mediaUrl(dealer.logo || dealer.image)}
+                      alt={dealer.name}
+                      className="w-full h-full object-cover rounded-xl"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-xl bg-gradient-to-br from-[#3083ff] to-indigo-600 flex items-center justify-center text-white text-base font-black shadow-inner">
+                      {dealer.name.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+
+                  {/* Verified Icon Badge */}
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#3083ff] text-white flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm">
+                    ✓
                   </div>
                 </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      </Section>
+
+                <div className="flex flex-col min-w-0">
+                  <h4 className="font-extrabold text-slate-900 text-base leading-tight truncate group-hover:text-[#3083ff] transition-colors">
+                    {dealer.name}
+                  </h4>
+                  <p className="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="truncate">{dealer.city || dealer.location || 'Hyderabad'}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Footer Action Strip */}
+            <div className="mt-6 pt-4 border-t border-slate-200/50 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">In Stock</span>
+                <span className="font-extrabold text-sm text-slate-900">
+                  {dealer.inventory || '25+ Vehicles'}
+                </span>
+              </div>
+
+              <Link
+                to={dealer._id ? `/dealers/${dealer._id}` : '/dealers'}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white group-hover:bg-[#3083ff] text-xs font-bold shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <span>View Showroom</span>
+                <span className="font-black group-hover:translate-x-0.5 transition-transform">→</span>
+              </Link>
+            </div>
+
+          </div>
+        </SwiperSlide>
+      ))}
+    </Swiper>
+  </div>
+     </Section>
+
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> 
+      <Section eyebrow="Financing" title={<>Easy Vehicle <span className="font-black">  Loans</span></>} >
+        <FinanceCTA />
+      </Section> 
+    </div>
 
       {/* ---- TESTIMONIALS ---- */}
-      <Section eyebrow="Reviews" title="What Buyers & Sellers Say" bg>
-        <div className="relative px-2">
-          <button
-            ref={testPrevRef}
-            aria-label="Previous testimonials"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
-          >
-            ‹
-          </button>
-          <button
-            ref={testNextRef}
-            aria-label="Next testimonials"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
-          >
-            ›
-          </button>
-
-          <Swiper
-            modules={[Navigation, Autoplay]}
-            spaceBetween={20}
-            slidesPerView={1}
-            autoplay={{ delay: 4000, disableOnInteraction: false }}
-            onBeforeInit={(swiper) => {
-              swiper.params.navigation.prevEl = testPrevRef.current;
-              swiper.params.navigation.nextEl = testNextRef.current;
-            }}
-            navigation={{ prevEl: testPrevRef.current, nextEl: testNextRef.current }}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-            }}
-            className="w-full !py-2"
-          >
-            {TESTIMONIALS.map((t) => (
-              <SwiperSlide key={t.name} className="h-auto">
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between h-full">
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex gap-0.5 text-amber-500 text-xs">
-                        {'★'.repeat(t.rating)}
-                      </div>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
-                        {t.role}
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">&ldquo;{t.text}&rdquo;</p>
-                  </div>
-                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-extrabold text-xs flex items-center justify-center shrink-0">
-                      {t.name[0]}
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-xs text-slate-900 block leading-tight">{t.name}</span>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
+      <Section bg>
+      <TestimonialCard />
       </Section>
 
       {/* ---- FAQS ---- */}
-      <Section eyebrow="Help Center" title="Frequently Asked Questions">
-        <div className="max-w-3xl space-y-3">
-          {FAQS.map((f) => (
-            <details key={f.q} className="bg-white border border-slate-200 rounded-xl p-5 group cursor-pointer shadow-xs [&_summary::-webkit-details-marker]:none">
-              <summary className="font-extrabold text-slate-900 flex justify-between items-center text-sm sm:text-base">
-                <span>{f.q}</span>
-                <span className="w-7 h-7 rounded-full bg-slate-100 group-open:bg-[#fe0100] group-open:text-white flex items-center justify-center text-slate-700 font-bold text-sm transition-colors">
-                  +
-                </span>
-              </summary>
-              <p className="text-xs sm:text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100 leading-relaxed font-medium">{f.a}</p>
-            </details>
-          ))}
-        </div>
+      <Section className='bg-gradient-to-b from-blue-50/70'>
+        <FaqsSection/>
       </Section>
 
-      {/* ---- MOBILE APP DOWNLOAD SECTION ---- */}
-      <div className="container-px mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-2xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-8 border border-slate-800">
-          <div className="max-w-xl relative z-10 text-center md:text-left">
-            <span style={{ color: '#fe0100' }} className="text-xs font-extrabold uppercase tracking-wider bg-red-950/80 px-3 py-1 rounded-md border border-red-800/50">
-              Experience On The Go
-            </span>
-            <h2 className="font-black text-white text-2xl sm:text-4xl mt-3 tracking-tight">
-              Download Our Mobile App
-            </h2>
-            <p className="text-slate-300 mt-3 text-xs sm:text-sm leading-relaxed font-medium">
-              Browse verified listings, schedule inspections, and list your car directly from your phone. Available on iOS and Android.
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 relative z-10 w-full sm:w-auto justify-center">
-            {/* Apple App Store */}
-            <a
-              href="#"
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl px-5 py-3 flex items-center gap-3 transition-all shadow-md hover:scale-[1.02]"
-            >
-              <svg className="w-7 h-7 fill-current transition-transform" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.32c.62-.75 1.04-1.8 0.92-2.84-.9.04-2 .6-2.63 1.34-.56.65-1.06 1.71-.92 2.73 1.01.08 2.02-.48 2.63-1.23z"/>
-              </svg>
-              <div className="text-left">
-                <div className="text-[10px] uppercase font-medium text-slate-400">Download on the</div>
-                <div className="text-sm font-extrabold text-white tracking-wide">App Store</div>
-              </div>
-            </a>
 
-            {/* Google Play Store */}
-            <a
-              href="#"
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl px-5 py-3 flex items-center gap-3 transition-all shadow-md hover:scale-[1.02]"
-            >
-              <svg className="w-7 h-7 fill-current transition-transform" viewBox="0 0 24 24">
-                <path d="M3 20.5v-17c0-.55.33-.82.8-.52l12.4 8.5c.4.28.4.74 0 1.02L3.8 21.02c-.47.3-.8.03-.8-.52zM17.8 11.2 5.5 2.8l10.5 10.5c.35-.35.35-.91 0-1.26zm0 1.6L16 14.3l-10.5 10.5 12.3-8.4c.35-.35.35-.91 0-1.26z"/>
-              </svg>
-              <div className="text-left">
-                <div className="text-[10px] uppercase font-medium text-slate-400">Get it on</div>
-                <div className="text-sm font-extrabold text-white tracking-wide">Google Play</div>
-              </div>
-            </a>
-          </div>
-        </div>
-      </div>
+
+
+      {/* ---- 4-STEP VERIFICATION PROCESS ---- */}
+      <Section className='bg-white'>
+        <HowItWorks/>
+      </Section>
+
+
+      <WhatsAppFloat/>
+     
     </div>
   );
 }
@@ -571,14 +590,14 @@ function CarSlider({ cars }) {
       <button
         ref={prevRef}
         aria-label="Previous cars"
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
       >
         ‹
       </button>
       <button
         ref={nextRef}
         aria-label="Next cars"
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#fe0100] hover:text-white hover:border-[#fe0100] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
       >
         ›
       </button>
@@ -609,52 +628,52 @@ function CarSlider({ cars }) {
   );
 }
 
-function Section({ eyebrow, title, children, bg, viewAllHref }) {
+export function CategoryBox({ title, badge, icon, items, onSelect }) {
   return (
-    <section className={bg ? 'bg-white py-16 border-y border-slate-200' : 'py-16'}>
-      <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <p style={{ color: '#fe0100' }} className="font-black uppercase tracking-wider text-xs">{eyebrow}</p>
-            <h2 className="font-black text-slate-900 text-2xl sm:text-3xl mt-1 tracking-tight">{title}</h2>
-          </div>
-          {viewAllHref && (
-            <Link to={viewAllHref} style={{ color: '#fe0100' }} className="hover:brightness-90 font-extrabold text-sm flex items-center gap-1 group">
-              <span>View All</span>
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </Link>
-          )}
-        </div>
-        {children}
-      </div>
-    </section>
-  );
-}
+    <div className="group relative flex flex-col justify-between p-6 rounded-3xl bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] hover:shadow-[0_20px_40px_0_rgba(37,99,235,0.15)] hover:border-blue-500/40 transition-all duration-500 overflow-hidden">
+      {/* Radiant Top Hover Beam */}
+      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-function CategoryBox({ title, badge, items, onSelect }) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+      {/* Card Header */}
       <div>
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <h3 className="font-black text-slate-900 text-base">{title}</h3>
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {icon && (
+              <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+                {icon}
+              </div>
+            )}
+            <h3 className="font-extrabold text-lg text-slate-900 tracking-tight">
+              {title}
+            </h3>
+          </div>
+
+          <span className="bg-slate-900/5 border border-slate-900/10 text-slate-700 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
             {badge}
           </span>
         </div>
-        <div className="grid grid-cols-1 gap-1.5">
+
+        {/* List Items / Badges */}
+        <div className="flex flex-wrap gap-2 mt-5">
           {items.map((item, idx) => (
             <button
-              key={item}
+              key={idx}
               onClick={() => onSelect(idx)}
-              className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 hover:text-[#fe0100] transition-all flex items-center justify-between group cursor-pointer border border-transparent hover:border-slate-200/60"
+              className="group/pill relative px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white/60 backdrop-blur-md border border-slate-200/60 shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-blue-500/20 active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5"
             >
               <span>{item}</span>
-              <span className="text-slate-300 group-hover:text-[#fe0100] group-hover:translate-x-0.5 transition-all font-bold">
+              <span className="text-[10px] opacity-0 -ml-1 group-hover/pill:opacity-100 group-hover/pill:ml-0 transition-all duration-200">
                 →
               </span>
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Bottom Subtle Gradient Accent Line */}
+      <div className="mt-6 pt-4 border-t border-slate-200/40 flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors">
+        <span>Quick Filter</span>
+        <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
       </div>
     </div>
   );

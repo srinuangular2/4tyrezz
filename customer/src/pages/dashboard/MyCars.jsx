@@ -43,7 +43,7 @@ export default function MyCars() {
   if (cars.length === 0) return (
     <div className="text-center py-16">
       <p className="text-slate2 mb-4">You haven't listed any cars yet.</p>
-      <Link to="/dashboard/add-car" className="bg-ember text-white font-semibold px-5 py-2.5 rounded-lg">List your first car</Link>
+      <Link to="/dealer/dashboard/add-car" className="bg-ember text-white font-semibold px-5 py-2.5 rounded-lg">List your first car</Link>
     </div>
   );
 
@@ -73,7 +73,7 @@ export default function MyCars() {
                 <td className="px-4 py-3">{c.views}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <Link to={`/dashboard/edit-car/${c._id}`} className="text-ember font-semibold text-xs hover:underline">
+                    <Link to={`/dealer/dashboard/edit-car/${c._id}`} className="text-ember font-semibold text-xs hover:underline">
                       Edit
                     </Link>
                     <button

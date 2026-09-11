@@ -2,13 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
 html { scroll-behavior: smooth; }
-::selection { background: #E11D2E; color: white; }
+::selection { background: #3083ff; color: white; }
 
 @layer utilities {
   /* 1. Define custom utilities first */
   .bg-red-gradient {
-    background: linear-gradient(180deg, #ff0000 0%, #ed0000 100%); /* Replace with your desired hex colors */
+    background: linear-gradient(180deg, #3083ff 0%, #1853ff 100%);
+  }
+
+  /* Frosted card used across module pages — mirrors the Home section cards. */
+  .glass-card {
+    @apply bg-white/40 backdrop-blur-xl border border-white/60 shadow-glass;
+  }
+
+  .glass-card-hover {
+    @apply hover:shadow-glass-hover hover:border-[#3083ff]/40 hover:-translate-y-1 transition-all duration-500;
   }
 
   /* 2. Apply utilities now that bg-red-gradient is registered */
@@ -27,7 +46,7 @@ html { scroll-behavior: smooth; }
 
 @layer utilities {
   .text-brand-red {
-    color: #E11D2E; /* Your primary brand red */
+    color: #3083ff; /* Primary brand accent */
   }
 }
 
@@ -38,8 +57,21 @@ html { scroll-behavior: smooth; }
 }
 .animate-fadeUp { animation: fadeUp 0.4s ease both; }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fadeIn { animation: fadeIn 0.2s ease both; }
+
 @keyframes kenburns {
   from { transform: scale(1.06); }
   to { transform: scale(1); }
 }
 .animate-kenburns { animation: kenburns 6s ease-out both; }
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+  50% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+}
+.badge-pulse { animation: badge-pulse 1.6s ease-in-out infinite; }
+.bell-badge-glow { animation: badge-pulse 1.4s ease-in-out infinite; }

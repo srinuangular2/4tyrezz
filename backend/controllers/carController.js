@@ -6,6 +6,12 @@ const Wishlist = require('../models/Wishlist');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
 const { sendWhatsAppTemplate } = require('../utils/whatsapp');
+const { parseJsonField, parseCarNestedFields, enrichCarForDetail, getKmCondition, resolveListingRefs } = require('../utils/carInsights');
+const { listingFieldsForCreate, publicListingFilter, requiresListingModeration, syncFromListingStatus } = require('../utils/listingStatus');
+const { applyLocationFilters, normalizeListingLocation, recountLocations } = require('../services/locationService');
+const inventory = require('./inventoryController');
+const { dispatchSafe, EVENTS } = require('../services/notifyService');
+const buyerAlerts = require('../services/buyerAlertService');
 
 
 const POPULATE = [
@@ -15,41 +21,118 @@ const POPULATE = [
   { path: 'owner', select: 'name mobile email dealershipName role' },
 ];
 
+function splitCarUploads(files = [], body = {}) {
+  const imageSlots = parseJsonField(body.imageSlots, []);
+  const documentSlots = parseJsonField(body.documentSlots, []);
+  const mediaSlots = {};
+  const listingDocuments = {};
+  const images = [];
+  let inspectionReport = '';
+  let imgIdx = 0;
+  let docIdx = 0;
+
+  files.forEach((f) => {
+    const url = `/uploads/cars/${f.filename}`;
+    const isDoc = f.mimetype === 'application/pdf' || /\.pdf$/i.test(f.originalname || '');
+    if (isDoc) {
+      const key = documentSlots[docIdx++] || 'serviceHistory';
+      listingDocuments[key] = url;
+      if (!inspectionReport) inspectionReport = url;
+      return;
+    }
+    const slot = imageSlots[imgIdx++] || 'extra';
+    if (slot && slot !== 'extra') mediaSlots[slot] = url;
+    images.push(url);
+  });
+
+  return { images, inspectionReport, mediaSlots, listingDocuments };
+}
+
 // GET /api/cars — list with search, filters, sort, pagination
 exports.getCars = async (req, res) => {
   try {
     const {
-      search, brand, model, city, fuel, transmission, bodyType, color,
+      search, q, brand, model, city, location, state, area, areas, fuel, transmission, bodyType, color,
       minPrice, maxPrice, minYear, maxYear, ownership, minKm, maxKm,
       status, isFeatured, isPremium, sort = '-createdAt',
       page = 1, limit = 12,
     } = req.query;
 
     const filter = {};
-    // Public listing pages only ever want approved cars; admin explicitly passes status.
-    filter.status = status || 'approved';
+    // Public listing always stays on live published cars. Admin inventory can see every status.
+    if (req.user?.role === 'admin') {
+      if (status) filter.status = status;
+    } else {
+      Object.assign(filter, publicListingFilter());
+    }
 
-    // MULTI-FIELD SEARCH LOGIC (Title, Model, Brand Name, City Name)
-    if (search) {
-      const searchRegex = new RegExp(search.trim(), 'i');
-
-      // Find matching Brand and City ObjectIDs based on the text string
-      const [matchingBrands, matchingCities] = await Promise.all([
+    const term = String(search || q || '').trim();
+    if (term) {
+      const searchRegex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const [matchingBrands, matchingCities, matchingModels] = await Promise.all([
         Brand.find({ name: searchRegex }).select('_id'),
         City.find({ name: searchRegex }).select('_id'),
+        CarModel.find({ name: searchRegex }).select('_id'),
       ]);
-
       filter.$or = [
         { title: searchRegex },
         { variant: searchRegex },
+        { fuel: searchRegex },
+        { bodyType: searchRegex },
+        { transmission: searchRegex },
         { brand: { $in: matchingBrands.map((b) => b._id) } },
         { city: { $in: matchingCities.map((c) => c._id) } },
+        { model: { $in: matchingModels.map((m) => m._id) } },
+        { pickupLocation: searchRegex },
+        { 'location.area': searchRegex },
+        { 'location.city': searchRegex },
+        { 'location.state': searchRegex },
       ];
     }
 
-    if (brand) filter.brand = brand;
-    if (model) filter.model = model;
-    if (city) filter.city = city;
+    async function resolveRef(Model, value) {
+      if (!value) return null;
+      if (/^[a-fA-F0-9]{24}$/.test(String(value))) return value;
+      const doc = await Model.findOne({
+        $or: [
+          { name: new RegExp(`^${String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+          { slug: String(value).toLowerCase() },
+        ],
+      }).select('_id');
+      return doc?._id || null;
+    }
+
+    async function resolveCityRef(value) {
+      if (!value) return null;
+      if (/^[a-fA-F0-9]{24}$/.test(String(value))) return value;
+      const cities = await City.find({}).select('_id name slug').lean();
+      const needle = String(value).toLowerCase().trim();
+      const exact = cities.find((c) => String(c.name).toLowerCase() === needle || String(c.slug).toLowerCase() === needle);
+      if (exact) return exact._id;
+      const partial = cities
+        .filter((c) => needle.includes(String(c.name).toLowerCase()) || String(c.name).toLowerCase().includes(needle))
+        .sort((a, b) => String(b.name).length - String(a.name).length)[0];
+      return partial?._id || null;
+    }
+
+    const brandId = await resolveRef(Brand, brand);
+    const modelId = await resolveRef(CarModel, model);
+    const cityId = await resolveCityRef(city || location);
+    const cityIsName = city && !/^[a-fA-F0-9]{24}$/.test(String(city));
+    applyLocationFilters(filter, {
+      state,
+      area: area || areas,
+      cityName: cityIsName ? city : '',
+    });
+    if (brandId) filter.brand = brandId;
+    if (modelId) filter.model = modelId;
+    if (cityId && filter['location.city']) {
+      const cityRx = filter['location.city'];
+      delete filter['location.city'];
+      filter.$and = [...(filter.$and || []), { $or: [{ 'location.city': cityRx }, { city: cityId }] }];
+    } else if (cityId) {
+      filter.city = cityId;
+    }
     if (fuel) filter.fuel = fuel;
     if (transmission) filter.transmission = transmission;
     if (bodyType) filter.bodyType = bodyType;
@@ -88,18 +171,37 @@ exports.getCars = async (req, res) => {
 };
 
 exports.getCarById = async (req, res) => {
-  const car = await Car.findById(req.params.id).populate(POPULATE);
-  if (!car) return res.status(404).json({ message: 'Car not found' });
-  car.views += 1;
-  await car.save();
-  res.json(car);
+  try {
+    const id = req.params.id;
+    const car = /^[a-fA-F0-9]{24}$/.test(id)
+      ? await Car.findById(id).populate(POPULATE)
+      : await Car.findOne({ $or: [{ slug: id }, { title: new RegExp(`^${id}$`, 'i') }] }).populate(POPULATE);
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+    const isOwner = req.user && String(car.owner?._id || car.owner) === String(req.user._id);
+    const isStaff = req.user?.role === 'admin';
+    const live = car.status === 'approved' && !car.unpublished;
+    if (!live && !isOwner && !isStaff) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+    car.views += 1;
+    await car.save();
+    const DealerProfile = require('../models/DealerProfile');
+    const dealerProfile = car.owner?._id
+      ? await DealerProfile.findOne({ user: car.owner._id }).select('businessName contactPhone addressLine1 city state pincode geo kycVerified onboardingStatus').lean()
+      : null;
+    const enriched = await enrichCarForDetail(car, { dealerProfile });
+    res.json(enriched);
+  } catch (error) {
+    console.error('Error fetching car:', error);
+    res.status(500).json({ message: 'Server error fetching cars' });
+  }
 };
 
 exports.getSimilarCars = async (req, res) => {
   const car = await Car.findById(req.params.id);
   if (!car) return res.status(404).json({ message: 'Car not found' });
   const similar = await Car.find({
-    _id: { $ne: car._id }, status: 'approved',
+    _id: { $ne: car._id }, ...publicListingFilter(),
     $or: [{ brand: car.brand }, { bodyType: car.bodyType }],
   }).limit(6).populate(POPULATE);
   res.json(similar);
@@ -112,7 +214,7 @@ exports.getRecommendedCars = async (req, res) => {
   const band = car.price * 0.2;
   const recommended = await Car.find({
     _id: { $ne: car._id },
-    status: 'approved',
+    ...publicListingFilter(),
     price: { $gte: car.price - band, $lte: car.price + band },
   }).limit(6).populate(POPULATE);
   res.json(recommended);
@@ -123,7 +225,7 @@ exports.getSimilarModels = async (req, res) => {
   const car = await Car.findById(req.params.id);
   if (!car) return res.status(404).json({ message: 'Car not found' });
   const stats = await Car.aggregate([
-    { $match: { status: 'approved', brand: car.brand, model: { $ne: car.model } } },
+    { $match: { ...publicListingFilter(), brand: car.brand, model: { $ne: car.model } } },
     { $group: { _id: '$model', startingPrice: { $min: '$price' }, count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 6 },
@@ -145,7 +247,19 @@ exports.getSimilarModels = async (req, res) => {
 // POST /api/cars — Create Car & Dispatch WhatsApp Alerts
 exports.createCar = async (req, res) => {
   try {
-    const images = (req.files || []).map((f) => `/uploads/cars/${f.filename}`);
+    if (req.user.role === 'dealer') {
+      const DealerProfile = require('../models/DealerProfile');
+      const kyc = await DealerProfile.findOne({ user: req.user._id });
+      const verified = Boolean(kyc?.kycVerified || kyc?.kycStatus === 'approved');
+      if (!verified) {
+        return res.status(403).json({
+          message: 'Complete dealer KYC and wait for approval before listing cars',
+          kycStatus: kyc?.kycStatus || 'PENDING_KYC_APPROVAL',
+          kycVerified: false,
+        });
+      }
+    }
+    const { images, inspectionReport, mediaSlots, listingDocuments } = splitCarUploads(req.files || [], req.body);
     const isAdmin = req.user.role === 'admin';
 
     let owner = req.user._id;
@@ -159,16 +273,75 @@ exports.createCar = async (req, res) => {
       sellerType = 'dealer';
     }
 
+    const payload = await resolveListingRefs(parseCarNestedFields(req.body));
+    const cityDoc = payload.city ? await City.findById(payload.city).select('name state') : null;
+    payload.location = await normalizeListingLocation({ ...req.body, ...payload }, cityDoc);
+    const Brand = require('../models/Brand');
+    const CarModel = require('../models/CarModel');
+    const { estimateValue } = require('../services/integrations/valuationService');
+    const [brandDoc, modelDoc] = await Promise.all([
+      payload.brand ? Brand.findById(payload.brand).select('name') : null,
+      payload.model ? CarModel.findById(payload.model).select('name') : null,
+    ]);
+    const valuation = await estimateValue({
+      brandId: payload.brand,
+      brandName: brandDoc?.name,
+      modelId: payload.model,
+      modelName: modelDoc?.name,
+      year: payload.year,
+      kmDriven: payload.kmDriven,
+      ownership: payload.ownership,
+      bodyType: payload.bodyType,
+      fuel: payload.fuel,
+      transmission: payload.transmission,
+      conditionScore: payload.conditionScore || (payload.inspectionScore ? Math.round(payload.inspectionScore / 10) : 7),
+      price: payload.price,
+    });
+    const conditionScore = Math.min(
+      10,
+      Math.max(1, Number(payload.conditionScore) || (payload.inspectionScore ? payload.inspectionScore / 10 : 7))
+    );
+    payload.inspectionScore = Math.round(conditionScore * 10);
+    const incomingInsights = payload.quickInsights || {};
+    const quickInsights = {
+      ...incomingInsights,
+      marketPriceMin: incomingInsights.marketPriceMin ?? valuation.minPrice,
+      marketPriceMax: incomingInsights.marketPriceMax ?? valuation.maxPrice,
+      condition: {
+        ...(incomingInsights.condition || {}),
+        conditionScore,
+        kmCondition: getKmCondition({ ...payload, quickInsights: incomingInsights }),
+      },
+    };
+    if (!payload.price) payload.price = valuation.estimate;
+    delete payload.conditionScore;
+
     const car = await Car.create({
-      ...req.body,
-      features: req.body.features ? JSON.parse(req.body.features) : [],
+      ...payload,
+      features: payload.features || [],
+      quickInsights,
+      rtoDetails: payload.rtoDetails || {},
+      inspectionChecklist: payload.inspectionChecklist || {},
+      inspectionReport: inspectionReport || payload.inspectionReport || '',
+      mediaSlots: { ...(payload.mediaSlots || {}), ...mediaSlots },
+      listingDocuments: { ...(payload.listingDocuments || {}), ...listingDocuments },
       images,
       owner,
       sellerType,
-      status: isAdmin ? 'approved' : 'pending',
+      ...listingFieldsForCreate({ isAdmin }),
     });
 
     const populatedCar = await Car.findById(car._id).populate(POPULATE);
+    recountLocations().catch(() => {});
+
+    if (!isAdmin && populatedCar.listingStatus === 'PENDING_MODERATION') {
+      inventory.notifyOnCreateOrUpdate({
+        title: 'New listing pending moderation',
+        body: `${populatedCar.title} from ${req.user.dealershipName || req.user.name} needs approval`,
+        link: '/approvals',
+        meta: { carId: populatedCar._id, dealerId: owner },
+      }).catch(() => {});
+    }
 
     // WHATSAPP BROADCAST (Target Numbers: 919160415851 & 916304135959)
     if (isAdmin) {
@@ -204,6 +377,10 @@ exports.createCar = async (req, res) => {
       });
     }
 
+    if (populatedCar.status === 'approved' && !populatedCar.unpublished) {
+      buyerAlerts.onListingPublished(populatedCar);
+    }
+
     res.status(201).json(populatedCar);
   } catch (error) {
     console.error('Error creating car:', error);
@@ -221,7 +398,12 @@ exports.updateCar = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to edit this listing' });
     }
 
-    const newImages = (req.files || []).map((f) => `/uploads/cars/${f.filename}`);
+    const previousPrice = Number(car.price);
+    const previousStatus = car.status;
+    const previousUnpublished = Boolean(car.unpublished);
+    const previousAvail = car.availability;
+
+    const { images: newImages, inspectionReport, mediaSlots, listingDocuments } = splitCarUploads(req.files || [], req.body);
 
     let keptExistingImages = [];
     if (req.body.existingImages !== undefined && req.body.existingImages !== null) {
@@ -242,40 +424,89 @@ exports.updateCar = async (req, res) => {
 
     const finalImages = [...keptExistingImages, ...newImages];
 
+    const payload = await resolveListingRefs(parseCarNestedFields(req.body));
+    const cityDoc = payload.city ? await City.findById(payload.city).select('name state') : null;
+    const location = await normalizeListingLocation({ ...req.body, ...payload, pickupLocation: payload.pickupLocation }, cityDoc);
     const updateData = {
-      title: req.body.title,
-      brand: req.body.brand || null,
-      model: req.body.model || null,
-      variant: req.body.variant,
-      year: req.body.year,
-      price: req.body.price,
-      fuel: req.body.fuel,
-      transmission: req.body.transmission,
-      bodyType: req.body.bodyType,
-      kmDriven: req.body.kmDriven,
-      ownership: req.body.ownership,
-      color: req.body.color,
-      city: req.body.city || null,
-      description: req.body.description,
-      owner: req.body.owner || car.owner,
+      title: payload.title,
+      brand: payload.brand || null,
+      model: payload.model || null,
+      variant: payload.variant,
+      year: payload.year,
+      price: payload.price,
+      fuel: payload.fuel,
+      transmission: payload.transmission,
+      bodyType: payload.bodyType,
+      kmDriven: payload.kmDriven,
+      ownership: payload.ownership,
+      color: payload.color,
+      city: payload.city || null,
+      description: payload.description,
+      owner: payload.owner || car.owner,
       images: finalImages,
-      insuranceType: req.body.insuranceType,
-      seats: req.body.seats,
-      registrationYear: req.body.registrationYear,
-      rto: req.body.rto,
-      engineDisplacement: req.body.engineDisplacement,
+      insuranceType: payload.insuranceType,
+      seats: payload.seats,
+      registrationYear: payload.registrationYear,
+      rto: payload.rto,
+      engineDisplacement: payload.engineDisplacement,
+      inspectionScore: payload.inspectionScore,
+      interiorColor: payload.interiorColor,
+      videoUrl: payload.videoUrl,
+      pickupLocation: payload.pickupLocation,
+      location,
+      accidentDetails: payload.accidentDetails,
+      serviceHistoryLog: payload.serviceHistoryLog,
+      insuranceExpiry: payload.insuranceExpiry,
+      pucExpiry: payload.pucExpiry,
+      availability: payload.availability,
     };
 
-    if (req.body.features) {
-      try {
-        updateData.features = JSON.parse(req.body.features);
-      } catch (e) {
-        updateData.features = [];
+    const conditionScore = Number(payload.conditionScore);
+    if (Number.isFinite(conditionScore)) {
+      const score = Math.min(10, Math.max(1, conditionScore));
+      updateData.inspectionScore = Math.round(score * 10);
+      if (payload.quickInsights) {
+        payload.quickInsights = {
+          ...payload.quickInsights,
+          condition: {
+            ...(payload.quickInsights.condition || {}),
+            conditionScore: score,
+            kmCondition: getKmCondition({
+              year: payload.year ?? car.year,
+              kmDriven: payload.kmDriven ?? car.kmDriven,
+              quickInsights: payload.quickInsights,
+            }),
+          },
+        };
       }
     }
 
+    if (payload.features) updateData.features = payload.features;
+    if (payload.quickInsights) updateData.quickInsights = payload.quickInsights;
+    if (payload.rtoDetails) updateData.rtoDetails = payload.rtoDetails;
+    if (payload.inspectionChecklist) updateData.inspectionChecklist = payload.inspectionChecklist;
+    if (inspectionReport) updateData.inspectionReport = inspectionReport;
+    if (payload.mediaSlots || Object.keys(mediaSlots).length) {
+      updateData.mediaSlots = { ...(car.mediaSlots || {}), ...(payload.mediaSlots || {}), ...mediaSlots };
+    }
+    if (payload.listingDocuments || Object.keys(listingDocuments).length) {
+      updateData.listingDocuments = { ...(car.listingDocuments || {}), ...(payload.listingDocuments || {}), ...listingDocuments };
+    }
+
     if (req.user.role !== 'admin') {
-      updateData.status = 'pending';
+      if (requiresListingModeration()) {
+        Object.assign(updateData, syncFromListingStatus('PENDING_MODERATION', car));
+        inventory.notifyOnCreateOrUpdate({
+          title: 'Listing updated — pending moderation',
+          body: `${car.title} was edited and needs re-approval`,
+          link: '/approvals',
+          meta: { carId: car._id, dealerId: car.owner },
+        }).catch(() => {});
+      }
+    }
+
+    if (payload.price != null && Number(payload.price) !== Number(car.price)) {
+      updateData.priceHistory = [...(car.priceHistory || []), { price: Number(payload.price), changedAt: new Date(), reason: 'listing_edit' }];
     }
 
     const updatedCar = await Car.findByIdAndUpdate(
@@ -284,6 +515,17 @@ exports.updateCar = async (req, res) => {
       { new: true, runValidators: true }
     ).populate(POPULATE);
 
+    recountLocations().catch(() => {});
+    if (updatedCar) {
+      if (Number(updatedCar.price) !== previousPrice) {
+        buyerAlerts.onPriceChange(updatedCar, previousPrice);
+      }
+      const becameLive = previousStatus !== 'approved' && updatedCar.status === 'approved' && !updatedCar.unpublished;
+      if (becameLive) buyerAlerts.onListingPublished(updatedCar);
+      if (Boolean(updatedCar.unpublished) !== previousUnpublished || updatedCar.availability !== previousAvail || updatedCar.status === 'sold') {
+        buyerAlerts.onAvailabilityChange(updatedCar, { reason: updatedCar.status === 'sold' ? 'sold' : updatedCar.availability });
+      }
+    }
     res.json(updatedCar);
   } catch (error) {
     console.error('Update car error:', error);
@@ -299,6 +541,7 @@ exports.deleteCar = async (req, res) => {
     return res.status(403).json({ message: 'Not authorized to delete this listing' });
   }
   await car.deleteOne();
+  recountLocations().catch(() => {});
   res.json({ success: true });
 };
 
@@ -360,10 +603,35 @@ exports.connectCarOnWhatsApp = async (req, res) => {
 };
 // ---- Leads ----
 exports.createLead = async (req, res) => {
-  const { carId, name, phone, message } = req.body;
+  const { carId, name, phone, message, enquiryType, source, email, action } = req.body;
   const car = await Car.findById(carId);
   if (!car) return res.status(404).json({ message: 'Car not found' });
-  const lead = await Lead.create({ car: carId, seller: car.owner, name, phone, message });
+  const type = action || enquiryType || source || 'enquiry';
+  const lead = await Lead.create({
+    car: carId,
+    seller: car.owner,
+    name,
+    phone,
+    email: email || '',
+    message,
+    enquiryType: ['call', 'whatsapp', 'enquiry', 'test_drive', 'booking', 'finance', 'insurance', 'valuation', 'other'].includes(type) ? type : 'enquiry',
+    source: source || type || 'website',
+    stage: 'New Lead',
+    status: 'New Lead',
+  });
+  const inc = { enquiryCount: 1 };
+  if (type === 'call') inc.phoneEnquiryCount = 1;
+  if (type === 'whatsapp') inc.whatsappEnquiryCount = 1;
+  await Car.findByIdAndUpdate(car._id, { $inc: inc });
+  const vehicleLabel = car.title || 'a vehicle';
+  await dispatchSafe({
+    event: EVENTS.NEW_LEAD,
+    title: 'New Lead',
+    message: `${name} requested ${type.replace(/_/g, ' ')} for ${vehicleLabel}`,
+    dealerId: car.owner,
+    entityId: lead._id,
+    meta: { leadId: lead._id, carId: car._id, enquiryType: type, soundKey: 'lead', phone },
+  });
   res.status(201).json(lead);
 };
 exports.myLeads = async (req, res) => {

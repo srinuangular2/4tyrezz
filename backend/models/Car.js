@@ -14,6 +14,49 @@ const carSchema = new mongoose.Schema(
     kmDriven: { type: Number, required: true },
     ownership: { type: Number, default: 1 }, // 1st, 2nd, 3rd owner
     color: { type: String, default: '' },
+    interiorColor: { type: String, default: '' },
+    videoUrl: { type: String, default: '' },
+    pickupLocation: { type: String, default: '' },
+    location: {
+      state: { type: String, default: '', index: true },
+      city: { type: String, default: '', index: true },
+      area: { type: String, default: '', index: true },
+      pincode: { type: String, default: '', index: true },
+      formattedAddress: { type: String, default: '' },
+      coordinates: {
+        type: { type: String, enum: ['Point'] },
+        coordinates: { type: [Number] },
+      },
+    },
+    availability: {
+      type: String,
+      enum: ['available', 'reserved', 'in_transit', 'unavailable'],
+      default: 'available',
+    },
+    unpublished: { type: Boolean, default: false, index: true },
+    listingStatus: {
+      type: String,
+      enum: ['DRAFT', 'PENDING_MODERATION', 'PUBLISHED', 'REJECTED', 'SOLD', 'UNPUBLISHED'],
+      index: true,
+    },
+    moderationNotes: { type: String, default: '' },
+    accidentDetails: { type: String, default: '' },
+    serviceHistoryLog: { type: String, default: '' },
+    insuranceExpiry: { type: String, default: '' },
+    pucExpiry: { type: String, default: '' },
+    enquiryCount: { type: Number, default: 0 },
+    phoneEnquiryCount: { type: Number, default: 0 },
+    whatsappEnquiryCount: { type: Number, default: 0 },
+    priceHistory: {
+      type: [
+        {
+          price: { type: Number, required: true },
+          changedAt: { type: Date, default: Date.now },
+          reason: { type: String, default: '' },
+        },
+      ],
+      default: [],
+    },
     city: { type: mongoose.Schema.Types.ObjectId, ref: 'City', required: true },
     images: [{ type: String }],
     features: [{ type: String }],
@@ -57,6 +100,27 @@ const carSchema = new mongoose.Schema(
     status: { type: String, enum: ['pending', 'approved', 'rejected', 'sold'], default: 'pending' },
     isFeatured: { type: Boolean, default: false },
     isPremium: { type: Boolean, default: false },
+    inspectionChecklist: {
+      engineState: { type: String, default: '' },
+      serviceHistory: { type: String, default: '' },
+      tyreCondition: { type: Number, default: null },
+      keyCount: { type: Number, default: null },
+      accidental: { type: String, default: 'No' },
+      floodDamage: { type: String, default: 'No' },
+    },
+    inspectionReport: { type: String, default: '' },
+    mediaSlots: {
+      front: { type: String, default: '' },
+      rear: { type: String, default: '' },
+      dashboard: { type: String, default: '' },
+      odometer: { type: String, default: '' },
+      tyres: { type: String, default: '' },
+    },
+    listingDocuments: {
+      rcCopy: { type: String, default: '' },
+      insurancePolicy: { type: String, default: '' },
+      serviceHistory: { type: String, default: '' },
+    },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     sellerType: { type: String, enum: ['individual', 'dealer'], default: 'individual' },
     views: { type: Number, default: 0 },
@@ -65,5 +129,11 @@ const carSchema = new mongoose.Schema(
 );
 
 carSchema.index({ title: 'text', description: 'text' });
+carSchema.index({ brand: 1, model: 1, status: 1 });
+carSchema.index({ status: 1, unpublished: 1, fuel: 1, bodyType: 1 });
+carSchema.index({ variant: 1, status: 1 });
+carSchema.index({ 'location.city': 1, 'location.area': 1, status: 1 });
+carSchema.index({ 'location.state': 1, 'location.city': 1, status: 1 });
+carSchema.index({ 'location.coordinates': '2dsphere' });
 
 module.exports = mongoose.model('Car', carSchema);

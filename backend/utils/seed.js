@@ -8,6 +8,7 @@ const CarModel = require('../models/CarModel');
 const City = require('../models/City');
 const Car = require('../models/Car');
 const Banner = require('../models/Banner');
+const DealerProfile = require('../models/DealerProfile');
 
 const BRANDS = {
   'Maruti Suzuki': ['Swift', 'Baleno', 'Brezza', 'Dzire', 'Ertiga'],
@@ -36,6 +37,56 @@ const FEATURES = ['Power Steering', 'Power Windows', 'ABS', 'Airbags', 'Rear Cam
 
 const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+const RTO_CODES = ['KA01', 'KA03', 'TS09', 'MH01', 'DL01', 'TN07'];
+const INSURERS = ['ICICI Lombard', 'HDFC ERGO', 'Bajaj Allianz', 'Royal Sundaram', 'New India Assurance'];
+
+function buildSeedCarExtras({ price, year, kmDriven, ownership, fuel, bodyType, cityName, brandName, modelName, features }) {
+  const band = Math.round(price * 0.1);
+  const regYear = year + randInt(0, 1);
+  const age = new Date().getFullYear() - year;
+  const avgKm = kmDriven / Math.max(1, age);
+  const kmCondition = avgKm < 8000 ? 'Below average' : avgKm > 18000 ? 'Above average' : 'Normal';
+  const rtoCode = rand(RTO_CODES);
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  return {
+    insuranceType: rand(['Comprehensive', 'Third Party', 'Comprehensive']),
+    seats: rand([5, 5, 5, 7, 6]),
+    registrationYear: regYear,
+    rto: cityName,
+    engineDisplacement: rand([1197, 1199, 1493, 1498, 1997, 2199, 2498]),
+    quickInsights: {
+      goodBuyReason: `Competitive price for a ${year} ${brandName} ${modelName} with ${ownership === 1 ? 'single-owner' : `${ownership} owner`} history in ${cityName}.`,
+      marketPriceMin: price - band,
+      marketPriceMax: price + band,
+      condition: {
+        accidental: rand(['No', 'No', 'No', 'Yes']),
+        odometerTampered: 'No',
+        insuranceStatus: rand(['Valid', 'Valid', 'Expired']),
+        kmCondition,
+      },
+      fitForYou: `${bodyType} ideal for ${fuel === 'Electric' ? 'eco-friendly' : 'daily'} commutes in ${cityName}. ${ownership === 1 ? 'Single owner adds transparency to service history.' : ''}`.trim(),
+      thingsToCheck: [
+        `${Number(kmDriven).toLocaleString('en-IN')} km driven — check tyre tread and brake wear`,
+        age >= 5 ? `${age} years old — inspect rubber seals and battery health` : 'Low age vehicle — verify service records at authorised centre',
+        fuel === 'Diesel' ? 'Diesel engine — verify turbo and clutch on test drive' : 'Petrol/CNG unit — check idle smoothness and AC performance',
+      ],
+    },
+    rtoDetails: {
+      rcNumber: `${rtoCode}MG${randInt(1000, 9999)}****`,
+      rcStatus: rand(['Active', 'Active', 'NOC ISSUED']),
+      registrationDate: `${randInt(1, 28)}-${monthNames[randInt(0, 11)]}-${regYear}`,
+      rtoLocation: `${cityName.toUpperCase()} RTO`,
+      insuranceExpiryDate: `${randInt(1, 28)}-${monthNames[randInt(0, 11)]}-${year + randInt(1, 2)}`,
+      insuranceCompany: rand(INSURERS),
+      engineCapacityCC: rand([1197, 1498, 1997, 2199]),
+      puccValidUpto: `${randInt(1, 28)}-${monthNames[randInt(0, 11)]}-${year + 1}`,
+      fitnessValidUpto: `${randInt(1, 28)}-${monthNames[randInt(0, 11)]}-${year + randInt(5, 10)}`,
+    },
+    description: `Well-maintained ${year} ${brandName} ${modelName} in ${cityName}. ${Number(kmDriven).toLocaleString('en-IN')} km driven, ${fuel} ${rand(TRANSMISSIONS).toLowerCase()}, ${ownership === 1 ? '1st owner' : `${ownership}${ownership === 2 ? 'nd' : 'rd'} owner`}. Key features: ${features.join(', ')}. All documents verified.`,
+  };
+}
 
 // Stable, freely-licensed Unsplash photos used as dummy listing imagery so
 // seeded cars don't look empty. Swap for real seller photos in production —
@@ -81,6 +132,28 @@ async function run() {
   const dealerPass = await bcrypt.hash('dealer123', 10);
   const admin = await User.create({ name: 'Admin', email: 'admin@4tyrezz.com', password: adminPass, role: 'admin', isVerified: true });
   const dealer = await User.create({ name: 'Prime Motors', email: 'dealer@4tyrezz.com', password: dealerPass, role: 'dealer', dealershipName: 'Prime Motors', city: 'Hyderabad', isVerified: true });
+  await DealerProfile.create({
+    user: dealer._id,
+    businessName: 'Prime Motors',
+    businessType: 'Private Limited',
+    gstNumber: '36AABCP1234A1Z5',
+    panNumber: 'AABCP1234A',
+    addressLine1: 'Banjara Hills',
+    city: 'Hyderabad',
+    state: 'Telangana',
+    pincode: '500034',
+    contactPerson: 'Prime Motors',
+    contactPhone: '9876543210',
+    contactEmail: 'dealer@4tyrezz.com',
+    kycStatus: 'approved',
+    documents: [
+      { type: 'gst_certificate', url: '/uploads/kyc/seed-gst.pdf', originalName: 'gst.pdf' },
+      { type: 'pan_card', url: '/uploads/kyc/seed-pan.pdf', originalName: 'pan.pdf' },
+      { type: 'address_proof', url: '/uploads/kyc/seed-address.pdf', originalName: 'address.pdf' },
+    ],
+    submittedAt: new Date(),
+    reviewedAt: new Date(),
+  });
   const customer = await User.create({ name: 'Ravi Kumar', mobile: '9160415851', role: 'customer', isVerified: true });
 
   console.log('Seeding cars...');
@@ -89,26 +162,54 @@ async function run() {
   for (let i = 0; i < 40; i++) {
     const model = rand(modelDocs);
     const brand = brandDocs.find((b) => b._id.equals(model.brand));
+    const city = rand(cities);
     const year = randInt(2015, 2024);
     const title = `${year} ${brand.name} ${model.name}`;
+    const price = randInt(250000, 2200000);
+    const kmDriven = randInt(8000, 95000);
+    const ownership = randInt(1, 3);
+    const fuel = rand(FUELS);
+    const transmission = rand(TRANSMISSIONS);
+    const bodyType = rand(BODY_TYPES);
+    const carFeatures = [...FEATURES].sort(() => 0.5 - Math.random()).slice(0, randInt(3, 6));
+    const extras = buildSeedCarExtras({
+      price,
+      year,
+      kmDriven,
+      ownership,
+      fuel,
+      bodyType,
+      cityName: city.name,
+      brandName: brand.name,
+      modelName: model.name,
+      features: carFeatures,
+    });
+
     const car = await Car.create({
       title,
       brand: brand._id,
       model: model._id,
       variant: rand(['LXI', 'VXI', 'ZXI', 'Base', 'Top']),
       year,
-      price: randInt(250000, 2200000),
-      fuel: rand(FUELS),
-      transmission: rand(TRANSMISSIONS),
-      bodyType: rand(BODY_TYPES),
-      kmDriven: randInt(8000, 95000),
-      ownership: randInt(1, 3),
+      price,
+      fuel,
+      transmission,
+      bodyType,
+      kmDriven,
+      ownership,
       color: rand(['White', 'Silver', 'Red', 'Black', 'Grey']),
-      city: rand(cities)._id,
+      city: city._id,
       images: randomImages(),
-      features: [...FEATURES].sort(() => 0.5 - Math.random()).slice(0, 4),
-      description: `Well maintained ${title}, single owner, all documents clear, no accident history.`,
+      features: carFeatures,
+      description: extras.description,
       inspectionScore: randInt(75, 97),
+      insuranceType: extras.insuranceType,
+      seats: extras.seats,
+      registrationYear: extras.registrationYear,
+      rto: extras.rto,
+      engineDisplacement: extras.engineDisplacement,
+      quickInsights: extras.quickInsights,
+      rtoDetails: extras.rtoDetails,
       status: 'approved',
       isFeatured: Math.random() > 0.75,
       isPremium: Math.random() > 0.85,
@@ -160,7 +261,7 @@ async function run() {
   console.log('\nSeed complete.');
   console.log('Admin login   -> admin@4tyrezz.com / admin123');
   console.log('Dealer login  -> dealer@4tyrezz.com / dealer123');
-  console.log('Customer OTP  -> mobile 9160415851, OTP 123456 (MOCK_OTP=true)');
+  console.log('Customer OTP  -> mobile 9160415851 (4-digit OTP via Msg91 / console stub)');
   process.exit(0);
 }
 

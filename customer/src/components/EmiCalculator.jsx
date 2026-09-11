@@ -56,7 +56,7 @@ export default function EmiCalculator({ price, onContactSeller }) {
                 strokeDasharray={`${circumference - interestDash} ${circumference}`}
               />
               <circle
-                cx="60" cy="60" r="54" fill="none" stroke="#E11D2E" strokeWidth="12"
+                cx="60" cy="60" r="54" fill="none" stroke="#3083ff" strokeWidth="12"
                 strokeDasharray={`${interestDash} ${circumference}`}
                 strokeDashoffset={-(circumference - interestDash)}
               />
@@ -65,7 +65,7 @@ export default function EmiCalculator({ price, onContactSeller }) {
 
           <div className="space-y-2 mt-5 text-sm">
             <LegendRow color="#1C1C1E" label="Principal loan amount" value={formatPrice(loanAmount)} />
-            <LegendRow color="#E11D2E" label="Total interest payable" value={formatPrice(totalInterest)} />
+            <LegendRow color="#3083ff" label="Total interest payable" value={formatPrice(totalInterest)} />
             <div className="flex justify-between pt-2 border-t border-slate-100 font-semibold">
               <span>Total amount payable</span>
               <span>{formatPrice(totalPayable)}</span>

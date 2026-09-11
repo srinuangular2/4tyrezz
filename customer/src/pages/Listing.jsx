@@ -1,18 +1,40 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
 import CarCard from '../components/CarCard';
 import { CarGridSkeleton } from '../components/Skeletons';
 import Pagination from '../components/Pagination';
+import FilterSidebar from '../components/listing/FilterSidebar';
+import { describeFilters } from './profile/hubUtils';
+import { useAuthGuard } from '../components/AuthGuardModal';
 
 const FUELS = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
 const TRANSMISSIONS = ['Manual', 'Automatic'];
+const BODY_TYPES = ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Luxury', 'Convertible'];
 const OWNERSHIP = [1, 2, 3];
+
+function sameName(a, b) {
+  return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+}
+
+function matchRef(list, value) {
+  if (!value || !list?.length) return null;
+  return (
+    list.find((row) => String(row._id) === String(value)) ||
+    list.find((row) => sameName(row.name, value) || sameName(row.slug, value)) ||
+    list.find((row) => String(value).toLowerCase().includes(String(row.name).toLowerCase())) ||
+    null
+  );
+}
 
 export default function Listing() {
   const [params, setParams] = useSearchParams();
-  const { brands, cities } = useReferenceData();
+  const { user } = useSelector((s) => s.auth);
+  const { requireAuth } = useAuthGuard();
+  const { brands, models, cities } = useReferenceData();
   const [cars, setCars] = useState([]);
   const [meta, setMeta] = useState({ total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
@@ -26,6 +48,19 @@ export default function Listing() {
     setFilters(Object.fromEntries([...params.entries()]));
   }, [params]);
 
+  const searchValue = filters.search || filters.q || '';
+  const brandDoc = matchRef(brands, filters.brand);
+  const modelDoc = matchRef(
+    models.filter((m) => !brandDoc || String(m.brand) === String(brandDoc._id) || m.brand?._id === brandDoc._id),
+    filters.model
+  );
+  const cityDoc = matchRef(cities, filters.city || filters.location);
+  const brandModels = models.filter((m) => {
+    if (!brandDoc) return true;
+    const bid = m.brand?._id || m.brand;
+    return String(bid) === String(brandDoc._id);
+  });
+
   // 2. Main data fetching effect triggered whenever filters change
   useEffect(() => {
     const controller = new AbortController();
@@ -36,6 +71,12 @@ export default function Listing() {
         const clean = Object.fromEntries(
           Object.entries(filters).filter(([, v]) => v !== '' && v !== null && v !== undefined)
         );
+        if (clean.q && !clean.search) clean.search = clean.q;
+        if (brandDoc) clean.brand = brandDoc._id;
+        if (modelDoc) clean.model = modelDoc._id;
+        if (cityDoc) clean.city = cityDoc.name || cityDoc._id;
+        if (filters.state) clean.state = filters.state;
+        if (filters.area) clean.area = filters.area;
         
         const { data } = await api.get('/cars', {
           params: { ...clean, limit: 12 },
@@ -63,7 +104,7 @@ export default function Listing() {
     fetchCars();
 
     return () => controller.abort();
-  }, [JSON.stringify(filters)]);
+  }, [JSON.stringify(filters), brandDoc?._id, modelDoc?._id, cityDoc?._id]);
 
   // Apply new filters to state + URL query string
   const apply = (next) => {
@@ -74,7 +115,32 @@ export default function Listing() {
     setParams(clean);
   };
 
-  const set = (key, value) => apply({ ...filters, [key]: value, page: 1 });
+  const set = (key, value) => {
+    const next = { ...filters, [key]: value, page: 1 };
+    if (key === 'search') delete next.q;
+    apply(next);
+  };
+
+  const saveSearch = async () => {
+    const run = async () => {
+      const brandName = brandDoc?.name || filters.brand;
+      const cityName = cityDoc?.name || filters.city;
+      const named = describeFilters({ ...filters, brand: brandName, city: cityName });
+      try {
+        await api.post('/saved-searches', {
+          name: named,
+          filters,
+          emailAlerts: true,
+          newMatchAlerts: true,
+          priceChangeAlerts: false,
+        });
+        toast.success('Search saved. We will alert you when matching cars appear');
+      } catch (e) {
+        toast.error(e.response?.data?.message || 'Could not save search');
+      }
+    };
+    requireAuth(run);
+  };
 
   return (
     <>
@@ -86,15 +152,20 @@ export default function Listing() {
       </div>
 
       <div className="container-px py-8 grid lg:grid-cols-[260px_1fr] gap-7 items-start">
-        <aside className="bg-white border border-slate-100 rounded-2xl p-5 lg:sticky lg:top-24">
+        <aside className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/80 rounded-2xl p-5 lg:sticky lg:top-24">
           <FilterGroup title="Search">
             <input
-              value={filters.search || ''}
+              value={searchValue}
               onChange={(e) => set('search', e.target.value)}
               placeholder="Title, brand or model"
               className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
             />
           </FilterGroup>
+
+          <FilterSidebar
+            filters={{ ...filters, city: cityDoc?.name || filters.city }}
+            apply={apply}
+          />
 
           <FilterGroup title="Budget">
             <div className="flex gap-2">
@@ -117,14 +188,44 @@ export default function Listing() {
 
           <FilterGroup title="Brand">
             <select
-              value={filters.brand || ''}
-              onChange={(e) => set('brand', e.target.value)}
+              value={brandDoc?._id || ''}
+              onChange={(e) => apply({ ...filters, brand: e.target.value, model: '', page: 1 })}
               className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
             >
               <option value="">Any brand</option>
               {brands.map((b) => (
                 <option key={b._id} value={b._id}>
                   {b.name}
+                </option>
+              ))}
+            </select>
+          </FilterGroup>
+
+          <FilterGroup title="Model">
+            <select
+              value={modelDoc?._id || ''}
+              onChange={(e) => set('model', e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
+            >
+              <option value="">Any model</option>
+              {brandModels.map((m) => (
+                <option key={m._id} value={m._id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </FilterGroup>
+
+          <FilterGroup title="Body type">
+            <select
+              value={filters.bodyType || ''}
+              onChange={(e) => set('bodyType', e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
+            >
+              <option value="">Any</option>
+              {BODY_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
                 </option>
               ))}
             </select>
@@ -174,21 +275,15 @@ export default function Listing() {
               ))}
             </select>
           </FilterGroup>
-
-          <FilterGroup title="Location" last>
-            <select
-              value={filters.city || ''}
-              onChange={(e) => set('city', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
+          {user?.role !== 'dealer' && (
+            <button
+              type="button"
+              onClick={saveSearch}
+              className="mt-4 w-full bg-[#3083ff] text-white font-black rounded-xl py-2.5 text-xs shadow-lg shadow-blue-500/20 hover:brightness-110 transition"
             >
-              <option value="">Any city</option>
-              {cities.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </FilterGroup>
+              Save this search
+            </button>
+          )}
         </aside>
 
         <div>

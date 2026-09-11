@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../api/axios';
 
 // ==========================================
 // UNIFIED CORPORATE PAGE SHELL
@@ -9,10 +10,10 @@ function PageShell({ title, subtitle, badge, children }) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         {/* Hero Section */}
         <div className="bg-slate-900 rounded-3xl p-8 sm:p-12 text-white relative overflow-hidden shadow-xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#fe0100]/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#3083ff]/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
           <div className="relative z-10 max-w-3xl space-y-4">
             {badge && (
-              <span className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-extrabold bg-[#fe0100] text-white tracking-widest uppercase">
+              <span className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-extrabold bg-[#3083ff] text-white tracking-widest uppercase">
                 {badge}
               </span>
             )}
@@ -70,7 +71,7 @@ const DealerSlider = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#fe0100] font-black text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-[#3083ff] font-black text-xs uppercase tracking-wider">
             <span>Verified Partners</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900">
@@ -103,7 +104,7 @@ const DealerSlider = () => {
           {dealers.map((dealer, idx) => (
             <div
               key={idx}
-              className="min-w-[85%] sm:min-w-[45%] md:min-w-[31%] bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-[#fe0100]/50 transition shrink-0"
+              className="min-w-[85%] sm:min-w-[45%] md:min-w-[31%] bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-[#3083ff]/50 transition shrink-0"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -122,7 +123,7 @@ const DealerSlider = () => {
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                 <span className="font-bold text-slate-600">{dealer.inventory}</span>
-                <span className="font-black text-[#fe0100] hover:underline cursor-pointer">
+                <span className="font-black text-[#3083ff] hover:underline cursor-pointer">
                   View Showroom →
                 </span>
               </div>
@@ -177,7 +178,7 @@ export const About = () => {
     >
       {/* 1. ABOUT COMPANY OVERVIEW */}
       <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 text-[#fe0100] font-black text-xs uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-[#3083ff] font-black text-xs uppercase tracking-wider">
           <span>01</span>
           <span>—</span>
           <span>Company Overview</span>
@@ -196,7 +197,7 @@ export const About = () => {
       {/* 2. MISSION & VISION */}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200/80 rounded-3xl p-8 shadow-xs space-y-3 relative overflow-hidden">
-          <div className="w-12 h-12 bg-[#fe0100]/10 text-[#fe0100] rounded-2xl flex items-center justify-center font-black text-xl mb-4">
+          <div className="w-12 h-12 bg-[#3083ff]/10 text-[#3083ff] rounded-2xl flex items-center justify-center font-black text-xl mb-4">
             🎯
           </div>
           <h3 className="text-xl font-extrabold text-slate-900">Our Mission</h3>
@@ -219,7 +220,7 @@ export const About = () => {
       {/* 3. WHY CHOOSE 4TYREZZ */}
       <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xs space-y-8">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-[#fe0100] font-black text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-[#3083ff] font-black text-xs uppercase tracking-wider">
             <span>02</span>
             <span>—</span>
             <span>Key Differentiators</span>
@@ -231,7 +232,7 @@ export const About = () => {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="space-y-2 border border-slate-100 rounded-2xl p-5 bg-slate-50/50">
-            <span className="font-black text-[#fe0100] text-lg">01. 15-Point Check</span>
+            <span className="font-black text-[#3083ff] text-lg">01. 15-Point Check</span>
             <h4 className="font-extrabold text-slate-900 text-sm">Empirical Evaluation</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
               Every vehicle undergoes physical evaluations covering engine health, frame structural integrity, braking, and RC documentation.
@@ -239,7 +240,7 @@ export const About = () => {
           </div>
 
           <div className="space-y-2 border border-slate-100 rounded-2xl p-5 bg-slate-50/50">
-            <span className="font-black text-[#fe0100] text-lg">02. Triple Trade Model</span>
+            <span className="font-black text-[#3083ff] text-lg">02. Triple Trade Model</span>
             <h4 className="font-extrabold text-slate-900 text-sm">C2C, B2C & C2B</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
               Flexible transaction routes allowing buyers to purchase directly from private owners or verified dealer inventory.
@@ -247,7 +248,7 @@ export const About = () => {
           </div>
 
           <div className="space-y-2 border border-slate-100 rounded-2xl p-5 bg-slate-50/50">
-            <span className="font-black text-[#fe0100] text-lg">03. Shielded Privacy</span>
+            <span className="font-black text-[#3083ff] text-lg">03. Shielded Privacy</span>
             <h4 className="font-extrabold text-slate-900 text-sm">Masked Contact Info</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
               Phone numbers remain private. Contact details are shared only when you explicitly approve a connection request.
@@ -255,7 +256,7 @@ export const About = () => {
           </div>
 
           <div className="space-y-2 border border-slate-100 rounded-2xl p-5 bg-slate-50/50">
-            <span className="font-black text-[#fe0100] text-lg">04. Dedicated Portals</span>
+            <span className="font-black text-[#3083ff] text-lg">04. Dedicated Portals</span>
             <h4 className="font-extrabold text-slate-900 text-sm">Pro Dealer Dashboards</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
               Commercial dealers get separate, secured portal credentials to manage stock, post bids, and handle client inquiries.
@@ -272,7 +273,7 @@ export const About = () => {
       {/* 5. TEAM DETAILS */}
       <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xs space-y-8">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-[#fe0100] font-black text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-[#3083ff] font-black text-xs uppercase tracking-wider">
             <span>03</span>
             <span>—</span>
             <span>Leadership & Key Personnel</span>
@@ -290,7 +291,7 @@ export const About = () => {
               </div>
               <div>
                 <h4 className="font-extrabold text-slate-900 text-base">{member.name}</h4>
-                <p className="text-xs font-bold text-[#fe0100] mt-0.5">{member.role}</p>
+                <p className="text-xs font-bold text-[#3083ff] mt-0.5">{member.role}</p>
                 <p className="text-[11px] font-semibold text-slate-400">{member.dept}</p>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed pt-1 border-t border-slate-100">
@@ -309,6 +310,25 @@ export const About = () => {
 // ==========================================
 export const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', email: '', category: 'general', message: '' });
+  const [error, setError] = useState('');
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await api.post('/support', {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        category: form.category,
+        subject: `Contact: ${form.category}`,
+        message: form.message,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not submit');
+    }
+  };
 
   return (
     <PageShell
@@ -319,23 +339,23 @@ export const Contact = () => {
       <div className="grid md:grid-cols-3 gap-6">
         <div className="space-y-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-2 shadow-xs">
-            <span className="text-[10px] font-black uppercase text-[#fe0100] tracking-wider block">Direct Telephone</span>
-            <a href="tel:9160415851" className="font-black text-slate-900 text-base block hover:text-[#fe0100] transition">
+            <span className="text-[10px] font-black uppercase text-[#3083ff] tracking-wider block">Direct Telephone</span>
+            <a href="tel:9160415851" className="font-black text-slate-900 text-base block hover:text-[#3083ff] transition">
               +91 9160415851
             </a>
             <p className="text-xs text-slate-500">Operating hours: Mon – Sat (9:00 AM – 7:00 PM IST)</p>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-2 shadow-xs">
-            <span className="text-[10px] font-black uppercase text-[#fe0100] tracking-wider block">Official Email</span>
-            <a href="mailto:info@webteksoft.com" className="font-black text-slate-900 text-sm block hover:text-[#fe0100] transition">
+            <span className="text-[10px] font-black uppercase text-[#3083ff] tracking-wider block">Official Email</span>
+            <a href="mailto:info@webteksoft.com" className="font-black text-slate-900 text-sm block hover:text-[#3083ff] transition">
               info@webteksoft.com
             </a>
             <p className="text-xs text-slate-500">Inquiries processed within 24 business hours.</p>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-2 shadow-xs">
-            <span className="text-[10px] font-black uppercase text-[#fe0100] tracking-wider block">Technical Division</span>
+            <span className="text-[10px] font-black uppercase text-[#3083ff] tracking-wider block">Technical Division</span>
             <p className="font-bold text-slate-900 text-xs">Webteksoft IT Solutions</p>
             <p className="text-xs text-slate-500">Infrastructure & platform engineering headquarters.</p>
           </div>
@@ -344,43 +364,46 @@ export const Contact = () => {
         <div className="md:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xs">
           {submitted ? (
             <div className="text-center py-12 space-y-3">
-              <div className="w-12 h-12 bg-[#fe0100] text-white rounded-full flex items-center justify-center font-bold mx-auto text-xl">✓</div>
+              <div className="w-12 h-12 bg-[#3083ff] text-white rounded-full flex items-center justify-center font-bold mx-auto text-xl">✓</div>
               <h3 className="font-black text-slate-900 text-lg">Message Submitted</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 Thank you for contacting 4tyrezz. A customer support representative will evaluate your request and respond shortly.
               </p>
             </div>
           ) : (
-            <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="space-y-4">
+            <form onSubmit={onSubmit} className="space-y-4">
               <h3 className="font-extrabold text-slate-900 text-base">Send an Official Message</h3>
+              {error && <p className="text-xs text-red-600 font-semibold">{error}</p>}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Full Name *</label>
-                  <input required type="text" placeholder="Your name" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#fe0100]" />
+                  <input required type="text" placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#3083ff]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number *</label>
-                  <input required type="tel" placeholder="10-digit number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#fe0100]" />
+                  <input required type="tel" placeholder="10-digit number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#3083ff]" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
-                <input required type="email" placeholder="you@domain.com" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#fe0100]" />
+                <input required type="email" placeholder="you@domain.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#3083ff]" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Inquiry Topic *</label>
-                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#fe0100]">
-                  <option>15-Point Inspection Schedule</option>
-                  <option>Dealer Partnership / Portal Access</option>
-                  <option>Listing & Phone Privacy Inquiry</option>
-                  <option>General Support</option>
+                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#3083ff]">
+                  <option value="general">General Support</option>
+                  <option value="listing">Listing & Inspection</option>
+                  <option value="kyc">Dealer Partnership / KYC</option>
+                  <option value="payment">Payment</option>
+                  <option value="technical">Technical</option>
+                  <option value="complaint">Complaint</option>
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Details *</label>
-                <textarea required rows="4" placeholder="Describe your inquiry..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#fe0100]"></textarea>
+                <textarea required rows="4" placeholder="Describe your inquiry..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#3083ff]"></textarea>
               </div>
-              <button type="submit" className="w-full bg-[#fe0100] text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl hover:brightness-95 transition cursor-pointer">
+              <button type="submit" className="w-full bg-[#3083ff] text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl hover:brightness-95 transition cursor-pointer">
                 Submit Inquiry
               </button>
             </form>
@@ -433,7 +456,7 @@ export const FAQs = () => {
               <details key={q} className="bg-white border border-slate-200 rounded-2xl p-5 group cursor-pointer shadow-xs [&_summary::-webkit-details-marker]:none">
                 <summary className="font-bold text-slate-900 flex justify-between items-center text-sm">
                   <span>{q}</span>
-                  <span className="w-6 h-6 rounded-full bg-slate-100 group-open:bg-[#fe0100] group-open:text-white flex items-center justify-center text-slate-600 font-bold text-xs transition shrink-0 ml-2">
+                  <span className="w-6 h-6 rounded-full bg-slate-100 group-open:bg-[#3083ff] group-open:text-white flex items-center justify-center text-slate-600 font-bold text-xs transition shrink-0 ml-2">
                     +
                   </span>
                 </summary>
@@ -481,7 +504,7 @@ export const Careers = () => (
         <div key={job.role} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
           <div className="space-y-1">
             <h4 className="font-extrabold text-slate-900 text-base">{job.role}</h4>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#fe0100]">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#3083ff]">
               <span>{job.dept}</span>
               <span>•</span>
               <span>{job.loc}</span>
@@ -490,7 +513,7 @@ export const Careers = () => (
           </div>
           <a
             href={`mailto:info@webteksoft.com?subject=Application for ${job.role}`}
-            className="inline-flex items-center justify-center bg-[#fe0100] text-white font-bold text-xs px-5 py-3 rounded-xl hover:brightness-95 transition shrink-0"
+            className="inline-flex items-center justify-center bg-[#3083ff] text-white font-bold text-xs px-5 py-3 rounded-xl hover:brightness-95 transition shrink-0"
           >
             Apply via Email
           </a>
@@ -646,19 +669,19 @@ export const Blog = () => (
           desc: "Comparing private buyer sales timelines against dealer liquidation options."
         }
       ].map((post, index) => (
-        <div key={index} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-[#fe0100]/40 transition">
+        <div key={index} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-[#3083ff]/40 transition">
           <div className="space-y-3">
             <div className="h-36 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-slate-400 text-xs">
               Automotive Guide Cover
             </div>
             <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="text-[#fe0100] uppercase tracking-wider">{post.tag}</span>
+              <span className="text-[#3083ff] uppercase tracking-wider">{post.tag}</span>
               <span className="text-slate-400">{post.time}</span>
             </div>
             <h3 className="font-extrabold text-slate-900 text-sm leading-snug">{post.title}</h3>
             <p className="text-xs text-slate-500 leading-relaxed">{post.desc}</p>
           </div>
-          <button className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-slate-900 text-left hover:text-[#fe0100] transition">
+          <button className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-slate-900 text-left hover:text-[#3083ff] transition">
             Read Full Article →
           </button>
         </div>

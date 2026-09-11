@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom';
 import CarsManager from '../components/CarsManager';
+import { PageHeader, btnPrimary } from '../components/admin/ui';
 
 export default function Cars() {
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="font-display font-bold text-2xl">Car Management</h1>
-        <Link to="/cars/add" className="bg-ember hover:bg-ember-dark text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Add Car</Link>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        kicker="Marketplace inventory"
+        title="Vehicle listings"
+        subtitle="Live inventory with status filters, featured flags, and approval actions."
+        actions={<Link to="/cars/add" className={btnPrimary}>+ Add car</Link>}
+      />
       <CarsManager />
     </div>
   );

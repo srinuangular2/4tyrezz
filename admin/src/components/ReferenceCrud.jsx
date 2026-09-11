@@ -37,11 +37,11 @@ export default function ReferenceCrud({ title, endpoint, fields, extraQuery = {}
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="font-display font-black text-2xl">{title}</h1>
+        <h1 className="font-display font-black text-2xl text-white">{title}</h1>
         <button onClick={openNew} className="bg-ember hover:bg-ember-dark text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Add {title.slice(0, -1) || title}</button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100">
+      <div className="bg-slate-900/70 border border-slate-800 rounded-2xl divide-y divide-slate-800">
         {items.length === 0 && <p className="text-slate2 text-sm p-6">No records yet.</p>}
         {items.map((item) => (
           <div key={item._id} className="flex items-center justify-between px-5 py-3">

@@ -1,10 +1,10 @@
 import CarsManager from '../components/CarsManager';
+import { PageHeader } from '../components/admin/ui';
 
 export default function Approvals() {
   return (
     <div className="space-y-4">
-      <h1 className="font-display font-black text-2xl">Listing Approvals</h1>
-      <p className="text-slate2 text-sm">New and edited listings land here first — approve before they go live on the customer site.</p>
+      <PageHeader kicker="Queue" title="Listing approvals" subtitle="Pending listings before they go live. Prefer the full inspection tools under Listing moderation." />
       <CarsManager defaultStatus="pending" />
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import useReferenceData from '../hooks/useReferenceData';
 import {
   PRICE_RANGES, FUEL_TYPES, TRANSMISSIONS, BODY_TYPES,
@@ -43,6 +43,16 @@ export default function ExploreByBar() {
     { key: 'city', label: 'City', items: cities.slice(0, 12).map((c) => [c.name, () => go({ city: c._id })]) },
   ];
 
+  const services = [
+    ['Sell', '/sell'],
+    ['Valuation', '/valuation'],
+    ['Finance', '/finance'],
+    ['Insurance', '/insurance'],
+    ['Offers', '/offers'],
+    ['Compare', '/compare'],
+    ['Dealers', '/dealers'],
+  ];
+
   return (
     <div ref={barRef} className="hidden lg:block bg-ink border-t border-white/10">
       <div className="container-px flex items-center flex-wrap gap-1 min-h-[44px]">
@@ -75,6 +85,22 @@ export default function ExploreByBar() {
             )}
           </div>
         ))}
+
+        <div className="ml-auto flex items-center gap-1 flex-shrink-0 pl-3 border-l border-white/10">
+          {services.map(([label, to]) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `px-3 h-11 flex items-center text-sm font-semibold whitespace-nowrap transition ${
+                  isActive ? 'text-ember' : 'text-white/80 hover:text-white'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
       </div>
     </div>
   );

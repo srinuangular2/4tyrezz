@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useReferenceData from '../hooks/useReferenceData';
+import api from '../api/axios';
 import { Search, Close } from './icons';
 
 const RECENT_KEY = '4tyrezz_recent_searches';
@@ -30,8 +31,25 @@ export default function SearchBar({ className = '' }) {
   const [recent, setRecent] = useState([]);
   const boxRef = useRef(null);
 
+  const [quickFilters, setQuickFilters] = useState([]);
+
   useEffect(() => {
     setRecent(loadRecent());
+    api
+      .get('/meta/car-filters')
+      .then((r) => {
+        const f = r.data || {};
+        const items = [];
+        if (f.bodyTypes?.includes('SUV')) items.push({ label: 'Used SUVs', params: { bodyType: 'SUV' } });
+        if (f.transmissions?.includes('Automatic')) {
+          items.push({ label: 'Used Automatic cars', params: { transmission: 'Automatic' } });
+        }
+        if (f.fuels?.includes('Electric')) {
+          items.push({ label: 'Electric cars', params: { fuel: 'Electric' } });
+        }
+        setQuickFilters(items);
+      })
+      .catch(() => setQuickFilters([]));
   }, []);
 
   useEffect(() => {
@@ -89,11 +107,12 @@ export default function SearchBar({ className = '' }) {
   const matchingCities = cities.filter((c) => c.name.toLowerCase().includes(cleanQuery));
   const matchingBrands = brands.filter((b) => b.name.toLowerCase().includes(cleanQuery));
 
-  const staticCategories = [
-    { label: 'Used SUVs', action: () => goParams({ bodyType: 'SUV' }, 'SUVs') },
-    { label: 'Used Automatic cars', action: () => goParams({ transmission: 'Automatic' }, 'Automatic cars') },
-    { label: 'Electric cars', action: () => goParams({ fuel: 'Electric' }, 'Electric cars') },
-  ].filter((item) => item.label.toLowerCase().includes(cleanQuery));
+  const staticCategories = quickFilters
+    .map((item) => ({
+      label: item.label,
+      action: () => goParams(item.params, item.label),
+    }))
+    .filter((item) => item.label.toLowerCase().includes(cleanQuery));
 
   const popular = [
     ...cities.slice(0, 4).map((c) => ({

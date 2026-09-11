@@ -1,39 +1,27 @@
 import React from 'react';
 import { FaWhatsapp } from 'react-icons/fa';
+import { useAuthGuard } from './AuthGuardModal';
 
-export default function WhatsAppConnectButton({ car }) {
-  // Your target contact phone number
-  const targetPhone = '916304135959';
+export default function WhatsAppConnectButton({ car, onOpen }) {
+  const { requireAuth } = useAuthGuard();
+  const dealerPhone = String(car?.dealer?.whatsapp || car?.dealer?.phone || car?.owner?.mobile || '916304135959').replace(/\D/g, '');
 
   const handleConnect = () => {
-    const carTitle = `${car.year || ''} ${car.brand?.name || ''} ${car.title || car.model?.name || 'Car'}`.trim();
-    const carPrice = car.price ? `₹${car.price} Lakhs` : 'Price on Request';
-    const carUrl = `${window.location.origin}/cars/${car._id || car.id}`;
-
-    // Craft rich formatted text message for WhatsApp
-    const textMessage = 
-`🚗 *Car Inquiry - 4TYREZZ*
-
-*Vehicle:* ${carTitle}
-*Price:* ${carPrice}
-*View Details:* ${carUrl}
-
-Hi, I am interested in this car and would like to connect with a dealer!`;
-
-    // Encode URL text
-    const encodedText = encodeURIComponent(textMessage);
-    const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedText}`;
-
-    // Open WhatsApp in new tab/app
-    window.open(whatsappUrl, '_blank');
+    const title = `${car?.year || ''} ${car?.brand?.name || ''} ${car?.model?.name || car?.title || 'car'}`.trim();
+    const ref = String(car?._id || car?.id || '').slice(-6).toUpperCase();
+    const textMessage = `Hi, I am interested in ${title} (Ref: #4T${ref}). Is it available?`;
+    const phone = dealerPhone.startsWith('91') ? dealerPhone : `91${dealerPhone}`;
+    onOpen?.({ phone, textMessage });
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(textMessage)}`, '_blank');
   };
 
   return (
     <button
-      onClick={handleConnect}
+      type="button"
+      onClick={() => requireAuth(handleConnect)}
       className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold px-4 py-2.5 rounded-xl shadow-md transition-all duration-200 cursor-pointer mt-3 w-full"
     >
-    <FaWhatsapp className="w-5 h-5" />
+      <FaWhatsapp className="w-5 h-5" />
       <span>Connect on WhatsApp</span>
     </button>
   );

@@ -37,11 +37,30 @@ const makeUploader = (subfolder) => {
     },
   });
 
-  return multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+  const fileFilter = (req, file, cb) => {
+    if (subfolder === 'kyc') {
+      const ok = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype);
+      if (!ok) return cb(new Error('Only PDF, JPG and PNG files are allowed (max 5MB)'));
+      return cb(null, true);
+    }
+    if (subfolder === 'bulk') {
+      const name = String(file.originalname || '').toLowerCase();
+      const ok = name.endsWith('.csv') || name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.txt');
+      if (!ok) return cb(new Error('Upload a CSV or Excel file'));
+      return cb(null, true);
+    }
+    return cb(null, true);
+  };
+
+  return multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 };
 
 module.exports = {
   uploadCarImages: makeUploader('cars'),
   uploadBrandLogo: makeUploader('brands'),
   uploadBannerImage: makeUploader('banners'),
+  uploadKycDocument: makeUploader('kyc'),
+  uploadBulkInventory: makeUploader('bulk'),
+  uploadAvatar: makeUploader('avatars'),
+  uploadSellPhotos: makeUploader('sell'),
 };

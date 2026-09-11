@@ -19,3 +19,9 @@ build/
 
 # Logs
 *.log
+
+# Local RTO lookup cache
+backend/.cache/
+
+# User-uploaded media (keep local only)
+backend/uploads/

@@ -4,26 +4,30 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Poppins', 'sans-serif'],
-        body: ['Montserrat', 'sans-serif'],
+        body: ['Poppins', 'sans-serif'],
+        display: ['Montserrat', 'sans-serif'],
       },
       colors: {
-        // Approved theme: white-dominant with a single red accent.
+        // Approved theme: white-dominant with a single blue accent (#3083ff).
         // Token names kept stable (ink/ember/verify/cream/slate2) so the
         // rest of the app picks up the palette without per-file edits.
-        ink: { DEFAULT: '#1C1C1E', 2: '#28282B', 3: '#333336' },
-        ember: { DEFAULT: '#E11D2E', dark: '#B4101F', light: '#FF4D5E' },
+        ink: { DEFAULT: '#0F172A', 2: '#1E293B', 3: '#334155' },
+        brand: { DEFAULT: '#3083ff', dark: '#1853ff', light: '#6BA6FF', soft: '#EAF2FF' },
+        ember: { DEFAULT: '#3083ff', dark: '#1853ff', light: '#6BA6FF' },
         verify: { DEFAULT: '#1F9D6C', bg: '#E6F5EE' },
         cream: '#FAFAFA',
-        slate2: '#6B6B72',
+        slate2: '#64748B',
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(135deg, #E11D2E 0%, #B4101F 100%)',
-        'brand-gradient-soft': 'linear-gradient(135deg, #FFF5F5 0%, #FFE5E7 100%)',
+        'brand-gradient': 'linear-gradient(135deg, #3083ff 0%, #1853ff 100%)',
+        'brand-gradient-soft': 'linear-gradient(135deg, #F2F7FF 0%, #E2EDFF 100%)',
+        'brand-beam': 'linear-gradient(90deg, #22d3ee 0%, #3083ff 50%, #6366f1 100%)',
       },
       boxShadow: {
-        card: '0 14px 32px rgba(225,29,46,0.10)',
-        soft: '0 4px 14px rgba(28,28,30,0.06)',
+        card: '0 14px 32px rgba(48,131,255,0.12)',
+        soft: '0 4px 14px rgba(15,23,42,0.06)',
+        glass: '0 8px 32px 0 rgba(31,38,135,0.06)',
+        'glass-hover': '0 20px 40px 0 rgba(48,131,255,0.18)',
       },
     },
   },
