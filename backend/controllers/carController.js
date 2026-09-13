@@ -288,6 +288,7 @@ exports.createCar = async (req, res) => {
       brandName: brandDoc?.name,
       modelId: payload.model,
       modelName: modelDoc?.name,
+      variant: payload.variant,
       year: payload.year,
       kmDriven: payload.kmDriven,
       ownership: payload.ownership,
@@ -297,6 +298,11 @@ exports.createCar = async (req, res) => {
       conditionScore: payload.conditionScore || (payload.inspectionScore ? Math.round(payload.inspectionScore / 10) : 7),
       price: payload.price,
     });
+    if (payload.price && valuation.maxPrice && Number(payload.price) > Number(valuation.maxPrice)) {
+      return res.status(400).json({
+        message: `Listing price cannot be above the market band (max ₹${Number(valuation.maxPrice).toLocaleString('en-IN')}).`,
+      });
+    }
     const conditionScore = Math.min(
       10,
       Math.max(1, Number(payload.conditionScore) || (payload.inspectionScore ? payload.inspectionScore / 10 : 7))

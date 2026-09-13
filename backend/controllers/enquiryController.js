@@ -73,6 +73,12 @@ exports.create = async (req, res) => {
   const intent = ['sell', 'exchange', 'both'].includes(req.body.intent) ? req.body.intent : 'sell';
   const estimatePrice = num(req.body.estimatePrice ?? req.body.estimate);
   const expectedPrice = num(req.body.expectedPrice);
+  const maxPrice = num(req.body.maxPrice);
+  if (type === 'seller' && expectedPrice && maxPrice && expectedPrice > maxPrice) {
+    return res.status(400).json({
+      message: `Expected price cannot be above the market band (max ₹${maxPrice.toLocaleString('en-IN')}).`,
+    });
+  }
   const valuationPending = req.body.valuationPending === true || req.body.valuationPending === 'true' || !estimatePrice;
 
   const doc = await Enquiry.create({

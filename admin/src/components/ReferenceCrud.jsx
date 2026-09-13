@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import Modal from './Modal';
+import { inputCls } from './admin/ui';
 
 // One generic add/edit/delete list, reused for Brands, Models, and Cities —
 // they're structurally identical (a name + a couple of optional fields).
@@ -66,14 +67,14 @@ export default function ReferenceCrud({ title, endpoint, fields, extraQuery = {}
           <form onSubmit={save} className="space-y-3">
             {fields.map((f) => (
               f.type === 'select' ? (
-                <select key={f.name} required={f.required} value={form[f.name] || ''} onChange={(e) => setForm({ ...form, [f.name]: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                <select key={f.name} required={f.required} value={form[f.name] || ''} onChange={(e) => setForm({ ...form, [f.name]: e.target.value })} className={inputCls}>
                   <option value="">{f.placeholder}</option>
                   {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               ) : f.type === 'file' ? (
                 <input key={f.name} type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} className="text-sm" />
               ) : (
-                <input key={f.name} required={f.required} placeholder={f.placeholder} value={form[f.name] || ''} onChange={(e) => setForm({ ...form, [f.name]: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+                <input key={f.name} required={f.required} placeholder={f.placeholder} value={form[f.name] || ''} onChange={(e) => setForm({ ...form, [f.name]: e.target.value })} className={inputCls} />
               )
             ))}
             <button className="w-full bg-ember hover:bg-ember-dark text-white font-semibold py-2.5 rounded-lg">Save</button>

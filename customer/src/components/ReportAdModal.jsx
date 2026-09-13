@@ -32,10 +32,10 @@ export default function ReportAdModal({ carId, onClose }) {
         ) : (
           <form onSubmit={submit} className="space-y-3">
             <h3 className="font-display font-semibold text-xl mb-1">Report this ad</h3>
-            <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+            <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900">
               {REASONS.map((r) => <option key={r}>{r}</option>)}
             </select>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows="3" placeholder="Anything else we should know? (optional)" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows="3" placeholder="Anything else we should know? (optional)" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900 placeholder:text-slate-400" />
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <button className="w-full bg-ember hover:bg-ember-dark text-white font-semibold py-2.5 rounded-lg">Submit report</button>
           </form>

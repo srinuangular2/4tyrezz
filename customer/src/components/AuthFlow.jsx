@@ -263,14 +263,14 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal' }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Full name"
-              className="w-full border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-extrabold outline-none focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
+              className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
             />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
-              className="w-full border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-extrabold outline-none focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
+              className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
             />
             {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
             <button

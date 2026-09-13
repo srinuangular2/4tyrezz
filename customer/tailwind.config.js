@@ -7,6 +7,9 @@ export default {
         body: ['Poppins', 'sans-serif'],
         display: ['Montserrat', 'sans-serif'],
       },
+      maxWidth: {
+        '8xl': '90rem',
+      },
       colors: {
         // Approved theme: white-dominant with a single blue accent (#3083ff).
         // Token names kept stable (ink/ember/verify/cream/slate2) so the

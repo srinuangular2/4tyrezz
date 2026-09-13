@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import DataTable from '../components/DataTable';
+import { inputCls } from '../components/admin/ui';
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
@@ -27,7 +28,7 @@ export default function Reports() {
   return (
     <div className="space-y-4">
       <h1 className="font-display font-bold text-2xl">Reported Ads</h1>
-      <select value={status} onChange={(e) => setStatus(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+      <select value={status} onChange={(e) => setStatus(e.target.value)} className={`${inputCls} max-w-xs`}>
         <option value="open">Open</option>
         <option value="reviewed">Reviewed</option>
         <option value="">All</option>

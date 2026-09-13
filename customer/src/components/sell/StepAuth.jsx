@@ -99,7 +99,7 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
               value={state.phone}
               onChange={(e) => patch({ phone: e.target.value.replace(/\D/g, '').slice(0, 10), otpVerified: false })}
               placeholder="10-digit number"
-              className="flex-1 px-3 py-3 text-sm font-extrabold outline-none bg-transparent"
+              className="flex-1 px-3 py-3 text-sm font-extrabold text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
             />
           </div>
         </label>

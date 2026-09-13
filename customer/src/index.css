@@ -10,6 +10,19 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='hidden']):not([type='color']):not([type='submit']):not([type='button']),
+  select,
+  textarea {
+    color: #0f172a;
+    caret-color: #0f172a;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8;
+    opacity: 1;
+  }
 }
 
 html { scroll-behavior: smooth; }
@@ -68,6 +81,18 @@ html { scroll-behavior: smooth; }
   to { transform: scale(1); }
 }
 .animate-kenburns { animation: kenburns 6s ease-out both; }
+
+@keyframes heroKenburns {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+.animate-heroKenburns { animation: heroKenburns 8s ease-out both; }
+
+@keyframes heroCopyIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-heroCopyIn { animation: heroCopyIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes badge-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }

@@ -1,7 +1,7 @@
 /**
  * Live RC / VAHAN lookup.
- * Primary: RapidAPI RTO Vehicle Information India
- *   POST { vehicle_no } → make / model / year / fuel / RTO
+ * Primary: Way2API POST /api/v1/rc/verify { rc_number }
+ * Fallback: RapidAPI RTO Vehicle Information India { vehicle_no }
  */
 const fs = require('fs');
 const path = require('path');
@@ -11,6 +11,13 @@ const CarModel = require('../../models/CarModel');
 
 const CACHE_FILE = path.join(__dirname, '../../.cache/rto-lookups.json');
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_CONSENT_TEXT =
+  'I hereby give my consent for Eccentric Labs API to fetch my information';
+// Providers answer 429 either for a short burst limit or an exhausted plan quota.
+// Only the burst case deserves a cooldown, and it stays short so one stray 429
+// cannot lock every user out of "Check value" for a full minute.
+const COOLDOWN_DEFAULT_SECS = 15;
+const COOLDOWN_MAX_SECS = 60;
 let rateLimitedUntil = 0;
 
 function readCache() {
@@ -234,7 +241,17 @@ function parseRegDate(raw) {
 
 function mapRcPayload(payload) {
   if (!payload || typeof payload !== 'object') return null;
-  if (payload.status === false || payload.success === false) return null;
+  const statusText = String(payload.status || '').toUpperCase();
+  if (
+    payload.status === false ||
+    payload.status === 'false' ||
+    payload.success === false ||
+    payload.success === 'false' ||
+    statusText === 'FAILED' ||
+    statusText === 'ERROR'
+  ) {
+    return null;
+  }
 
   const body = payload.data || payload.result || payload.response || payload.vehicle || payload;
   const flat = flatten(body);
@@ -257,7 +274,8 @@ function mapRcPayload(payload) {
   ]);
   const regDate = pick(flat, [
     'rc_regn_dt', 'registration_date', 'reg_date', 'regDate', 'registrationDate',
-    'rc_purchase_dt', 'manufacturing_date', 'manufacture_month_year', 'vehicle_manufacturing_month_year',
+    'rc_purchase_dt', 'manufacturing_date', 'manufacturing_month_year_formatted',
+    'manufacture_month_year', 'vehicle_manufacturing_month_year',
   ]);
   const owners = pick(flat, ['rc_owner_sr', 'owner_count', 'ownerCount', 'owner_number', 'ownerSerialNumber', 'ownership']);
   const rtoName = pick(flat, [
@@ -298,7 +316,7 @@ function mapRcPayload(payload) {
     city: '',
     rto: rtoName,
     insuranceUpto,
-    source: 'rapidapi',
+    source: payload.source || 'rc',
   };
 }
 
@@ -329,17 +347,23 @@ function publicVehicle(details) {
 function provider() {
   const explicit = String(process.env.RTO_PROVIDER || '').toLowerCase().trim();
   if (explicit) return explicit;
+  if (process.env.WAY2API_KEY) return 'way2api';
   if (process.env.RAPIDAPI_KEY) return 'rapidapi';
   return '';
 }
 
+function way2apiKey() {
+  return process.env.WAY2API_KEY || process.env.RTO_API_KEY || '';
+}
+
 function configured() {
   const p = provider();
+  if (p === 'way2api') return Boolean(way2apiKey());
   if (p === 'rapidapi') return Boolean(process.env.RAPIDAPI_KEY || process.env.RTO_API_KEY);
   if (p === 'surepass') return Boolean(process.env.SUREPASS_API_TOKEN || process.env.RTO_API_KEY);
   if (p === 'karza') return Boolean(process.env.KARZA_API_KEY || process.env.RTO_API_KEY);
   if (p === 'zoop') return Boolean((process.env.ZOOP_APP_ID && process.env.ZOOP_API_KEY) || process.env.RTO_API_KEY);
-  return Boolean(process.env.RTO_API_URL && (process.env.RAPIDAPI_KEY || process.env.RTO_API_KEY));
+  return Boolean(way2apiKey() || (process.env.RTO_API_URL && (process.env.RAPIDAPI_KEY || process.env.RTO_API_KEY)));
 }
 
 async function fromRapidApi(reg) {
@@ -349,7 +373,12 @@ async function fromRapidApi(reg) {
 
   const { data } = await axios.post(
     url,
-    { vehicle_no: reg },
+    {
+      vehicle_no: reg,
+      // Eccentric Labs rejects the request unless consent travels with it.
+      consent: 'Y',
+      consent_text: process.env.RTO_CONSENT_TEXT || DEFAULT_CONSENT_TEXT,
+    },
     {
       timeout: Number(process.env.RTO_API_TIMEOUT || 25000),
       headers: {
@@ -379,12 +408,66 @@ async function fromRapidApi(reg) {
       404
     );
   }
+  mapped.source = 'rapidapi';
+  return mapped;
+}
+
+function isFailedRc(data) {
+  const statusText = String(data?.status || '').toUpperCase();
+  return (
+    data?.success === false ||
+    data?.success === 'false' ||
+    data?.status === false ||
+    data?.status === 'false' ||
+    statusText === 'FAILED' ||
+    statusText === 'ERROR'
+  );
+}
+
+async function fromWay2Api(reg) {
+  const url = process.env.WAY2API_URL || 'https://app.way2api.com/api/v1/rc/verify';
+  const key = way2apiKey();
+  if (!key) throw lookupError('Live RC lookup is not configured. Add WAY2API_KEY in backend/.env.', 503);
+
+  const { data } = await axios.post(
+    url,
+    { rc_number: reg },
+    {
+      timeout: Number(process.env.RTO_API_TIMEOUT || 25000),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${key}`,
+        'X-API-Key': key,
+      },
+    }
+  );
+
+  if (isFailedRc(data)) {
+    const msg = data?.message || data?.msg || 'Please check the vehicle number';
+    const code = Number(data?.status_code);
+    const status = Number.isFinite(code) && code >= 400 && code < 600 ? code : 404;
+    throw lookupError(msg, status);
+  }
+
+  const mapped =
+    mapRcPayload(data) ||
+    mapRcPayload(data?.data) ||
+    mapRcPayload({ data: data?.data?.result || data?.result });
+  if (!mapped) {
+    console.warn('[rto] Way2API unrecognized payload', JSON.stringify(sanitizeForLog(data)));
+    throw lookupError(
+      data?.message || data?.msg || 'No RC details returned for this number. Search manually by brand.',
+      404
+    );
+  }
+  mapped.source = 'way2api';
   return mapped;
 }
 
 async function fromProvider(reg) {
-  const p = provider() || 'rapidapi';
+  const p = provider() || 'way2api';
   try {
+    if (p === 'way2api') return await fromWay2Api(reg);
     if (p === 'rapidapi' || p === 'generic') return await fromRapidApi(reg);
     throw lookupError(`Unknown RTO_PROVIDER "${p}"`, 500);
   } catch (err) {
@@ -392,17 +475,39 @@ async function fromProvider(reg) {
     const payload = err.response?.data;
     console.warn('[rto] provider failed:', p, err.message, payload || '');
     const status = err.response?.status;
-    if (status === 429) {
-      const retryAfter = Number(err.response.headers?.['retry-after'] || 60);
+    const providerMsg = payload?.message || payload?.msg || payload?.error || err.message || '';
+
+    if (status === 429 || /quota|monthly|plan|upgrade|subscription|credit|wallet|balance|insufficient/i.test(String(providerMsg))) {
+      if (/quota|monthly|plan|upgrade|subscription|credit|wallet|balance|insufficient/i.test(String(providerMsg))) {
+        throw lookupError(
+          'RC lookup credits are used up. Add Way2API wallet credit, then try once.',
+          429,
+          { quotaExhausted: true }
+        );
+      }
+      const header = Number(err.response?.headers?.['retry-after']);
+      const retryAfter = Math.min(
+        COOLDOWN_MAX_SECS,
+        Number.isFinite(header) && header > 0 ? header : COOLDOWN_DEFAULT_SECS
+      );
       rateLimitedUntil = Date.now() + retryAfter * 1000;
       throw lookupError(
-        `RTO provider is rate-limited. Wait ${retryAfter}s, then try once. Do not keep clicking.`,
+        `RC provider hit its rate limit. Try again in ${retryAfter}s.`,
         429,
         { retryAfter }
       );
     }
-    const msg = payload?.message || payload?.msg || payload?.error || err.message;
-    throw lookupError(msg || `RC lookup failed (${p})`, status || 502);
+
+    if (status === 401 || status === 403) {
+      throw lookupError(
+        p === 'way2api'
+          ? 'Way2API rejected the RC key. Check WAY2API_KEY in backend/.env.'
+          : 'RapidAPI rejected the RC key. Check RAPIDAPI_KEY and that this app is subscribed to the RTO Vehicle Information India API.',
+        status
+      );
+    }
+
+    throw lookupError(providerMsg || `RC lookup failed (${p})`, status || 502);
   }
 }
 
@@ -450,7 +555,7 @@ async function fetchVehicleDetailsByReg(regNumber) {
   const formatted = formatReg(reg);
 
   if (!configured()) {
-    throw lookupError('Live RC lookup is not configured. Add RAPIDAPI_KEY in backend/.env.', 503);
+    throw lookupError('Live RC lookup is not configured. Add WAY2API_KEY in backend/.env.', 503);
   }
 
   const cached = cacheGet(reg);
@@ -460,13 +565,14 @@ async function fetchVehicleDetailsByReg(regNumber) {
   if (waitMs > 0) {
     const secs = Math.ceil(waitMs / 1000);
     throw lookupError(
-      `RTO provider is cooling down. Try again in ${secs}s — extra clicks use up the quota.`,
+      `RC provider is cooling down. Try again in ${secs}s.`,
       429,
       { retryAfter: secs }
     );
   }
 
   const live = await fromProvider(reg);
+  rateLimitedUntil = 0;
   if (!live?.brand && !live?.model) {
     throw lookupError('No RC record found for this number. Search manually by brand.', 404);
   }

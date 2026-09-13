@@ -12,6 +12,30 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /*
+    Dark admin layout sets text-slate-100 on the page. Native inputs stay white,
+    so typed text was invisible. Default to dark-on-white; Tailwind utilities
+    (inputCls) still override for dark fields.
+  */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='hidden']):not([type='color']):not([type='submit']):not([type='button']),
+  select,
+  textarea {
+    color: #0f172a;
+    background-color: #ffffff;
+    caret-color: #0f172a;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8;
+    opacity: 1;
+  }
+
+  select option {
+    color: #0f172a;
+    background-color: #ffffff;
+  }
+
   /* Apply Poppins automatically to all headings and table headers */
   h1, h2, h3, h4, h5, h6, th, .font-display {
     font-family: 'Poppins', sans-serif;

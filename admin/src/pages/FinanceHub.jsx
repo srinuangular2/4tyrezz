@@ -83,7 +83,7 @@ export default function FinanceHub({ defaultType = 'finance' }) {
                   </td>
                   <td className="px-4 py-3">
                     <input
-                      className="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold bg-transparent w-36"
+                      className="border border-slate-700 rounded-lg px-2 py-1 text-xs font-bold bg-slate-950 text-slate-100 w-36"
                       defaultValue={r.partnerName || ''}
                       placeholder="Bank / insurer"
                       onBlur={(e) => {
@@ -93,7 +93,7 @@ export default function FinanceHub({ defaultType = 'finance' }) {
                   </td>
                   <td className="px-4 py-3">
                     <select
-                      className="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold bg-transparent"
+                      className="border border-slate-700 rounded-lg px-2 py-1 text-xs font-bold bg-slate-950 text-slate-100"
                       value={r.assignedTo?._id || r.assignedTo || ''}
                       onChange={(e) => save(r, { assignedTo: e.target.value || null, status: e.target.value ? 'Assigned' : r.status })}
                     >
@@ -105,7 +105,7 @@ export default function FinanceHub({ defaultType = 'finance' }) {
                   </td>
                   <td className="px-4 py-3">
                     <select
-                      className="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold bg-transparent"
+                      className="border border-slate-700 rounded-lg px-2 py-1 text-xs font-bold bg-slate-950 text-slate-100"
                       value={r.status}
                       onChange={(e) => save(r, { status: e.target.value })}
                     >

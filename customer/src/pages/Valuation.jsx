@@ -13,6 +13,13 @@ import {
 } from '../hooks/useVehicleCatalog';
 import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../lib/fetchVehicleDetailsByReg';
 import {
+  clearValuationDraft,
+  loadValuationDraft,
+  saveValuationDraft,
+  valuationDraftReady,
+} from '../lib/listingDrafts';
+import ResumeListingCard from '../components/sell/ResumeListingCard';
+import {
   BRAND,
   Card,
   Field,
@@ -22,6 +29,21 @@ import {
   formatINR,
   inputClass,
 } from '../components/PageShell';
+
+const EMPTY_FORM = {
+  brand: '',
+  model: '',
+  year: '',
+  variant: '',
+  kmDriven: 45000,
+  ownership: 1,
+  fuel: '',
+  transmission: '',
+  bodyType: '',
+  conditionScore: 7,
+  city: '',
+  plate: '',
+};
 
 const HOW = [
   { icon: ClipboardCheck, title: 'Tell us about the car', body: 'Pick brand, model, year and variant from our live catalogue — or enter the RC number.' },
@@ -60,20 +82,7 @@ function ensureOption(list, value) {
 export default function Valuation() {
   const { cities } = useReferenceData();
   const { brands, loading: loadingBrands } = useVehicleBrands();
-  const [form, setForm] = useState({
-    brand: '',
-    model: '',
-    year: '',
-    variant: '',
-    kmDriven: 45000,
-    ownership: 1,
-    fuel: '',
-    transmission: '',
-    bodyType: '',
-    conditionScore: 7,
-    city: '',
-    plate: '',
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [variantQ, setVariantQ] = useState('');
   const [result, setResult] = useState(null);
   const [estimating, setEstimating] = useState(false);
@@ -81,7 +90,25 @@ export default function Valuation() {
   const [contact, setContact] = useState({ name: '', phone: '', city: '' });
   const [submitting, setSubmitting] = useState(false);
   const [history, setHistory] = useState([]);
+  const [gate, setGate] = useState('check');
+  const [draft, setDraft] = useState(null);
   const { requireAuth, isAuthed } = useAuthGuard();
+
+  useEffect(() => {
+    const saved = loadValuationDraft();
+    if (valuationDraftReady(saved)) {
+      setDraft(saved);
+      setGate('resume');
+    } else {
+      setGate('form');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gate !== 'form') return;
+    if (!form.brand) return;
+    saveValuationDraft({ form, result, contact });
+  }, [form, result, contact, gate]);
 
   const { models, loading: loadingModels } = useVehicleModels(form.brand);
   const { years: catalogYears, loading: loadingMeta } = useVehicleFuelTransmissions(form.brand, form.model);
@@ -280,6 +307,7 @@ export default function Valuation() {
           message: `Valuation ${formatINR(result?.valuation?.fairMarketValue || result?.estimate)} (${formatINR(result?.valuation?.estimatedMinPrice || result?.minPrice)}–${formatINR(result?.valuation?.estimatedMaxPrice || result?.maxPrice)}). Requesting dealer offers.`,
         });
         toast.success('Request sent. Verified dealers will contact you shortly.');
+        saveValuationDraft({ form, result, contact, submitted: true });
         setContact({ name: '', phone: '', city: '' });
       } catch (e) {
         toast.error(e.response?.data?.message || 'Could not submit request');
@@ -287,6 +315,54 @@ export default function Valuation() {
         setSubmitting(false);
       }
     });
+  };
+
+  const resumeEditing = (saved = draft || loadValuationDraft()) => {
+    if (!saved?.form) {
+      setGate('form');
+      return;
+    }
+    setForm({ ...EMPTY_FORM, ...saved.form });
+    setResult(saved.result || null);
+    setContact(saved.contact || { name: '', phone: '', city: '' });
+    setGate('form');
+  };
+
+  const startNewValuation = () => {
+    clearValuationDraft();
+    setDraft(null);
+    setForm(EMPTY_FORM);
+    setResult(null);
+    setContact({ name: '', phone: '', city: '' });
+    setGate('form');
+  };
+
+  const editHistory = (row) => {
+    const next = {
+      ...EMPTY_FORM,
+      brand: row.brand || '',
+      model: row.model || '',
+      year: row.year || '',
+      variant: row.variant || '',
+      kmDriven: row.kmDriven || 45000,
+      ownership: row.ownership || 1,
+      fuel: row.fuel || '',
+      transmission: row.transmission || '',
+      city: row.city || '',
+    };
+    setForm(next);
+    setResult({
+      estimate: row.estimate,
+      minPrice: row.minPrice,
+      maxPrice: row.maxPrice,
+      valuation: {
+        fairMarketValue: row.estimate,
+        estimatedMinPrice: row.minPrice,
+        estimatedMaxPrice: row.maxPrice,
+      },
+    });
+    setGate('form');
+    saveValuationDraft({ form: next, result: null });
   };
 
   const valuation = result?.valuation;
@@ -322,9 +398,39 @@ export default function Valuation() {
             </div>
           </div>
 
-          <Card className="p-6 sm:p-7 shadow-xl shadow-blue-500/5">
-            <h2 className="font-display font-black text-xl text-slate-900">Used car price calculator</h2>
-            <p className="text-xs font-semibold text-slate-400 mt-1 mb-5">Get your estimate</p>
+          {gate === 'resume' && valuationDraftReady(draft) ? (
+            <ResumeListingCard
+              subtitle="Thanks for sharing the details"
+              year={draft.form.year}
+              brand={draft.form.brand}
+              model={draft.form.model}
+              variant={draft.form.variant}
+              kmDriven={draft.form.kmDriven}
+              fuel={draft.form.fuel}
+              city={draft.form.city}
+              plate={draft.form.plate}
+              resumeLabel="Resume editing"
+              newLabel="Start a new valuation"
+              onResume={() => resumeEditing(draft)}
+              onNew={startNewValuation}
+            />
+          ) : gate === 'form' ? (
+          <Card id="valuation-form" className="p-6 sm:p-7 shadow-xl shadow-blue-500/5">
+            <div className="flex items-start justify-between gap-3 mb-5">
+              <div>
+                <h2 className="font-display font-black text-xl text-slate-900">Used car price calculator</h2>
+                <p className="text-xs font-semibold text-slate-400 mt-1">Get your estimate</p>
+              </div>
+              {form.brand && (
+                <button
+                  type="button"
+                  onClick={startNewValuation}
+                  className="text-[11px] font-black uppercase tracking-wider text-[#3083ff] shrink-0"
+                >
+                  New car
+                </button>
+              )}
+            </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Brand">
@@ -484,6 +590,7 @@ export default function Valuation() {
             </PrimaryButton>
             <p className="text-center text-[11px] font-semibold text-emerald-600 mt-3">100% free · No sign-up · Instant estimate</p>
           </Card>
+          ) : null}
         </div>
       </section>
 
@@ -519,6 +626,13 @@ export default function Valuation() {
                 <p className="text-[11px] font-semibold text-slate-500 mt-4 leading-relaxed">
                   {result.disclaimer || 'This is an estimated market value only. It is not a final purchase offer. Price is confirmed after inspection.'}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => document.querySelector('#valuation-form')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="mt-5 text-xs font-black uppercase tracking-wider text-[#3083ff]"
+                >
+                  Edit car details
+                </button>
               </Card>
               <Card className="p-6">
                 <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Want real offers on this car?</p>
@@ -570,6 +684,13 @@ export default function Valuation() {
                 <p className="text-xs font-bold text-slate-400 mt-1">
                   {formatINR(h.minPrice)} – {formatINR(h.maxPrice)}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => editHistory(h)}
+                  className="mt-3 text-[11px] font-black uppercase tracking-wider text-[#3083ff]"
+                >
+                  Edit car
+                </button>
               </Card>
             ))}
           </div>

@@ -48,7 +48,7 @@ export default function FilterSidebar({ filters, apply }) {
         <select
           value={filters.city || ''}
           onChange={(e) => apply({ ...filters, city: e.target.value, area: '', page: 1 })}
-          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900"
         >
           <option value="">All cities</option>
           {cityOptions.map((c) => (

@@ -1,12 +1,13 @@
-import { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { BadgeCheck, Check, HandCoins, ShieldCheck, Timer } from 'lucide-react';
+import { BadgeCheck, HandCoins, ShieldCheck, Timer } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuthGuard } from '../AuthGuardModal';
 import useReferenceData from '../../hooks/useReferenceData';
+import { clearSellDraft, loadSellDraft, saveSellDraft, sellDraftReady } from '../../lib/listingDrafts';
 import { Card, formatINR } from '../PageShell';
 import { conditionScoreFromPills, initialSellCarState, vehicleReady } from './sellCarState';
+import ResumeListingCard from './ResumeListingCard';
 import { Stepper } from './ui';
 import StepIdentify from './StepIdentify';
 import StepCondition from './StepCondition';
@@ -23,9 +24,27 @@ const WHY = [
 export default function SellCarFlow() {
   const { cities } = useReferenceData();
   const [state, setState] = useState(initialSellCarState);
+  const [gate, setGate] = useState('check');
+  const [draft, setDraft] = useState(null);
   const [valuating, setValuating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { requireAuth } = useAuthGuard();
+
+  useEffect(() => {
+    const saved = loadSellDraft();
+    if (sellDraftReady(saved)) {
+      setDraft(saved);
+      setGate('resume');
+    } else {
+      setGate('form');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gate !== 'form') return;
+    if (!state.brand && !state.done) return;
+    saveSellDraft(state);
+  }, [state, gate]);
 
   const patch = useCallback((partial) => {
     setState((s) => ({ ...s, ...partial }));
@@ -122,6 +141,10 @@ export default function SellCarFlow() {
       (state.photoFiles || []).forEach((file) => form.append('photos', file));
 
       await api.post('/enquiries/seller', form);
+      const next = { ...state, done: true };
+      saveSellDraft(next);
+      setDraft(next);
+      setGate('resume');
       patch({ done: true });
     } catch (e) {
       toast.error(e.response?.data?.message || 'Could not book evaluation');
@@ -130,33 +153,50 @@ export default function SellCarFlow() {
     }
   };
 
-  if (state.done) {
+  const resumeEditing = () => {
+    const saved = draft || loadSellDraft() || state;
+    setState({
+      ...initialSellCarState(),
+      ...saved,
+      photoFiles: [],
+      done: false,
+      step: 1,
+    });
+    setGate('form');
+  };
+
+  const startNewListing = () => {
+    clearSellDraft();
+    setDraft(null);
+    setState(initialSellCarState());
+    setGate('form');
+  };
+
+  if (gate === 'check') return null;
+
+  if (gate === 'resume' && sellDraftReady(draft)) {
     return (
-      <Card className="p-8 text-center bg-white border border-slate-200" hover={false}>
-        <div className="w-14 h-14 rounded-2xl bg-[#3083ff] flex items-center justify-center mx-auto">
-          <Check className="w-7 h-7 text-white" strokeWidth={3} />
-        </div>
-        <h3 className="font-display font-black text-2xl text-slate-900 mt-5">Request received</h3>
-        <p className="text-sm font-medium text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
-          {state.inspectionDate} · {state.inspectionSlot}. A 4TYREZZ executive will call +91 {state.phone} to confirm
-          inspection. The figure you saw is an estimate only — any purchase or exchange offer comes after inspection.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3 justify-center">
-          <Link
-            to="/cars"
-            className="bg-[#3083ff] text-white font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl"
-          >
-            Browse cars
-          </Link>
-          <button
-            type="button"
-            onClick={() => setState(initialSellCarState())}
-            className="border border-slate-200 bg-white text-slate-800 font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl"
-          >
-            Value another car
-          </button>
-        </div>
-      </Card>
+      <div className="space-y-4">
+        {draft.done && (
+          <p className="text-sm font-semibold text-slate-500">
+            Request received
+            {draft.inspectionDate ? ` · ${draft.inspectionDate}` : ''}
+            {draft.inspectionSlot ? ` ${draft.inspectionSlot}` : ''}. You can edit the car and resubmit, or start a new listing.
+          </p>
+        )}
+        <ResumeListingCard
+          year={draft.year}
+          brand={draft.brand}
+          model={draft.model}
+          variant={draft.variant}
+          kmDriven={draft.kmDriven}
+          fuel={draft.fuel}
+          city={draft.city}
+          plate={draft.plate}
+          onResume={resumeEditing}
+          onNew={startNewListing}
+        />
+      </div>
     );
   }
 
@@ -207,6 +247,10 @@ export default function SellCarFlow() {
                 toast.error('Enter your expected price');
                 return;
               }
+              if (state.valuation?.maxPrice && Number(state.expectedPrice) > Number(state.valuation.maxPrice)) {
+                toast.error(`Expected price cannot be above the market band (${formatINR(state.valuation.maxPrice)})`);
+                return;
+              }
               patch({ step: 4 });
             }}
           />
@@ -242,6 +286,15 @@ export default function SellCarFlow() {
             )}
             {state.expectedPrice && (
               <p className="text-xs font-bold text-slate-500 mt-1">You expect {formatINR(Number(state.expectedPrice))}</p>
+            )}
+            {state.step > 1 && (
+              <button
+                type="button"
+                onClick={() => patch({ step: 1 })}
+                className="mt-4 text-xs font-black uppercase tracking-wider text-[#3083ff]"
+              >
+                Edit car details
+              </button>
             )}
           </Card>
         )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import { inputCls } from '../components/admin/ui';
 
 export default function ContentCMS() {
   const [tab, setTab] = useState('faqs');
@@ -57,13 +58,13 @@ export default function ContentCMS() {
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
             <input
-              className="w-full border rounded-lg px-3 py-2"
+              className={inputCls}
               placeholder="Question"
               value={form.question || ''}
               onChange={(e) => setForm({ ...form, question: e.target.value })}
             />
             <textarea
-              className="w-full border rounded-lg px-3 py-2"
+              className={inputCls}
               placeholder="Answer"
               rows={4}
               value={form.answer || ''}
@@ -98,19 +99,19 @@ export default function ContentCMS() {
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
             <input
-              className="w-full border rounded-lg px-3 py-2"
+              className={inputCls}
               placeholder="Name"
               value={form.name || ''}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
             <input
-              className="w-full border rounded-lg px-3 py-2"
+              className={inputCls}
               placeholder="Role"
               value={form.role || ''}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             />
             <textarea
-              className="w-full border rounded-lg px-3 py-2"
+              className={inputCls}
               placeholder="Text"
               rows={4}
               value={form.text || ''}

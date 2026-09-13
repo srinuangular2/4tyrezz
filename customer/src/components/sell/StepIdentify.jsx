@@ -23,7 +23,7 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
       return;
     }
     if (cooldown > 0) {
-      setError(`Wait ${cooldown}s — RapidAPI blocked extra requests.`);
+      setError(`Wait ${cooldown}s before checking again.`);
       return;
     }
     setError('');
@@ -32,8 +32,8 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
       const details = await fetchVehicleDetailsByReg(state.plate);
       setState((s) => applyLookup(s, details));
     } catch (e) {
-      const secs = Number(e.response?.data?.retryAfter || 60);
-      if (e.response?.status === 429) setCooldown(secs);
+      const secs = Number(e.response?.data?.retryAfter);
+      if (e.response?.status === 429 && Number.isFinite(secs) && secs > 0) setCooldown(secs);
       setState((s) => ({ ...s, lookupStatus: 'error' }));
       setError(e.response?.data?.message || 'Could not fetch vehicle details');
       toast.error(e.response?.data?.message || 'Lookup failed — try manual search');

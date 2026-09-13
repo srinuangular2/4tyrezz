@@ -14,6 +14,7 @@ import {
   User,
 } from 'lucide-react';
 import { logout } from '../../app/authSlice';
+import { SHOW_TEST_DRIVE } from '../../lib/featureFlags';
 
 const LINKS = [
   { to: '/profile/settings', label: 'My Profile', icon: User },
@@ -21,7 +22,7 @@ const LINKS = [
   { to: '/profile/wishlist', label: 'My Wishlist', icon: Heart },
   { to: '/profile/saved-searches', label: 'Saved Searches', icon: Search },
   { to: '/profile/comparisons', label: 'My Comparisons', icon: GitCompare },
-  { to: '/profile/test-drives', label: 'My Test Drives', icon: Gauge },
+  ...(SHOW_TEST_DRIVE ? [{ to: '/profile/test-drives', label: 'My Test Drives', icon: Gauge }] : []),
   { to: '/profile/bookings', label: 'My Bookings', icon: FileText },
   { to: '/profile/finance-applications', label: 'Finance Applications', icon: Landmark },
   { to: '/profile/insurance-enquiries', label: 'Insurance Enquiries', icon: Shield },

@@ -70,7 +70,7 @@ export default function LocationAddressInput({
       <input
         value={query}
         placeholder={placeholder}
-        className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"
+        className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900 placeholder:text-slate-400"
         onChange={(e) => {
           setQuery(e.target.value);
           onChange?.(e.target.value);

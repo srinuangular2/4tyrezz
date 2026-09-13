@@ -7,6 +7,7 @@ import OtpLoginModal from './OtpLoginModal';
 import HeaderSearchBar, { MobileSearchButton } from './common/HeaderSearchBar';
 import api from '../api/axios';
 import NotificationBell from './NotificationBell';
+import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 
 export default function Header() {
   const { user } = useSelector((s) => s.auth);
@@ -118,30 +119,8 @@ export default function Header() {
           <div className="max-w-7xl mx-auto px-4 sm:px-4 lg:px-4 h-18 flex items-center justify-between gap-4">
             
             {/* Logo */}
-            <Link to="/" className="font-display font-bold text-2xl tracking-tight shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 110" className="h-10 w-auto">
-                <g transform="translate(10, 5)">
-                  <rect width="100" height="100" rx="22" fill="#3083ff" />
-                  <path d="M 18 52 A 32 32 0 0 1 82 52" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" />
-                  <circle cx="36" cy="36" r="4.5" fill="#FFFFFF" />
-                  <path d="M 28 52 C 28 44 44 44 44 52" fill="#FFFFFF" />
-                  <circle cx="50" cy="40" r="3.5" fill="#fff" />
-                  <path d="M 44 52 C 44 46 56 46 56 52" fill="#fff" />
-                  <circle cx="64" cy="36" r="4.5" fill="#FFFFFF" />
-                  <path d="M 56 52 C 56 44 72 44 72 52" fill="#FFFFFF" />
-                  <path d="M 22 62 Q 50 74 78 62" fill="none" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" />
-                  <circle cx="22" cy="78" r="6" fill="#fff" stroke="#3083ff" strokeWidth="2" />
-                  <circle cx="40" cy="78" r="6" fill="#fff" stroke="#3083ff" strokeWidth="2" />
-                  <circle cx="60" cy="78" r="6" fill="#fff" stroke="#3083ff" strokeWidth="2" />
-                  <circle cx="78" cy="78" r="6" fill="#fff" stroke="#3083ff" strokeWidth="2" />
-                </g>
-                <text x="128" y="62" fontFamily="system-ui, -apple-system, sans-serif" fontSize="44" fontWeight="900" fill="#0F172A" letterSpacing="-1">
-                  4TYREZZ<tspan fill="#3083ff">.</tspan>
-                </text>
-                <text x="130" y="84" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="500" fill="#64748B">
-                  Verified Pre-Owned Cars
-                </text>
-              </svg>
+            <Link to="/" className="shrink-0">
+              <img src="/blue-logo.png" alt="4TYREZZ" className="h-20 w-auto" />
             </Link>
 
             {/* Dynamic Search Bar with Custom Floating Location Dropdown */}
@@ -260,7 +239,9 @@ export default function Header() {
                           </Link>
                           <Link to="/profile/saved-searches" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Saved Searches</Link>
                           <Link to="/profile/comparisons" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Comparisons</Link>
-                          <Link to="/profile/test-drives" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Test Drives</Link>
+                          {SHOW_TEST_DRIVE && (
+                            <Link to="/profile/test-drives" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Test Drives</Link>
+                          )}
                           <Link to="/profile/bookings" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Bookings</Link>
                           <Link to="/profile/finance-applications" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Finance Applications</Link>
                           <Link to="/profile/insurance-enquiries" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Insurance Enquiries</Link>
@@ -331,9 +312,7 @@ export default function Header() {
       {mobileOpen && (
         <div className="fixed inset-0 z-[90] bg-white p-6 lg:hidden animate-fadeUp overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
-            <span className="font-display font-black text-2xl text-slate-900">
-              4TYREZZ<span className="text-[#3083ff]">.</span>
-            </span>
+            <img src="/blue-logo.png" alt="4TYREZZ" className="h-10 w-auto" />
             <button onClick={() => setMobileOpen(false)} className="p-2">
               <Close />
             </button>

@@ -58,9 +58,7 @@ export default function AdminSidebar({ user, onLogout }) {
   return (
     <aside className="w-72 bg-[#070b14]/80 backdrop-blur-xl border-r border-slate-800/80 text-slate-200 flex-shrink-0 flex flex-col">
       <div className="h-16 flex items-center px-5 border-b border-slate-800/80">
-        <span className="font-display font-bold text-xl tracking-tight text-white">
-          4TYRE<span className="text-blue-500">ZZ</span>
-        </span>
+        <img src="/blue-logo.png" alt="4TYREZZ" className="h-9 w-auto bg-white rounded-md px-1.5 py-0.5" />
       </div>
       <nav className="flex-1 py-4 px-3 space-y-5 overflow-y-auto">
         {GROUPS.map((group) => (

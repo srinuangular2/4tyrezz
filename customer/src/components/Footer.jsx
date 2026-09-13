@@ -14,8 +14,8 @@ export default function Footer() {
         {/* Top Section: Quick Support & Assistance Highlight */}
         <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-[#3083ff]/30 backdrop-blur-xl mb-12 shadow-[0_10px_30px_rgba(48,131,255,0.1)] flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="space-y-1">
-            <span className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <span className="text-[#3083ff]">4TYREZZ</span>
+            <span className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-3">
+              <img src="/blue-logo.png" alt="4TYREZZ" className="h-10 w-auto bg-white rounded-lg px-2 py-1" />
               <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-[#3083ff]/20 text-sky-300 border border-[#3083ff]/40">
                 24/7 Support
               </span>

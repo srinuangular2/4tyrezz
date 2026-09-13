@@ -1,7 +1,7 @@
 const Valuation = require('../models/Valuation');
 const Brand = require('../models/Brand');
 const CarModel = require('../models/CarModel');
-const { estimateValue, calculateResale } = require('../services/integrations/valuationService');
+const { estimateValue } = require('../services/integrations/valuationService');
 
 async function resolveNames(body) {
   const input = { ...body };
@@ -72,7 +72,7 @@ exports.calculate = async (req, res) => {
       kmDriven: req.body.kmDriven || req.body.kilometersDriven,
       ownership: req.body.ownership || req.body.numberOfOwners,
     });
-    const result = await calculateResale(input);
+    const result = await estimateValue(input);
     let saved = null;
     if (req.user && Number(input.year) && Number(input.kmDriven || req.body.kmDriven)) {
       saved = await Valuation.create({

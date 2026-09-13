@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const bannerSchema = new mongoose.Schema(
   {
     image: { type: String, required: true },
-    title: { type: String, default: '' },
+    title: { type: String, default: '' }, // black heading line (same as titleLine1)
+    titleLine1: { type: String, default: '' },
+    titleLine2: { type: String, default: '' }, // blue heading line
     subtitle: { type: String, default: '' },
     ctaLabel: { type: String, default: 'Learn more' },
     linkType: { type: String, enum: ['car', 'url', 'none'], default: 'none' },

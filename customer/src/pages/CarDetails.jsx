@@ -14,6 +14,7 @@ import WhatsAppConnectButton from '../components/WhatsAppConnectButton';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import { addCompare } from '../lib/compareTray';
 import { rememberRecentlyViewed } from '../lib/recentlyViewed';
+import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 import { mediaUrl } from './profile/hubUtils';
 
 const glassCard = 'bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.08)]';
@@ -629,7 +630,7 @@ export default function CarDetails() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-slate-500">Schedule a test drive and physical inspection before purchase.</p>
+                  <p className="text-sm text-slate-500">{SHOW_TEST_DRIVE ? 'Schedule a test drive and physical inspection before purchase.' : 'Ask the dealer for a physical inspection before purchase.'}</p>
                 )}
               </div>
             </section>
@@ -904,19 +905,22 @@ export default function CarDetails() {
               >
                 Contact dealer
               </button>
-              <button
-                type="button"
-                onClick={() => requireAuth(() => { setDriveMode('dealer'); setDriveSent(false); setShowTestDrive(true); })}
-                className="w-full mt-2 border border-white/30 bg-white/50 text-slate-800 font-bold py-3.5 rounded-xl hover:bg-white/80"
-              >
-                Schedule test drive
-              </button>
-
+              {SHOW_TEST_DRIVE && (
+                <button
+                  type="button"
+                  onClick={() => requireAuth(() => { setDriveMode('dealer'); setDriveSent(false); setShowTestDrive(true); })}
+                  className="w-full mt-2 border border-white/30 bg-white/50 text-slate-800 font-bold py-3.5 rounded-xl hover:bg-white/80"
+                >
+                  Schedule test drive
+                </button>
+              )}
               <div className={`${glassCard} rounded-2xl p-3 mt-3 grid grid-cols-2 gap-2`}>
                 <button type="button" onClick={handleCallDealer} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Call dealer</button>
                 <button type="button" onClick={handleWhatsApp} className="text-xs font-bold py-2.5 rounded-xl bg-[#25D366]/90 text-white border border-white/20">WhatsApp</button>
                 <button type="button" onClick={() => requireAuth(() => { setSent(false); setShowContact(true); })} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Send enquiry</button>
-                <button type="button" onClick={() => requireAuth(() => { setDriveMode('home'); setDriveSent(false); setShowTestDrive(true); })} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Home test drive</button>
+                {SHOW_TEST_DRIVE && (
+                  <button type="button" onClick={() => requireAuth(() => { setDriveMode('home'); setDriveSent(false); setShowTestDrive(true); })} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Home test drive</button>
+                )}
                 <button type="button" onClick={() => requireAuth(() => setShowFinance(true))} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Get finance</button>
                 <button type="button" onClick={() => requireAuth(() => setShowInsurance(true))} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Request insurance</button>
                 <button type="button" onClick={() => requireAuth(() => setShowBook(true))} className="text-xs font-bold py-2.5 rounded-xl bg-ink text-white col-span-2">Book vehicle</button>
