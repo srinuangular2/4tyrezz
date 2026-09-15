@@ -5,6 +5,7 @@ import api from '../../api/axios';
 import { Close, Search } from '../icons';
 import { formatINR } from '../PageShell';
 import { mediaUrl } from '../../pages/profile/hubUtils';
+import { BUDGETS, budgetQuery, looksLikeBudgetQuery, matchBudgets, parseBudgetQuery } from '../../utils/filterOptions';
 
 export const BUY_CARS_PATH = '/buy-cars';
 const RECENT_KEY = '4tyrezz:recent-searches';
@@ -38,6 +39,22 @@ function cityParam(location) {
   if (!raw) return '';
   const parts = raw.split(',').map((p) => p.trim()).filter(Boolean);
   return parts[parts.length - 1] || raw;
+}
+
+function mapListingCar(c) {
+  return {
+    id: c._id || c.id,
+    title: c.title,
+    thumbnail: c.images?.[0] || c.thumbnail || '',
+    price: c.price,
+    year: c.year,
+    kmDriven: c.kmDriven,
+    fuel: c.fuel,
+    variant: c.variant,
+    city: c.city?.name || c.city || '',
+    brand: c.brand?.name || c.brand || '',
+    model: c.model?.name || c.model || '',
+  };
 }
 
 function BrandMark({ name, logo }) {
@@ -84,7 +101,10 @@ export default function HeaderSearchBar({
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const isModal = variant === 'modal';
-  const typing = query.trim().length >= MIN_CHARS;
+  const qTrim = query.trim();
+  const parsedBudget = parseBudgetQuery(qTrim);
+  const budgetHits = qTrim ? matchBudgets(qTrim) : BUDGETS;
+  const typing = qTrim.length >= MIN_CHARS || looksLikeBudgetQuery(qTrim);
   const panelOpen = isModal ? open : focused;
   const cityName = cityParam(city);
 
@@ -111,6 +131,24 @@ export default function HeaderSearchBar({
     const seq = ++seqRef.current;
     setLoading(true);
     try {
+      const budget = parseBudgetQuery(q);
+      if (budget) {
+        const { data: json } = await api.get('/cars', {
+          params: { ...budgetQuery(budget), limit: 4, city: cityName || city },
+          signal: controller.signal,
+        });
+        if (seq !== seqRef.current) return;
+        setData((prev) => ({
+          ...prev,
+          models: [],
+          cars: (json.cars || []).map(mapListingCar),
+          intents: [],
+          locations: [],
+          total: json.total || 0,
+        }));
+        return;
+      }
+
       const { data: json } = await api.get('/cars/autocomplete', {
         params: { q, city: cityName || city },
         signal: controller.signal,
@@ -139,8 +177,11 @@ export default function HeaderSearchBar({
   useEffect(() => {
     if (!panelOpen) return;
     const q = query.trim();
-    if (q.length > 0 && q.length < MIN_CHARS) return undefined;
-    const timer = setTimeout(() => fetchAutocomplete(q), q.length >= MIN_CHARS ? DEBOUNCE_MS : 0);
+    if (q.length > 0 && q.length < MIN_CHARS && !looksLikeBudgetQuery(q)) return undefined;
+    const timer = setTimeout(
+      () => fetchAutocomplete(q),
+      q.length >= MIN_CHARS || looksLikeBudgetQuery(q) ? DEBOUNCE_MS : 0
+    );
     return () => clearTimeout(timer);
   }, [query, panelOpen, fetchAutocomplete]);
 
@@ -162,8 +203,24 @@ export default function HeaderSearchBar({
   }, [isModal, open]);
 
   const items = useMemo(() => {
+    const budgetItems = budgetHits.map((b) => ({
+      type: 'budget',
+      label: b.label,
+      params: budgetQuery(b),
+      meta: b,
+    }));
     if (typing) {
+      const parsedBudget = parseBudgetQuery(query.trim());
+      const viewAllParams = parsedBudget
+        ? budgetQuery(parsedBudget)
+        : {
+            q: query.trim(),
+            fuel: data.intents[0]?.fuel,
+            bodyType: data.intents[0]?.bodyType,
+            transmission: data.intents[0]?.transmission,
+          };
       return [
+        ...budgetItems,
         ...(data.locations || []).map((loc) => ({
           type: 'location',
           label: loc.label,
@@ -195,17 +252,15 @@ export default function HeaderSearchBar({
         })),
         {
           type: 'viewall',
-          label: `View all results (${data.total} cars found)`,
-          params: {
-            q: query.trim(),
-            fuel: data.intents[0]?.fuel,
-            bodyType: data.intents[0]?.bodyType,
-            transmission: data.intents[0]?.transmission,
-          },
+          label: parsedBudget
+            ? `See all ${data.total || ''} cars ${parsedBudget.label}`.replace(/\s+/g, ' ').trim()
+            : `View all results (${data.total} cars found)`,
+          params: viewAllParams,
         },
       ];
     }
     return [
+      ...budgetItems,
       ...recent.map((row) => ({ type: 'recent', label: row.label, params: row.params || { q: row.q || row.label }, meta: row })),
       ...(data.popularAreas || []).map((loc) => ({
         type: 'location',
@@ -229,7 +284,7 @@ export default function HeaderSearchBar({
         meta: row,
       })),
     ];
-  }, [typing, data, recent, query]);
+  }, [typing, data, recent, query, budgetHits, parsedBudget]);
 
   useEffect(() => {
     setActiveIndex(-1);
@@ -255,6 +310,12 @@ export default function HeaderSearchBar({
     const q = query.trim();
     if (!q) {
       go({}, null);
+      return;
+    }
+    const budget = parseBudgetQuery(q);
+    if (budget) {
+      const params = budgetQuery(budget);
+      go(params, { label: budget.label, params });
       return;
     }
     const intent = data.intents?.[0];
@@ -324,6 +385,32 @@ export default function HeaderSearchBar({
 
       {!typing && (
         <div className="p-4 space-y-5">
+          {BUDGETS.length > 0 && (
+            <section>
+              <h4 className="text-[11px] font-black uppercase tracking-wide text-slate-400 mb-1">Search by budget</h4>
+              <p className="text-[11px] font-semibold text-slate-500 mb-2">Tap a price. You can type 10 lakhs or 10 laks — no ₹ needed.</p>
+              <div className="flex flex-wrap gap-2">
+                {BUDGETS.map((b) => {
+                  const idx = items.findIndex((item) => item.type === 'budget' && item.label === b.label);
+                  return (
+                    <button
+                      key={b.label}
+                      type="button"
+                      role="option"
+                      aria-selected={activeIndex === idx}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
+                        activeIndex === idx ? 'border-[#3083ff] bg-blue-50 text-[#3083ff]' : 'border-slate-200 text-slate-700 hover:border-[#3083ff]'
+                      }`}
+                      onMouseEnter={() => setActiveIndex(idx)}
+                      onClick={() => activate(items[idx])}
+                    >
+                      {b.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
           {recent.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-2">
@@ -450,6 +537,33 @@ export default function HeaderSearchBar({
 
       {typing && (
         <div className="divide-y divide-slate-100">
+          {budgetHits.length > 0 && (
+            <section className="py-2">
+              <h4 className="px-4 pt-2 pb-1 text-[11px] font-black uppercase tracking-wide text-slate-400">Choose a price</h4>
+              <p className="px-4 pb-2 text-[11px] font-semibold text-slate-500">Tap one option below. Spelling like 10lakhs / 10 laks also works.</p>
+              <div className="px-3 pb-2 space-y-1.5">
+                {budgetHits.map((b) => {
+                  const idx = items.findIndex((item) => item.type === 'budget' && item.label === b.label);
+                  return (
+                    <button
+                      key={b.label}
+                      type="button"
+                      role="option"
+                      aria-selected={activeIndex === idx}
+                      className={`w-full text-left rounded-xl border px-3 py-2.5 ${
+                        activeIndex === idx ? 'border-[#3083ff] bg-blue-50' : 'border-slate-200 hover:border-[#3083ff] bg-white'
+                      }`}
+                      onMouseEnter={() => setActiveIndex(idx)}
+                      onClick={() => activate(items[idx])}
+                    >
+                      <span className="block text-sm font-black text-slate-900">{b.label}</span>
+                      <span className="block text-[11px] font-semibold text-slate-500 mt-0.5">{b.hint || 'Tap to see cars'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
           {(data.locations || []).length > 0 && (
             <section className="py-2">
               <h4 className="px-4 pt-2 pb-1 text-[11px] font-black uppercase tracking-wide text-slate-400">Locations</h4>
@@ -565,7 +679,7 @@ export default function HeaderSearchBar({
             </section>
           )}
 
-          {!loading && !data.models.length && !data.cars.length && !data.intents.length && (
+          {!loading && !data.models.length && !data.cars.length && !data.intents.length && !budgetHits.length && (
             <p className="px-4 py-4 text-xs text-slate-500">No live matches for “{query.trim()}”.</p>
           )}
 
@@ -579,7 +693,7 @@ export default function HeaderSearchBar({
             onMouseEnter={() => setActiveIndex(items.length - 1)}
             onClick={() => activate(items[items.length - 1])}
           >
-            View all results ({data.total} cars found)
+            See all {parsedBudget ? `${data.total || ''} cars ${parsedBudget.label}` : `results (${data.total} cars found)`}
           </button>
         </div>
       )}
@@ -597,9 +711,12 @@ export default function HeaderSearchBar({
         aria-autocomplete="list"
         aria-expanded={panelOpen}
         aria-controls="header-search-dropdown"
-        placeholder="Search by brand, model, or keyword…"
+        placeholder="Type Swift, Honda, or 10 lakhs…"
         className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none py-2"
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setFocused(true);
+        }}
         onFocus={() => setFocused(true)}
         onKeyDown={onKeyDown}
       />

@@ -28,7 +28,7 @@ export default function Footer() {
           {/* Direct Contact Actions */}
           <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-3 shrink-0">
             <a 
-              href="tel:+919160415851" 
+              href="tel:+917993980559" 
               className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#3083ff] hover:bg-blue-600 text-white font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#3083ff]/30 text-center cursor-pointer"
             >
               Call +91 79939 80559
@@ -101,7 +101,7 @@ export default function Footer() {
               <span>📧</span> support@4tyrezz.com
             </p>
             <p className="text-slate-300 font-medium flex items-center gap-2">
-              <span>📞</span> +91 91604 15851
+              <span>📞</span> +91 79939 80559
             </p>
           </div>
 

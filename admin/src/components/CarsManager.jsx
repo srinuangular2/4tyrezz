@@ -5,6 +5,8 @@ import api from '../api/axios';
 import DataTable from './DataTable';
 import { formatPrice } from '../utils/format';
 
+const PREMIUM_MIN = 1500000;
+
 const STATUS_COLORS = {
   pending: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
   approved: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
@@ -56,11 +58,6 @@ export default function CarsManager({ defaultStatus = '' }) {
     load(meta.page);
   };
 
-  const toggleFlag = async (id, field) => {
-    await api.patch(`/admin/cars/${id}/flag`, { field });
-    toast.success('Car flag updated');
-    load(meta.page);
-  };
 
   const confirmDelete = async () => {
     if (!carToDelete) return;
@@ -135,22 +132,14 @@ export default function CarsManager({ defaultStatus = '' }) {
     },
     {
       key: 'flags',
-      label: 'Flags',
+      label: 'Premium',
       render: (c) => (
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => toggleFlag(c._id, 'isFeatured')}
-            className={`text-[11px] font-bold px-2 py-1 rounded-md transition-colors ${c.isFeatured ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-          >
-            Featured
-          </button>
-          <button
-            onClick={() => toggleFlag(c._id, 'isPremium')}
-            className={`text-[11px] font-bold px-2 py-1 rounded-md transition-colors ${c.isPremium ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-          >
-            Premium
-          </button>
-        </div>
+        // Customer "Premium" = ask price ≥ ₹15 Lakh. isPremium remains a dealer boost flag (not shown here).
+        Number(c.price) >= PREMIUM_MIN ? (
+          <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-blue-500 text-white">Premium</span>
+        ) : (
+          <span className="text-[11px] font-medium text-slate-500">—</span>
+        )
       ),
     },
     {

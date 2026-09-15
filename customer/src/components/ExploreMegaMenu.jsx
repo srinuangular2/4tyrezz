@@ -1,40 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import useReferenceData from '../hooks/useReferenceData';
 import {
+  PRICE_RANGES, FUEL_TYPES, TRANSMISSIONS, BODY_TYPES,
+  YEAR_RANGES, KM_RANGES, OWNER_TYPES, COLORS,
+} from '../utils/filterOptions';
+import {
   PriceIcon, BrandIcon, FuelIcon, TransmissionIcon, BodyIcon,
   YearIcon, KmIcon, OwnerIcon, ColorIcon, LocationIcon,
 } from './icons';
-
-const PRICE_RANGES = [
-  ['Under ₹3 Lakh', { maxPrice: 300000 }],
-  ['₹3 – 5 Lakh', { minPrice: 300000, maxPrice: 500000 }],
-  ['₹5 – 8 Lakh', { minPrice: 500000, maxPrice: 800000 }],
-  ['₹8 – 10 Lakh', { minPrice: 800000, maxPrice: 1000000 }],
-  ['₹10 – 15 Lakh', { minPrice: 1000000, maxPrice: 1500000 }],
-  ['Above ₹15 Lakh', { minPrice: 1500000 }],
-];
-const FUEL_TYPES = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
-const TRANSMISSIONS = ['Manual', 'Automatic'];
-const BODY_TYPES = ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Luxury', 'Convertible'];
-const YEAR_RANGES = [
-  ['2022 & newer', { minYear: 2022 }],
-  ['2019 – 2021', { minYear: 2019, maxYear: 2021 }],
-  ['2015 – 2018', { minYear: 2015, maxYear: 2018 }],
-  ['Before 2015', { maxYear: 2014 }],
-];
-const KM_RANGES = [
-  ['Under 20,000 km', { maxKm: 20000 }],
-  ['20,000 – 40,000 km', { minKm: 20000, maxKm: 40000 }],
-  ['40,000 – 60,000 km', { minKm: 40000, maxKm: 60000 }],
-  ['60,000 – 80,000 km', { minKm: 60000, maxKm: 80000 }],
-  ['Above 80,000 km', { minKm: 80000 }],
-];
-const OWNER_TYPES = [
-  ['1st owner', { ownership: 1 }],
-  ['2nd owner', { ownership: 2 }],
-  ['3rd owner', { ownership: 3 }],
-];
-const COLORS = ['White', 'Silver', 'Red', 'Black', 'Grey'];
 
 export default function ExploreMegaMenu({ onNavigate }) {
   const navigate = useNavigate();

@@ -99,13 +99,13 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { label: 'Buy Cars', path: '/cars' },
-    { label: 'Sell Car', path: '/sell' },
-    { label: 'Valuation', path: '/valuation' },
+    { label: 'Buy Used Cars', path: '/cars' },
+    { label: 'Sell Your Car', path: '/sell' },
+    { label: 'Car Valuation', path: '/valuation' },
     { label: 'Compare', path: '/compare' },
     { label: 'Finance', path: '/finance' },
     { label: 'Insurance', path: '/insurance' },
-    { label: 'Dealers', path: '/dealers' },
+    // { label: 'Dealers', path: '/dealers' },
     { label: 'Offers', path: '/offers', badge: 'HOT' },
     { label: 'Contact', path: '/contact' },
   ];
@@ -189,7 +189,7 @@ export default function Header() {
               )}
 
               <a
-                href="tel:+919160415851"
+                href="tel:+917993980559"
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 transition"
               >
                 <div className="w-7 h-7 rounded-lg bg-[#3083ff] text-white flex items-center justify-center shrink-0">
@@ -199,7 +199,7 @@ export default function Header() {
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-[9px] font-black uppercase text-slate-400">Call Now</span>
-                  <span className="text-xs font-black text-slate-900">+91 91604 15851</span>
+                  <span className="text-xs font-black text-slate-900">+91 79939 80559</span>
                 </div>
               </a>
 
@@ -287,7 +287,7 @@ export default function Header() {
         {/* ================= BOTTOM NAVIGATION BAR ================= */}
         <div className="hidden lg:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-4 lg:px-4 h-12 flex items-center justify-between">
-            <nav className="flex items-center gap-6 text-xs font-bold text-slate-800 uppercase tracking-wide">
+            <nav className="flex items-center gap-6 text-sm font-semibold text-slate-800 uppercase tracking-wide">
               {navLinks.map((item, idx) => (
                 <Link
                   key={idx}

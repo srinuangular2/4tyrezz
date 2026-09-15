@@ -8,7 +8,7 @@ export default function Cars() {
       <PageHeader
         kicker="Marketplace inventory"
         title="Vehicle listings"
-        subtitle="Live inventory with status filters, featured flags, and approval actions."
+        subtitle="Newest listings first. Premium means ask price of ₹15 Lakh or more."
         actions={<Link to="/cars/add" className={btnPrimary}>+ Add car</Link>}
       />
       <CarsManager />

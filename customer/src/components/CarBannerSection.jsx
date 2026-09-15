@@ -4,7 +4,7 @@ import sectionBg from '../public/section-bg.jpg';
 
 export default function CarBannerSection() {
   return (
-    <section className="relative my-16 mx-auto overflow-hidden">
+    <section className="relative mx-auto overflow-hidden">
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0">
         <img

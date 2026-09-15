@@ -59,17 +59,38 @@ const emptyCounts = {
 
 const AlertsContext = createContext(null);
 
+let sharedCtx = null;
+let audioUnlocked = false;
+let pendingChime = null;
+const audioCache = {};
+
 function socketOrigin() {
   const raw = import.meta.env.VITE_API_URL || '';
   if (/^https?:\/\//i.test(raw)) return raw.replace(/\/api\/?$/, '');
   return window.location.origin;
 }
 
+function getCtx() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  if (!sharedCtx) sharedCtx = new Ctx();
+  return sharedCtx;
+}
+
+function getAudio(src) {
+  if (!audioCache[src]) {
+    const audio = new Audio(src);
+    audio.preload = 'auto';
+    audio.volume = 0.75;
+    audioCache[src] = audio;
+  }
+  return audioCache[src];
+}
+
 function playOscillator(soundKey = 'lead') {
-  try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
+  const ctx = getCtx();
+  if (!ctx) return;
+  const startNotes = () => {
     const notes = SOUND_TONES[soundKey] || SOUND_TONES.lead;
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -85,29 +106,90 @@ function playOscillator(soundKey = 'lead') {
       osc.start(start);
       osc.stop(start + 0.18);
     });
+  };
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(startNotes).catch(() => {});
+    return;
+  }
+  startNotes();
+}
+
+function playFile(src) {
+  return new Promise((resolve, reject) => {
+    try {
+      const audio = getAudio(src);
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+      audio.volume = 0.75;
+      const fail = (err) => reject(err || new Error('audio error'));
+      audio.onerror = () => fail(new Error('audio error'));
+      const played = audio.play();
+      if (played && typeof played.then === 'function') {
+        played.then(() => resolve(true)).catch(fail);
+      } else {
+        resolve(true);
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+function runChime(payload) {
+  if (localStorage.getItem(SOUND_KEY) === 'off') return Promise.resolve(false);
+  const soundKey = resolveSoundKey(payload);
+  const typed = SOUND_FILES[soundKey] || '/alert-lead.mp3';
+  return playFile(typed)
+    .catch(() => playFile('/alert.mp3'))
+    .catch(() => playFile('/alert.wav'))
+    .catch(() => {
+      const ctx = getCtx();
+      if (!ctx || ctx.state === 'suspended') throw new Error('audio blocked');
+      playOscillator(soundKey);
+      return true;
+    });
+}
+
+async function unlockAlertAudio() {
+  try {
+    const ctx = getCtx();
+    if (ctx?.state === 'suspended') await ctx.resume();
+    if (ctx) {
+      const buffer = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.start(0);
+    }
+    const probe = new Audio(SOUND_FILES.lead);
+    probe.muted = true;
+    probe.volume = 0.01;
+    await probe.play().catch(() => {});
+    probe.pause();
+    probe.removeAttribute?.('src');
+    audioUnlocked = true;
+    if (pendingChime) {
+      const queued = pendingChime;
+      pendingChime = null;
+      runChime(queued).catch(() => {});
+    }
   } catch {
     /* ignore */
   }
 }
 
-function playFile(src) {
-  return new Promise((resolve, reject) => {
-    const audio = new Audio(src);
-    audio.volume = 0.7;
-    audio.onended = () => resolve(true);
-    audio.onerror = () => reject(new Error('audio error'));
-    audio.play().then(() => resolve(true)).catch(reject);
+function playChime(payload) {
+  if (localStorage.getItem(SOUND_KEY) === 'off') return;
+  runChime(payload).catch(() => {
+    pendingChime = payload;
+    unlockAlertAudio();
   });
 }
 
-function playChime(payload) {
-  if (localStorage.getItem(SOUND_KEY) === 'off') return;
-  const soundKey = resolveSoundKey(payload);
-  const typed = SOUND_FILES[soundKey] || '/alert-lead.mp3';
-  playFile(typed)
-    .catch(() => playFile('/alert.mp3'))
-    .catch(() => playFile('/alert.wav'))
-    .catch(() => playOscillator(soundKey));
+function playTestChime() {
+  localStorage.setItem(SOUND_KEY, 'on');
+  playChime({ event: 'NEW_LEAD', soundKey: 'lead' });
 }
 
 function toastAlert(payload, dark) {
@@ -153,9 +235,31 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
     }
   }, [enabled, token]);
 
+  const primeSound = useCallback(async () => {
+    await unlockAlertAudio();
+  }, []);
+
+  const testChime = useCallback(async () => {
+    await unlockAlertAudio();
+    playTestChime();
+  }, []);
+
   useEffect(() => {
     localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off');
   }, [soundOn]);
+
+  useEffect(() => {
+    const prime = () => { unlockAlertAudio(); };
+    window.addEventListener('pointerdown', prime, { capture: true });
+    window.addEventListener('keydown', prime, { capture: true });
+    window.addEventListener('touchstart', prime, { capture: true });
+    unlockAlertAudio();
+    return () => {
+      window.removeEventListener('pointerdown', prime, { capture: true });
+      window.removeEventListener('keydown', prime, { capture: true });
+      window.removeEventListener('touchstart', prime, { capture: true });
+    };
+  }, []);
 
   useEffect(() => {
     if (!enabled || !token) {
@@ -203,6 +307,7 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
     EVENTS.forEach((name) => socket.on(name, onPayload));
+    socket.on('notification', onPayload);
 
     const onVis = () => {
       if (document.visibilityState === 'visible') refresh();
@@ -212,6 +317,7 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
     return () => {
       document.removeEventListener('visibilitychange', onVis);
       EVENTS.forEach((name) => socket.off(name, onPayload));
+      socket.off('notification', onPayload);
       socket.disconnect();
     };
   }, [enabled, token, refresh, dark, variant]);
@@ -243,8 +349,10 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
       refresh,
       markRead,
       variant,
+      primeSound,
+      testChime,
     }),
-    [items, counts, soundOn, connected, refresh, markRead, variant]
+    [items, counts, soundOn, connected, refresh, markRead, variant, primeSound, testChime]
   );
 
   return <AlertsContext.Provider value={value}>{children}</AlertsContext.Provider>;

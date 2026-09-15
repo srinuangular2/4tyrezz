@@ -53,7 +53,7 @@ export const STEPS = [
 
 export default function VerificationProcessSection() {
   return (
-    <section className=" py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <section className="">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-14">
         <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-[#3083ff]/15 text-[#3083ff] border border-[#3083ff]/40 backdrop-blur-md shadow-sm mb-3">

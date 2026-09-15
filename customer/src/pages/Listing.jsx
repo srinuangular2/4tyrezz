@@ -10,6 +10,7 @@ import Pagination from '../components/Pagination';
 import FilterSidebar from '../components/listing/FilterSidebar';
 import { describeFilters } from './profile/hubUtils';
 import { useAuthGuard } from '../components/AuthGuardModal';
+import { BUDGETS, budgetQuery, isBudgetActive, parseBudgetQuery } from '../utils/filterOptions';
 
 const FUELS = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
 const TRANSMISSIONS = ['Manual', 'Automatic'];
@@ -45,7 +46,18 @@ export default function Listing() {
 
   // 1. Keep state synced with URL search params when route changes
   useEffect(() => {
-    setFilters(Object.fromEntries([...params.entries()]));
+    const next = Object.fromEntries([...params.entries()]);
+    const budget = parseBudgetQuery(next.q || next.search);
+    if (budget && !next.minPrice && !next.maxPrice) {
+      const q = budgetQuery(budget);
+      delete next.q;
+      delete next.search;
+      Object.assign(next, q);
+      setFilters(next);
+      setParams(next, { replace: true });
+      return;
+    }
+    setFilters(next);
   }, [params]);
 
   const searchValue = filters.search || filters.q || '';
@@ -168,20 +180,48 @@ export default function Listing() {
           />
 
           <FilterGroup title="Budget">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {BUDGETS.map((b) => {
+                const active = isBudgetActive(b, filters.minPrice, filters.maxPrice);
+                return (
+                  <button
+                    key={b.label}
+                    type="button"
+                    onClick={() => {
+                      const q = budgetQuery(b);
+                      apply({
+                        ...filters,
+                        minPrice: q.minPrice || '',
+                        maxPrice: q.maxPrice || '',
+                        page: 1,
+                      });
+                    }}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                      active
+                        ? 'border-[#3083ff] bg-blue-50 text-[#3083ff]'
+                        : 'border-slate-200 text-slate-700 hover:border-[#3083ff]'
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Custom range</p>
             <div className="flex gap-2">
               <input
                 type="number"
                 placeholder="Min ₹"
                 value={filters.minPrice || ''}
                 onChange={(e) => set('minPrice', e.target.value)}
-                className="w-1/2 border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
+                className="w-1/2 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900"
               />
               <input
                 type="number"
                 placeholder="Max ₹"
                 value={filters.maxPrice || ''}
                 onChange={(e) => set('maxPrice', e.target.value)}
-                className="w-1/2 border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
+                className="w-1/2 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900"
               />
             </div>
           </FilterGroup>

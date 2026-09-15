@@ -48,6 +48,35 @@ function splitCarUploads(files = [], body = {}) {
   return { images, inspectionReport, mediaSlots, listingDocuments };
 }
 
+function parseBudgetSearchTerm(term) {
+  const t = String(term || '')
+    .toLowerCase()
+    .replace(/[₹,]/g, '')
+    .replace(/[–—−]/g, '-')
+    .replace(/\bto\b/g, '-')
+    .replace(/([a-z])(\d)/g, '$1 $2')
+    .replace(/(\d)([a-z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!t) return null;
+  const unit = '(lakhs|lakh|laks|lak|lacs|lac|cr|crores|crore)';
+  const toRs = (n, u) => {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return null;
+    if (String(u || '').startsWith('cr')) return Math.round(num * 10000000);
+    return Math.round(num * 100000);
+  };
+  const under = t.match(new RegExp(`^(?:under|below|upto|up to)\\s*(\\d+(?:\\.\\d+)?)\\s*${unit}?$`));
+  if (under) return { maxPrice: toRs(under[1], under[2] || 'lakh') };
+  const above = t.match(new RegExp(`^(?:above|over|more than)\\s*(\\d+(?:\\.\\d+)?)\\s*${unit}?$`));
+  if (above) return { minPrice: toRs(above[1], above[2] || 'lakh') };
+  const range = t.match(new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*-\\s*(\\d+(?:\\.\\d+)?)\\s*${unit}?$`));
+  if (range) return { minPrice: toRs(range[1], range[3] || 'lakh'), maxPrice: toRs(range[2], range[3] || 'lakh') };
+  const single = t.match(new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*${unit}$`));
+  if (single) return { maxPrice: toRs(single[1], single[2]) };
+  return null;
+}
+
 // GET /api/cars — list with search, filters, sort, pagination
 exports.getCars = async (req, res) => {
   try {
@@ -67,7 +96,8 @@ exports.getCars = async (req, res) => {
     }
 
     const term = String(search || q || '').trim();
-    if (term) {
+    const budgetTerm = parseBudgetSearchTerm(term);
+    if (term && !budgetTerm) {
       const searchRegex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       const [matchingBrands, matchingCities, matchingModels] = await Promise.all([
         Brand.find({ name: searchRegex }).select('_id'),
@@ -141,10 +171,12 @@ exports.getCars = async (req, res) => {
     if (isFeatured) filter.isFeatured = true;
     if (isPremium) filter.isPremium = true;
 
-    if (minPrice || maxPrice) {
+    const priceMin = minPrice || budgetTerm?.minPrice;
+    const priceMax = maxPrice || budgetTerm?.maxPrice;
+    if (priceMin || priceMax) {
       filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
+      if (priceMin) filter.price.$gte = Number(priceMin);
+      if (priceMax) filter.price.$lte = Number(priceMax);
     }
     if (minYear || maxYear) {
       filter.year = {};

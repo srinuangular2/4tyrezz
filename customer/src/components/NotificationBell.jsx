@@ -63,7 +63,12 @@ export default function NotificationBell({ variant = 'admin' }) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => alerts.setSoundOn((v) => !v)}
+                onClick={() => {
+                  const next = !alerts.soundOn;
+                  alerts.setSoundOn(next);
+                  if (next) alerts.testChime?.();
+                  else alerts.primeSound?.();
+                }}
                 className={`p-1.5 rounded-lg ${dark ? 'text-slate-400 hover:bg-white/5' : 'text-slate-500 hover:bg-slate-100'}`}
                 title={alerts.soundOn ? 'Mute chime' : 'Enable chime'}
               >

@@ -202,7 +202,7 @@ export default function QuickServices() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 font-sans">
+    <section className="relative z-30 max-w-7xl mx-auto font-sans">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {SERVICES.map((item) => (
           <div

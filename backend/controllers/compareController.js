@@ -1,6 +1,7 @@
 const Car = require('../models/Car');
 const { publicListingFilter } = require('../utils/listingStatus');
 const { estimatedEmi } = require('../utils/emi');
+const { buildSuggestedPairs } = require('../utils/comparePairs');
 
 function dash(v) {
   if (v == null || v === '') return null;
@@ -39,6 +40,7 @@ function toMatrix(c) {
     bodyType: c.bodyType,
     ownership: c.ownership,
     color: c.color,
+    interiorColor: c.interiorColor,
     variant: c.variant,
     seats: c.seats,
     engineDisplacement: c.engineDisplacement || rto.engineCapacityCC,
@@ -104,25 +106,31 @@ exports.compare = async (req, res) => {
   res.json({ data: cars.map(toMatrix) });
 };
 
-/** Live inventory pairings for the landing carousel — never a static list. */
-exports.suggested = async (_req, res) => {
+/** Fair live pairings: similar budget / body — never consecutive latest or isFeatured. */
+exports.suggested = async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(20, Math.max(1, Number(req.query.limit) || 10));
+
   const cars = await Car.find({ ...publicListingFilter(), images: { $exists: true, $ne: [] } })
     .populate('brand model city owner', 'name dealershipName city')
-    .sort('-isFeatured -createdAt')
-    .limit(24)
+    .sort('-createdAt')
+    .limit(200)
     .lean();
 
-  const pairs = [];
-  for (let i = 0; i < cars.length - 1 && pairs.length < 8; i += 2) {
-    const a = cars[i];
-    const b = cars[i + 1];
-    if (!a || !b) break;
-    pairs.push({
-      id: `${a._id}-${b._id}`,
-      ids: [String(a._id), String(b._id)],
-      cars: [toMatrix(a), toMatrix(b)],
-    });
-  }
+  const all = buildSuggestedPairs(cars, 40).map((edge) => ({
+    id: `${edge.a._id}-${edge.b._id}`,
+    ids: [String(edge.a._id), String(edge.b._id)],
+    cars: [toMatrix(edge.a), toMatrix(edge.b)],
+  }));
 
-  res.json({ data: pairs });
+  const start = (page - 1) * limit;
+  const data = all.slice(start, start + limit);
+
+  res.json({
+    data,
+    page,
+    limit,
+    total: all.length,
+    hasMore: start + data.length < all.length,
+  });
 };

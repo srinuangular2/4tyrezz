@@ -16,19 +16,14 @@ import HowItWorks from '../components/HowItWorks';
 import CarBannerSection from '../components/CarBannerSection';
 import WhatsAppFloat from '../components/WhatsAppFloat';
 import LastViewedCars from '../components/LastViewedCars';
+import CompareVsCard from '../components/CompareVsCard';
 import { mediaUrl } from './profile/hubUtils';
+import { BUDGETS, budgetQuery } from '../utils/filterOptions';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-const BUDGETS = [
-  { label: 'Under ₹3 Lakh', max: 300000 },
-  { label: '₹3 – ₹5 Lakh', min: 300000, max: 500000 },
-  { label: '₹5 – ₹10 Lakh', min: 500000, max: 1000000 },
-  { label: '₹10 – ₹20 Lakh', min: 1000000, max: 2000000 },
-  { label: 'Above ₹20 Lakh', min: 2000000 },
-];
-
 const FUEL_TYPES = ['Petrol', 'Diesel', 'CNG', 'Electric'];
+const TRANSMISSION_TYPES = ['Manual', 'Automatic'];
 
 const BODY_TYPES = [
   { name: 'Hatchback', icon: '🚗' },
@@ -84,7 +79,7 @@ function Section({ eyebrow, title, viewAllHref, children, bg, className = '' }) 
   };
 
   return (
-    <section className={`${bg ? 'bg-white' : ''} py-12  ${className}`}>
+    <section className={`${bg ? 'bg-white' : ''} py-16  ${className}`}>
       <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
         {(eyebrow || title || viewAllHref) && (
           <div className="flex items-end justify-between pb-3 mb-5 border-b border-slate-100">
@@ -132,7 +127,6 @@ function Section({ eyebrow, title, viewAllHref, children, bg, className = '' }) 
 export default function Home() {
   const navigate = useNavigate();
   const { brands } = useReferenceData();
-  const [featured, setFeatured] = useState([]);
   const [latest, setLatest] = useState([]);
   const [premium, setPremium] = useState([]);
   const [dealers, setDealers] = useState(FEATURED_DEALERS);
@@ -155,16 +149,12 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      api.get('/cars', { params: { isFeatured: true, limit: 10 } }).catch(() => ({ data: { cars: [] } })),
       api.get('/cars', { params: { sort: '-createdAt', limit: 10 } }).catch(() => ({ data: { cars: [] } })),
-      api.get('/cars', { params: { isPremium: true, limit: 10 } }).catch(() => ({ data: { cars: [] } })),
+      api.get('/cars', { params: { minPrice: 1500000, limit: 10, sort: '-createdAt' } }).catch(() => ({ data: { cars: [] } })),
       api.get('/dealers', { params: { limit: 12 } }).catch(() => ({ data: { data: [] } })),
-    ]).then(([f, l, p, d]) => {
+    ]).then(([l, p, d]) => {
       if (cancelled) return;
-      const latestCars = l.data?.cars || [];
-      const featuredCars = f.data?.cars?.length ? f.data.cars : latestCars;
-      setFeatured(featuredCars);
-      setLatest(latestCars);
+      setLatest(l.data?.cars || []);
       setPremium(p.data?.cars || []);
       const liveDealers = (d.data?.data || []).map(mapDealerCard).filter((row) => row.name);
       if (liveDealers.length) setDealers(liveDealers);
@@ -180,9 +170,8 @@ export default function Home() {
     const params = new URLSearchParams();
 
     if (filterMode === 'budget' && selectedBudget !== '') {
-      const b = BUDGETS[selectedBudget];
-      if (b.min) params.set('minPrice', b.min);
-      if (b.max) params.set('maxPrice', b.max);
+      const q = budgetQuery(BUDGETS[selectedBudget] || {});
+      Object.entries(q).forEach(([k, v]) => params.set(k, v));
     } else if (filterMode === 'brand' && selectedBrand) {
       params.set('brand', selectedBrand);
     }
@@ -303,21 +292,29 @@ export default function Home() {
 
       <LastViewedCars />
 
-      {/* ---- FEATURED CARS SLIDER ---- */} 
-        <Section className='bg-gradient-to-b from-blue-50/70' eyebrow="FEATURED" title={<>FEATURED <span className="font-black">CARS</span></>} viewAllHref="/cars?isFeatured=true">
-          {loading ? <CarGridSkeleton /> : <CarSlider cars={featured} />}
-        </Section>
-
-{/* ---- LATEST CARS ---- */}
-     <Section className='bg-white' eyebrow="Fresh Listings" title={<>Latest <span className="font-black"> Used Cars</span></>}  viewAllHref="/cars?sort=-createdAt">
+      {/* ---- LATEST CARS ---- */}
+      <Section className="bg-gradient-to-b from-blue-50/70" eyebrow="Fresh Listings" title={<>Latest <span className="font-black"> Used Cars</span></>} viewAllHref="/cars?sort=-createdAt">
         {loading ? <CarGridSkeleton /> : <CarSlider cars={latest} />}
       </Section>
 
-      {/* ---- POPULAR BRANDS ---- */}
-      <CarBannerSection/>
+      <BudgetCarsByTabs />
 
-      
-<Section eyebrow="all brands" title="Popular Brands" bg>
+   
+
+      {/* ---- PREMIUM CARS (price ≥ ₹15 Lakh, not isFeatured) ---- */}
+      <Section
+        className="bg-gradient-to-b from-blue-50/70"
+        eyebrow="Above ₹15 Lakh"
+        title={<>Premium <span className="font-black"> Cars</span></>}
+        viewAllHref="/cars?minPrice=1500000"
+      >
+        {loading ? <CarGridSkeleton /> : <CarSlider cars={premium} />}
+      </Section>
+
+     
+
+      {/* ---- POPULAR BRANDS ---- */}
+      <Section eyebrow="all brands" title="Popular Brands" bg>
   <div className="flex flex-col gap-8">
     {/* Top 12 Brands Glassmorphism Grid */}
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -367,33 +364,15 @@ export default function Home() {
     </div>
   </div>
 </Section>
+<PopularComparisons />
+      <CarBannerSection />
 
 
-      {/* ---- PREMIUM VEHICLES ---- */}
-      {/* <Section eyebrow="Exclusive Inventory" title="Premium Pre-Owned Vehicles" bg viewAllHref="/cars?isPremium=true">
-        {loading ? <CarGridSkeleton /> : <CarSlider cars={premium} />}
-      </Section> */}
+ 
 
-      {/* ---- BROWSE BY CATEGORY ---- */}
-      <Section eyebrow="Find Your Style" title="Browse By Category" className='bg-gradient-to-b from-blue-50/70'>
+      {/* ---- BROWSE BY CATEGORY (fuel / body — budget lives in tabs above) ---- */}
+      <Section eyebrow="Find Your Style" title="Browse By Category" className="bg-gradient-to-b from-blue-50/70">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <CategoryBox
-            title="By Budget"
-            badge="Price"
-            icon={
-              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-            items={BUDGETS.map((b) => b.label)}
-            onSelect={(i) => {
-              const b = BUDGETS[i];
-              const p = new URLSearchParams();
-              if (b.min) p.set('minPrice', b.min);
-              if (b.max) p.set('maxPrice', b.max);
-              navigate(`/cars?${p}`);
-            }}
-          />
           <CategoryBox
             title="By Fuel Type"
             badge="Engine"
@@ -416,6 +395,18 @@ export default function Home() {
             items={BODY_TYPES.map((b) => b.name)}
             onSelect={(i) => navigate(`/cars?bodyType=${BODY_TYPES[i].name}`)}
           />
+          <CategoryBox
+            title="By Transmission"
+            badge="Gearbox"
+            icon={
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            }
+            items={TRANSMISSION_TYPES}
+            onSelect={(i) => navigate(`/cars?transmission=${TRANSMISSION_TYPES[i]}`)}
+          />
         </div>
       </Section>
 
@@ -425,12 +416,14 @@ export default function Home() {
           <SellCarCTA/>
         </div>
 
-
+{/* ---- 4-STEP VERIFICATION PROCESS ---- */}
+<Section className='bg-white'>
+        <HowItWorks/>
+      </Section>
 
       {/* ---- FEATURED DEALERS SLIDER ---- */}
-      <Section eyebrow="Verified Partners"  title={<>our verified<span className="font-black">  Dealers</span></>} >
+      {/* <Section eyebrow="Verified Partners"  title={<>our verified<span className="font-black">  Dealers</span></>} >
   <div className="relative px-2">
-    {/* Swiper Navigation Buttons */}
     <button
       ref={dealerPrevRef}
       aria-label="Previous dealers"
@@ -466,11 +459,11 @@ export default function Home() {
         <SwiperSlide key={dealer._id || dealer.name} className="h-auto">
           <div className="group relative flex flex-col justify-between h-full p-6 rounded-3xl bg-white/40 backdrop-blur-xl border border-white/70 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] hover:shadow-[0_20px_40px_0_rgba(48,131,255,0.18)] hover:border-[#3083ff]/50 hover:-translate-y-1.5 transition-all duration-500 overflow-hidden">
             
-            {/* Top Glowing Beam Accent */}
+             
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-400 via-[#3083ff] to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <div>
-              {/* Header Badges & Rating */}
+               
               <div className="flex items-center justify-between mb-4">
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-[#3083ff]/10 text-[#3083ff] border border-[#3083ff]/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#3083ff] animate-pulse" />
@@ -484,10 +477,8 @@ export default function Home() {
                   </span>
                 </div>
               </div>
-
-              {/* Dealer Profile Information */}
+             
               <div className="flex items-center gap-4 my-2">
-                {/* Dealer Avatar / Logo Container */}
                 <div className="relative w-14 h-14 rounded-2xl bg-white shadow-md border border-slate-100 p-1 shrink-0 group-hover:scale-105 transition-transform duration-300">
                   {dealer.logo || dealer.image ? (
                     <img
@@ -501,7 +492,6 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Verified Icon Badge */}
                   <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#3083ff] text-white flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm">
                     ✓
                   </div>
@@ -522,7 +512,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bottom Footer Action Strip */}
+        
             <div className="mt-6 pt-4 border-t border-slate-200/50 flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">In Stock</span>
@@ -545,19 +535,16 @@ export default function Home() {
       ))}
     </Swiper>
   </div>
-     </Section>
+     </Section> */}
 
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> 
-      <Section eyebrow="Financing" title={<>Easy Vehicle <span className="font-black">  Loans</span></>} >
+      <Section eyebrow="Insurance" title={<>Car Insurance <span className="font-black"> Help</span></>} >
         <FinanceCTA />
       </Section> 
     </div>
 
-      {/* ---- TESTIMONIALS ---- */}
-      <Section bg>
-      <TestimonialCard />
-      </Section>
+     
 
       {/* ---- FAQS ---- */}
       <Section className='bg-gradient-to-b from-blue-50/70'>
@@ -565,17 +552,153 @@ export default function Home() {
       </Section>
 
 
-
-
-      {/* ---- 4-STEP VERIFICATION PROCESS ---- */}
-      <Section className='bg-white'>
-        <HowItWorks/>
+ {/* ---- TESTIMONIALS ---- */}
+ <Section bg>
+      <TestimonialCard />
       </Section>
 
+     
 
       <WhatsAppFloat/>
      
     </div>
+  );
+}
+
+function PopularComparisons() {
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+  const [pairs, setPairs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/compare/suggested')
+      .then((r) => {
+        if (!cancelled) setPairs(r.data?.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setPairs([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!loading && !pairs.length) return null;
+
+  return (
+    <Section
+      className="bg-gradient-to-b from-blue-50/70"
+      eyebrow="Similar cars"
+      title={<>Compare <span className="font-black"> similar cars</span></>}
+      viewAllHref="/compare"
+    >
+      {loading ? (
+        <CarGridSkeleton />
+      ) : (
+        <div className="relative px-2">
+          <button
+            ref={prevRef}
+            aria-label="Previous comparisons"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+          >
+            ‹
+          </button>
+          <button
+            ref={nextRef}
+            aria-label="Next comparisons"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+          >
+            ›
+          </button>
+          <Swiper
+            modules={[Navigation]}
+            spaceBetween={20}
+            slidesPerView={1}
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
+            }}
+            navigation={{ prevEl: prevRef.current, nextEl: nextRef.current }}
+            breakpoints={{ 768: { slidesPerView: 2 }, 1100: { slidesPerView: 3 } }}
+            className="w-full !py-2"
+          >
+            {pairs.map((pair) => (
+              <SwiperSlide key={pair.id} className="h-auto">
+                <CompareVsCard pair={pair} to={`/compare?ids=${(pair.ids || []).join(',')}`} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function budgetListHref(budget) {
+  const params = new URLSearchParams();
+  Object.entries(budgetQuery(budget)).forEach(([key, value]) => params.set(key, String(value)));
+  return `/cars?${params.toString()}`;
+}
+
+function BudgetCarsByTabs() {
+  const defaultIdx = Math.max(0, BUDGETS.findIndex((b) => b.label === '₹3 – 5 Lakh'));
+  const [tab, setTab] = useState(defaultIdx);
+  const [cars, setCars] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const budget = BUDGETS[tab] || BUDGETS[0];
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    api
+      .get('/cars', { params: { ...budgetQuery(budget), limit: 10, sort: '-createdAt' } })
+      .then((res) => {
+        if (!cancelled) setCars(res.data?.cars || []);
+      })
+      .catch(() => {
+        if (!cancelled) setCars([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [tab]);
+
+  return (
+    <Section
+      className="bg-white"
+      eyebrow="Choose a budget"
+      title={<>Trusted used cars <span className="font-black"> by budget</span></>}
+      viewAllHref={budgetListHref(budget)}
+    >
+      <div
+        className="flex gap-2 overflow-x-auto pb-4 mb-1 -mx-1 px-1"
+        role="tablist"
+        aria-label="Car budget"
+      >
+        {BUDGETS.map((b, i) => (
+          <button
+            key={b.label}
+            type="button"
+            role="tab"
+            aria-selected={i === tab}
+            onClick={() => setTab(i)}
+            className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer ${
+              i === tab
+                ? 'bg-[#3083ff] text-white border-[#3083ff] shadow-sm'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-[#3083ff]/50'
+            }`}
+          >
+            {b.label}
+          </button>
+        ))}
+      </div>
+      {loading ? <CarGridSkeleton /> : <CarSlider cars={cars} />}
+    </Section>
   );
 }
 

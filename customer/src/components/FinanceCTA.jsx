@@ -30,30 +30,30 @@ export default function FinanceCTA() {
             <div className='p-8 md:py-12 px-8'>
           <span className="inline-flex items-center gap-2 self-start text-[11px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full bg-[#3083ff]/20 text-cyan-300 border border-[#3083ff]/40">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            Easy Commercial Vehicle Loans
+            Insurance Enquiries
           </span>
 
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white">
-            Need Low Interest Finance for Your Commercial Fleet?
+            Get the right car insurance. Without the confusion.
           </h2>
 
           <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl">
-            Get instant loan approvals with minimal documentation. We partner with leading financial institutions to offer flexible EMI options catered to your business growth.
+            Third-party, comprehensive, or zero-dep — we help you compare options and raise an enquiry. Our desk shares firm quotes from licensed partners.
           </p>
 
           {/* Quick Value Metrics */}
           <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-700/60 max-w-lg">
             <div>
-              <p className="text-xs uppercase font-extrabold text-slate-400">Interest Rates</p>
-              <p className="text-lg font-black text-cyan-300">From 8.5%*</p>
+              <p className="text-xs uppercase font-extrabold text-slate-400">Cover types</p>
+              <p className="text-lg font-black text-cyan-300">Third-party to Zero Dep</p>
             </div>
             <div>
-              <p className="text-xs uppercase font-extrabold text-slate-400">Approval Time</p>
-              <p className="text-lg font-black text-white">Within 24 Hours</p>
+              <p className="text-xs uppercase font-extrabold text-slate-400">Quotes</p>
+              <p className="text-lg font-black text-white">From licensed insurers</p>
             </div>
             <div>
-              <p className="text-xs uppercase font-extrabold text-slate-400">Tenure</p>
-              <p className="text-lg font-black text-white">Up to 7 Years</p>
+              <p className="text-xs uppercase font-extrabold text-slate-400">Help</p>
+              <p className="text-lg font-black text-white">Claim assistance</p>
             </div>
           </div>
         </div>
@@ -64,33 +64,33 @@ export default function FinanceCTA() {
 <div className='p-8 md:py-12 px-8'>
           <div className="p-6 md:p-8 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl flex flex-col gap-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-extrabold text-white">Check Your Eligibility</h3>
+              <h3 className="text-lg font-extrabold text-white">Get an insurance quote</h3>
               <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                Zero Impact on Credit
+                Free enquiry
               </span>
             </div>
 
             <p className="text-xs text-slate-300">
-              Calculate EMI options or request a callback from our dedicated loan specialist.
+              Tell us your car details. We’ll share quote options and call you back.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                to="/finance#apply"
+                to="/insurance"
                 className="flex-1 text-center py-3 px-5 rounded-xl bg-[#3083ff] hover:bg-[#2070f0] text-white font-extrabold text-xs uppercase tracking-wider shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Apply for Loan
+                Get Quote
               </Link>
               <Link
-                to="/finance#emi-calculator"
+                to="/insurance"
                 className="flex-1 text-center py-3 px-5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/30 font-extrabold text-xs uppercase tracking-wider backdrop-blur-md transition-all duration-300"
               >
-                EMI Calculator
+                View plans
               </Link>
             </div>
 
             <p className="text-[10px] text-slate-400 text-center">
-              *T&C Apply. Loan approval and interest rates depend on credit score and lender policies.
+              *Quotes are indicative. Final premium depends on IDV, NCB, and insurer rules.
             </p>
           </div>
         </div>
