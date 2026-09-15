@@ -122,7 +122,7 @@ export default function SellCarFlow() {
         inspectionSlot: state.inspectionSlot,
         hubId: state.hubId || '',
         message: [
-          `${state.intent === 'exchange' ? 'Exchange' : state.intent === 'both' ? 'Sell/Exchange' : 'Sell'}`,
+          'Sell',
           `${state.year} ${state.brand} ${state.model} ${state.variant}`.trim(),
           state.plate && `Reg ${state.plate}`,
           state.valuation
@@ -247,10 +247,6 @@ export default function SellCarFlow() {
                 toast.error('Enter your expected price');
                 return;
               }
-              if (state.valuation?.maxPrice && Number(state.expectedPrice) > Number(state.valuation.maxPrice)) {
-                toast.error(`Expected price cannot be above the market band (${formatINR(state.valuation.maxPrice)})`);
-                return;
-              }
               patch({ step: 4 });
             }}
           />
@@ -275,7 +271,7 @@ export default function SellCarFlow() {
               {[state.year, state.brand, state.model].filter(Boolean).join(' ') || 'Add details'}
             </p>
             <p className="text-xs font-semibold text-slate-500 mt-1">
-              {state.intent === 'exchange' ? 'Exchange' : state.intent === 'both' ? 'Sell & exchange' : 'Sell'}
+              Sell
               {state.plate ? ` · ${state.plate}` : ''}
               {state.city ? ` · ${state.city}` : ''}
             </p>

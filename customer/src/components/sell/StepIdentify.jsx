@@ -46,29 +46,8 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
         <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">Step 1</p>
         <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-900 mt-1">Identify your car</h2>
         <p className="text-sm font-medium text-slate-500 mt-2">
-          Choose Sell or Exchange, then enter the RC number. We fetch live RTO data — make, model, variant, year, fuel and office.
+          Enter the RC number to get started. We fetch live RTO data — make, model, variant, year, fuel and office.
         </p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { id: 'sell', label: 'Sell' },
-          { id: 'exchange', label: 'Exchange' },
-          { id: 'both', label: 'Both' },
-        ].map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => patch({ intent: opt.id })}
-            className={`rounded-2xl border px-3 py-3 text-xs font-black uppercase tracking-wider transition ${
-              state.intent === opt.id
-                ? 'bg-[#3083ff] text-white border-[#3083ff] shadow-lg shadow-blue-500/20'
-                : 'bg-white border-slate-200 text-slate-600 hover:border-[#3083ff]'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
       </div>
 
       <div className="rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">

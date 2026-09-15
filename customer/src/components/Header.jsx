@@ -100,7 +100,7 @@ export default function Header() {
 
   const navLinks = [
     { label: 'Buy Cars', path: '/cars' },
-    { label: 'Sell / Exchange Car', path: '/sell' },
+    { label: 'Sell Car', path: '/sell' },
     { label: 'Valuation', path: '/valuation' },
     { label: 'Compare', path: '/compare' },
     { label: 'Finance', path: '/finance' },

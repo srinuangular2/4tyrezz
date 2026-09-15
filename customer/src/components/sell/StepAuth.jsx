@@ -70,7 +70,7 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
 
       <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
         <Row k="Car" v={`${state.year} ${state.brand} ${state.model}${state.variant ? ` · ${state.variant}` : ''}`} />
-        <Row k="Intent" v={state.intent === 'exchange' ? 'Exchange' : state.intent === 'both' ? 'Sell & exchange' : 'Sell'} />
+        <Row k="Intent" v="Sell" />
         <Row k="Plate" v={state.plate || '—'} />
         <Row k="Estimate" v={state.valuation ? `${formatINR(state.valuation.minPrice)} – ${formatINR(state.valuation.maxPrice)}` : 'Pending inspection'} />
         <Row k="Your expectation" v={state.expectedPrice ? formatINR(Number(state.expectedPrice)) : '—'} />

@@ -30,7 +30,6 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
   const cityHubs = HUBS.filter((h) => !state.city || h.city === state.city);
   const hubs = cityHubs.length ? cityHubs : HUBS;
   const expected = Number(state.expectedPrice);
-  const overBand = v?.maxPrice && expected > Number(v.maxPrice);
 
   return (
     <div className="space-y-7">
@@ -83,14 +82,9 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
           placeholder="What you hope to receive"
           className={`mt-1.5 ${sellFieldClass}`}
         />
-        {v?.estimate && expected > 0 && !overBand && (
+        {v?.estimate && expected > 0 && (
           <p className="text-[11px] font-bold text-slate-400 mt-1.5">
             Estimate {formatINR(v.estimate)} · Your expectation {formatINR(expected)}
-          </p>
-        )}
-        {overBand && (
-          <p className="text-[12px] font-bold text-red-600 mt-1.5">
-            Expected price cannot be more than the market band ({formatINR(v.maxPrice)}). Lower it to continue.
           </p>
         )}
       </label>
@@ -181,7 +175,7 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
         </button>
         <button
           type="button"
-          disabled={!state.inspectionDate || !state.inspectionSlot || !(Number(state.expectedPrice) > 0) || overBand}
+          disabled={!state.inspectionDate || !state.inspectionSlot || !(Number(state.expectedPrice) > 0)}
           onClick={onNext}
           className="flex-1 rounded-xl bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white py-3.5 text-xs font-black uppercase tracking-wider"
         >

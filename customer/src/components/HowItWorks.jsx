@@ -1,4 +1,5 @@
 import React from 'react';
+import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 
 export const STEPS = [
   {
@@ -14,8 +15,10 @@ export const STEPS = [
   },
   {
     step: '02',
-    header: 'Take a test drive at home',
-    desc: 'Sanitized cars delivered right to your doorstep or available at our local delivery hubs.',
+    header: SHOW_TEST_DRIVE ? 'Take a test drive at home' : 'Doorstep delivery & inspection',
+    desc: SHOW_TEST_DRIVE
+      ? 'Sanitized cars delivered right to your doorstep or available at our local delivery hubs.'
+      : 'Sanitized cars inspected and delivered right to your doorstep or available at our local delivery hubs.',
     badge: '140-pt Inspection',
     icon: (
       <svg className="w-10 h-10 text-[#3083ff] group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

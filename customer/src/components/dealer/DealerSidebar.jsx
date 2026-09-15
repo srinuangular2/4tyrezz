@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { SidebarCountBadge } from '../NotificationBell';
 import { useRealtimeAlerts } from '../../hooks/useRealtimeAlerts';
+import { SHOW_TEST_DRIVE } from '../../lib/featureFlags';
 
 export const DEALER_LINKS = [
   { to: '/dealer/dashboard', label: 'Dashboard / KPIs', icon: BarChart3, end: true },
@@ -23,7 +24,7 @@ export const DEALER_LINKS = [
   { to: '/dealer/dashboard/inventory/add', label: 'Add Vehicle', icon: PlusCircle },
   { to: '/dealer/dashboard/leads', label: 'Lead CRM & Pipeline', icon: Target, badgeKey: 'leads', badgeLabel: 'New' },
   { to: '/dealer/dashboard/sell-leads', label: 'Sell / Exchange leads', icon: Repeat },
-  { to: '/dealer/dashboard/test-drives', label: 'Test Drive Management', icon: Gauge, badgeKey: 'testDrives', badgeLabel: 'Pending' },
+  ...(SHOW_TEST_DRIVE ? [{ to: '/dealer/dashboard/test-drives', label: 'Test Drive Management', icon: Gauge, badgeKey: 'testDrives', badgeLabel: 'Pending' }] : []),
   { to: '/dealer/dashboard/bookings', label: 'Booking & Token Management', icon: FileText, badgeKey: 'bookings', badgeLabel: 'New' },
   { to: '/dealer/dashboard/promotions', label: 'Promotions & Featured Cars', icon: Sparkles },
   { to: '/dealer/dashboard/analytics', label: 'Performance Analytics', icon: BarChart3 },

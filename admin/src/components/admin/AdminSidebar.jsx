@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { SidebarCountBadge } from '../NotificationBell';
 import { useRealtimeAlerts } from '../../hooks/useRealtimeAlerts';
+import { SHOW_TEST_DRIVE } from '../../lib/featureFlags';
 
 const GROUPS = [
   {
@@ -28,7 +29,7 @@ const GROUPS = [
     label: 'Sales & operations',
     items: [
       { to: '/leads', label: 'Leads', Icon: Target, badgeKey: 'leads', badgeLabel: 'New' },
-      { to: '/test-drives', label: 'Test drives', Icon: Gauge, badgeKey: 'testDrives', badgeLabel: 'Pending' },
+      ...(SHOW_TEST_DRIVE ? [{ to: '/test-drives', label: 'Test drives', Icon: Gauge, badgeKey: 'testDrives', badgeLabel: 'Pending' }] : []),
       { to: '/bookings', label: 'Bookings & tokens', Icon: CreditCard, badgeKey: 'bookings', badgeLabel: 'New' },
       { to: '/payments', label: 'Payments & ledger', Icon: Wallet },
       { to: '/commissions', label: 'Commissions & payouts', Icon: Percent },

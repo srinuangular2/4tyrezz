@@ -65,7 +65,7 @@ export default function Footer() {
             <ul className="space-y-2 font-medium">
               <li><Link to="/cars" className="hover:text-[#3083ff] transition-colors">Buy Cars</Link></li>
               <li><Link to="/brands" className="hover:text-[#3083ff] transition-colors">All Brands</Link></li>
-              <li><Link to="/sell" className="hover:text-[#3083ff] transition-colors">Sell / Exchange Car</Link></li>
+              <li><Link to="/sell" className="hover:text-[#3083ff] transition-colors">Sell Car</Link></li>
               <li><Link to="/compare" className="hover:text-[#3083ff] transition-colors">Compare</Link></li>
               <li><Link to="/finance" className="hover:text-[#3083ff] transition-colors">Finance</Link></li>
               <li><Link to="/insurance" className="hover:text-[#3083ff] transition-colors">Insurance</Link></li>

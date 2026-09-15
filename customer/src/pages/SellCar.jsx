@@ -5,7 +5,7 @@ export default function SellCar() {
   return (
     <div className="bg-slate-50">
       <PageHero
-        eyebrow="Sell / Exchange"
+        eyebrow="Sell"
         title="Get a fair price for your car"
         subtitle="Identify the car, share condition and photos, see an indicative estimate, then book inspection. Final offers come after inspection."
       />

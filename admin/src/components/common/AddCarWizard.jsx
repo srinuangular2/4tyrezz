@@ -334,10 +334,6 @@ export default function AddCarWizard({
       toast.error('Enter an expected selling price');
       return;
     }
-    if (next > 2 && valuation?.estimatedMaxPrice && Number(form.price) > Number(valuation.estimatedMaxPrice)) {
-      toast.error(`Price cannot be above the market band (${formatINR(valuation.estimatedMaxPrice)})`);
-      return;
-    }
     setStep(next);
   };
 
@@ -350,10 +346,6 @@ export default function AddCarWizard({
   const submit = async () => {
     if (!form.brand || !form.model || !form.year || !form.price) {
       toast.error('Brand, model, year and price are required');
-      return;
-    }
-    if (valuation?.estimatedMaxPrice && Number(form.price) > Number(valuation.estimatedMaxPrice)) {
-      toast.error(`Price cannot be above the market band (${formatINR(valuation.estimatedMaxPrice)})`);
       return;
     }
     setSaving(true);
@@ -664,11 +656,6 @@ export default function AddCarWizard({
                 <span className={labelCls}>Expected selling price</span>
                 <input className={input} value={form.price} onChange={(e) => set('price', e.target.value.replace(/\D/g, ''))} placeholder="750000" />
                 <p className="mt-2 text-sm font-black text-blue-600">{formatLakh(form.price) || '₹ 0'}</p>
-                {valuation?.estimatedMaxPrice && Number(form.price) > Number(valuation.estimatedMaxPrice) && (
-                  <p className="mt-2 text-xs font-bold text-red-600">
-                    Price is above the market band ({formatINR(valuation.estimatedMaxPrice)}). Lower it to continue.
-                  </p>
-                )}
               </div>
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                 <span className={labelCls}>Ownership</span>

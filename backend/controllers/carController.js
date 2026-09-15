@@ -298,11 +298,8 @@ exports.createCar = async (req, res) => {
       conditionScore: payload.conditionScore || (payload.inspectionScore ? Math.round(payload.inspectionScore / 10) : 7),
       price: payload.price,
     });
-    if (payload.price && valuation.maxPrice && Number(payload.price) > Number(valuation.maxPrice)) {
-      return res.status(400).json({
-        message: `Listing price cannot be above the market band (max ₹${Number(valuation.maxPrice).toLocaleString('en-IN')}).`,
-      });
-    }
+    // Listing price is the seller's choice — never blocked against the valuation
+    // band. The estimated range is stored/shown as indicative info only.
     const conditionScore = Math.min(
       10,
       Math.max(1, Number(payload.conditionScore) || (payload.inspectionScore ? payload.inspectionScore / 10 : 7))

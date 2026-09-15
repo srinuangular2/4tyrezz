@@ -141,7 +141,7 @@ const SERVICES = [
   },
   {
     id: 'sell',
-    title: 'Sell or Exchange',
+    title: 'Sell Your Car',
     subtitle: 'Free door-step evaluation and same-day payment at the guaranteed best price.',
     badge: 'Instant Cash',
     badgeStyle: 'bg-amber-50 text-amber-700 border-amber-200',
