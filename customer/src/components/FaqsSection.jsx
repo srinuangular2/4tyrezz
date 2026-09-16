@@ -27,7 +27,11 @@ export const DEFAULT_FAQS = [
   },
 ];
 
-export default function FAQSection({ faqs = DEFAULT_FAQS }) {
+export default function FAQSection({
+  faqs = DEFAULT_FAQS,
+  subtitle = 'Everything you need to know about buying, selling, financing, and inspecting used cars.',
+  layout = 'grid',
+}) {
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Header */}
@@ -40,12 +44,11 @@ export default function FAQSection({ faqs = DEFAULT_FAQS }) {
           Frequently Asked <span className='font-black text-slate-900'>Questions</span> 
         </h2>
         <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-          Everything you need to know about buying, selling, financing, and inspecting used cars.
+          {subtitle}
         </p>
       </div>
 
-      {/* 2-Column Side-by-Side FAQ Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
+      <div className={layout === 'stack' ? 'max-w-3xl mx-auto space-y-3' : 'grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start'}>
         {faqs.map((f, index) => (
           <details
             key={f.q || index}

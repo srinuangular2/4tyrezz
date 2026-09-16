@@ -1,7 +1,20 @@
-import { CONDITION_PILLS, HUBS, KM_PRESETS, OWNER_OPTIONS, conditionReady } from './sellCarState';
+import toast from 'react-hot-toast';
+import { formatPlateInput } from '../../lib/fetchVehicleDetailsByReg';
+import {
+  CONDITION_PILLS,
+  HUBS,
+  KM_PRESETS,
+  OWNER_OPTIONS,
+  conditionReady,
+  fileToPreview,
+  plateError,
+  variantError,
+} from './sellCarState';
 import { sellChipIdle, sellFieldClass } from './ui';
 
 export default function StepCondition({ state, patch, cities, onBack, onNext }) {
+  const plateMsg = plateError(state.plate);
+  const variantMsg = variantError(state.variant);
   const toggle = (id) => {
     const next = state.conditions.includes(id)
       ? state.conditions.filter((x) => x !== id)
@@ -9,14 +22,24 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
     patch({ conditions: next });
   };
 
-  const onPhotos = (e) => {
+  const onPhotos = async (e) => {
     const files = Array.from(e.target.files || []).slice(0, 8);
-    patch({ photoFiles: files });
+    e.target.value = '';
+    if (!files.length) return;
+    const previews = await Promise.all(files.map(fileToPreview));
+    patch({ photoFiles: files, photoPreviews: previews });
   };
 
   const removePhoto = (idx) => {
-    patch({ photoFiles: (state.photoFiles || []).filter((_, i) => i !== idx) });
+    patch({
+      photoFiles: (state.photoFiles || []).filter((_, i) => i !== idx),
+      photoPreviews: (state.photoPreviews || []).filter((_, i) => i !== idx),
+    });
   };
+
+  const photoThumbs = (state.photoPreviews || []).length
+    ? state.photoPreviews.map((p) => p.dataUrl)
+    : (state.photoFiles || []).map((file) => URL.createObjectURL(file));
 
   return (
     <div className="space-y-7">
@@ -107,10 +130,13 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
           <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Registration number</span>
           <input
             value={state.plate}
-            onChange={(e) => patch({ plate: e.target.value.toUpperCase() })}
+            onChange={(e) => patch({ plate: formatPlateInput(e.target.value) })}
             placeholder="TS 09 AB 1234"
-            className={`mt-1.5 ${sellFieldClass}`}
+            className={`mt-1.5 ${sellFieldClass} ${state.plate && plateMsg ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200' : ''}`}
           />
+          {state.plate && plateMsg && (
+            <p className="text-xs font-semibold text-rose-600 mt-1.5">{plateMsg}</p>
+          )}
         </label>
         <label className="block">
           <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Variant</span>
@@ -118,8 +144,11 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
             value={state.variant}
             onChange={(e) => patch({ variant: e.target.value })}
             placeholder="e.g. SX (O)"
-            className={`mt-1.5 ${sellFieldClass}`}
+            className={`mt-1.5 ${sellFieldClass} ${state.variant && variantMsg ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200' : ''}`}
           />
+          {state.variant && variantMsg && (
+            <p className="text-xs font-semibold text-rose-600 mt-1.5">{variantMsg}</p>
+          )}
         </label>
       </section>
 
@@ -154,11 +183,11 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
           <span className="text-[11px] font-semibold text-slate-400 mt-1">Front, rear, interiors and odometer help dealers inspect faster</span>
           <input type="file" accept="image/*" multiple className="hidden" onChange={onPhotos} />
         </label>
-        {(state.photoFiles || []).length > 0 && (
+        {(photoThumbs || []).length > 0 && (
           <div className="mt-3 grid grid-cols-4 gap-2">
-            {state.photoFiles.map((file, i) => (
-              <div key={`${file.name}-${i}`} className="relative">
-                <img src={URL.createObjectURL(file)} alt="" className="h-20 w-full object-cover rounded-xl" />
+            {photoThumbs.map((src, i) => (
+              <div key={`${src.slice(-12)}-${i}`} className="relative">
+                <img src={src} alt="" className="h-20 w-full object-cover rounded-xl" />
                 <button
                   type="button"
                   onClick={() => removePhoto(i)}
@@ -178,8 +207,21 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
         </button>
         <button
           type="button"
-          onClick={onNext}
-          disabled={!conditionReady(state)}
+          onClick={() => {
+            if (plateMsg) {
+              toast.error(plateMsg);
+              return;
+            }
+            if (variantMsg) {
+              toast.error(variantMsg);
+              return;
+            }
+            if (!conditionReady(state)) {
+              toast.error('Add city, photos and a valid RC number and variant');
+              return;
+            }
+            onNext();
+          }}
           className="flex-1 rounded-xl bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white py-3.5 text-xs font-black uppercase tracking-wider"
         >
           Get valuation

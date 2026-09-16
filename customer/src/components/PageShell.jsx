@@ -114,11 +114,11 @@ export function Card({ children, className = '', hover = true, beam = true }) {
 
 export function Field({ label, hint, children }) {
   return (
-    <label className="block">
+    <div className="block">
       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{label}</span>
       <div className="mt-1.5">{children}</div>
       {hint && <span className="text-[11px] font-medium text-slate-400 mt-1 block">{hint}</span>}
-    </label>
+    </div>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   useVehicleFuelTransmissions,
   useVehicleModels,
   useVehicleVariants,
+  useVehicleYears,
 } from '../../hooks/useVehicleCatalog';
 import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../../lib/fetchVehicleDetailsByReg';
 import LocationAddressInput from './LocationAddressInput';
@@ -185,8 +186,9 @@ export default function AddCarWizard({
   });
 
   const { brands, loading: loadingBrands } = useVehicleBrands();
-  const { models, loading: loadingModels } = useVehicleModels(form.brand);
-  const { years, fuelTypes, transmissions } = useVehicleFuelTransmissions(form.brand, form.model);
+  const { years, loading: loadingYears } = useVehicleYears(form.brand);
+  const { models, loading: loadingModels } = useVehicleModels(form.brand, form.year);
+  const { fuelTypes, transmissions } = useVehicleFuelTransmissions(form.brand, form.model, form.year);
   const { variants, loading: loadingVariants } = useVehicleVariants({
     brand: form.brand,
     model: form.model,
@@ -197,7 +199,13 @@ export default function AddCarWizard({
 
   const brandNames = useMemo(() => (brands || []).map(nameOf).filter(Boolean), [brands]);
   const modelNames = useMemo(() => (models || []).map(nameOf).filter(Boolean), [models]);
-  const yearOptions = years?.length ? years : Array.from({ length: 16 }, (_, i) => new Date().getFullYear() - i);
+  const yearOptions = useMemo(() => {
+    const now = new Date().getFullYear();
+    const list = (years || []).map(Number).filter((y) => y >= 1980 && y <= now);
+    const y = Number(form.year);
+    if (Number.isInteger(y) && y >= 1980 && y <= now && !list.includes(y)) list.unshift(y);
+    return list;
+  }, [years, form.year]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -563,37 +571,37 @@ export default function AddCarWizard({
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <label>
                     <span className={labelCls}>Brand</span>
-                    <select className={input} value={form.brand} disabled={loadingBrands} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value, model: '', variant: '' }))}>
+                    <select className={input} value={form.brand} disabled={loadingBrands} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value, year: '', model: '', variant: '' }))}>
                       <option value="">{loadingBrands ? 'Loading…' : 'Select brand'}</option>
                       {brandNames.map((n) => <option key={n}>{n}</option>)}
                     </select>
                   </label>
                   <label>
-                    <span className={labelCls}>Model</span>
-                    <select className={input} value={form.model} disabled={!form.brand || loadingModels} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value, variant: '' }))}>
-                      <option value="">Select model</option>
-                      {modelNames.map((n) => <option key={n}>{n}</option>)}
+                    <span className={labelCls}>Registration year</span>
+                    <select className={input} value={form.year} disabled={!form.brand || loadingYears} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value, model: '', variant: '' }))}>
+                      <option value="">{!form.brand ? 'Select brand first' : loadingYears ? 'Loading years…' : 'Select year'}</option>
+                      {yearOptions.map((y) => <option key={y}>{y}</option>)}
                     </select>
                   </label>
                   <label>
-                    <span className={labelCls}>Registration year</span>
-                    <select className={input} value={form.year} onChange={(e) => set('year', e.target.value)}>
-                      <option value="">Year</option>
-                      {yearOptions.map((y) => <option key={y}>{y}</option>)}
+                    <span className={labelCls}>Model</span>
+                    <select className={input} value={form.model} disabled={!form.year || loadingModels} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value, variant: '' }))}>
+                      <option value="">{!form.year ? 'Select year first' : 'Select model'}</option>
+                      {modelNames.map((n) => <option key={n}>{n}</option>)}
                     </select>
                   </label>
                   <label>
                     <span className={labelCls}>Fuel</span>
                     <select className={input} value={form.fuel} onChange={(e) => set('fuel', e.target.value)}>
                       <option value="">Fuel</option>
-                      {(fuelTypes.length ? fuelTypes : ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid']).map((t) => <option key={t}>{t}</option>)}
+                      {fuelTypes.map((t) => <option key={t}>{t}</option>)}
                     </select>
                   </label>
                   <label>
                     <span className={labelCls}>Transmission</span>
                     <select className={input} value={form.transmission} onChange={(e) => set('transmission', e.target.value)}>
                       <option value="">Transmission</option>
-                      {(transmissions.length ? transmissions : ['Manual', 'Automatic']).map((t) => <option key={t}>{t}</option>)}
+                      {transmissions.map((t) => <option key={t}>{t}</option>)}
                     </select>
                   </label>
                   <label>
@@ -601,7 +609,7 @@ export default function AddCarWizard({
                     <select
                       className={input}
                       value={form.variant}
-                      disabled={loadingVariants}
+                      disabled={!form.model || loadingVariants}
                       onChange={(e) => {
                         const v = variants.find((x) => (x.variant || x.name) === e.target.value);
                         setForm((f) => ({
@@ -613,7 +621,7 @@ export default function AddCarWizard({
                         }));
                       }}
                     >
-                      <option value="">Variant</option>
+                      <option value="">{!form.model ? 'Select model first' : 'Variant'}</option>
                       {variants.map((v) => {
                         const label = v.variant || v.name;
                         return <option key={v._id || label} value={label}>{label}</option>;

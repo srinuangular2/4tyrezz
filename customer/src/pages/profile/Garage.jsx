@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import { useVehicleBrands, useVehicleModels } from '../../hooks/useVehicleCatalog';
+import { useVehicleBrands, useVehicleModels, useVehicleYears } from '../../hooks/useVehicleCatalog';
 import { inputClass } from '../../lib/kycValidation';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
 
@@ -25,7 +25,8 @@ export default function Garage() {
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
   const { brands, loading: loadingBrands } = useVehicleBrands();
-  const { models, loading: loadingModels } = useVehicleModels(form.brand);
+  const { years, loading: loadingYears } = useVehicleYears(form.brand);
+  const { models, loading: loadingModels } = useVehicleModels(form.brand, form.year);
   const brandNames = useMemo(() => (brands || []).map(nameOf).filter(Boolean), [brands]);
   const modelNames = useMemo(() => (models || []).map(nameOf).filter(Boolean), [models]);
 
@@ -101,25 +102,30 @@ export default function Garage() {
         <form onSubmit={add} className="grid sm:grid-cols-2 gap-3">
           <label className="block">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Brand</span>
-            <select className={`${inputClass} mt-1.5`} value={form.brand} disabled={loadingBrands} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value, model: '' }))}>
-              <option value="">{loadingBrands ? 'Loading brands…' : ''}</option>
+            <select className={`${inputClass} mt-1.5`} value={form.brand} disabled={loadingBrands} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value, year: '', model: '' }))}>
+              <option value="">{loadingBrands ? 'Loading brands…' : 'Select brand'}</option>
               {brandNames.map((n) => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>
           </label>
           <label className="block">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Model</span>
-            <select className={`${inputClass} mt-1.5`} value={form.model} disabled={!form.brand || loadingModels} onChange={(e) => set('model', e.target.value)}>
-              <option value="" />
-              {modelNames.map((n) => (
-                <option key={n} value={n}>{n}</option>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Year</span>
+            <select className={`${inputClass} mt-1.5`} value={form.year} disabled={!form.brand || loadingYears} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value, model: '' }))}>
+              <option value="">{!form.brand ? 'Select brand first' : loadingYears ? 'Loading years…' : 'Select year'}</option>
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
               ))}
             </select>
           </label>
           <label className="block">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Year</span>
-            <input className={`${inputClass} mt-1.5`} value={form.year} onChange={(e) => set('year', e.target.value.replace(/\D/g, '').slice(0, 4))} />
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Model</span>
+            <select className={`${inputClass} mt-1.5`} value={form.model} disabled={!form.year || loadingModels} onChange={(e) => set('model', e.target.value)}>
+              <option value="">{!form.year ? 'Select year first' : ''}</option>
+              {modelNames.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
           </label>
           <label className="block">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Registration number</span>

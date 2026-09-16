@@ -37,7 +37,36 @@ export function useVehicleBrands() {
   return { brands, loading, error };
 }
 
-export function useVehicleModels(brand) {
+export function useVehicleYears(brand) {
+  const [years, setYears] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!brand) {
+      setYears([]);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const { data } = await api.get('/vehicles/years', { params: { brand } });
+        if (!cancelled) setYears(unwrapList(data));
+      } catch {
+        if (!cancelled) setYears([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [brand]);
+
+  return { years, loading };
+}
+
+export function useVehicleModels(brand, year) {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,7 +81,9 @@ export function useVehicleModels(brand) {
       setLoading(true);
       setError('');
       try {
-        const { data } = await api.get('/vehicles/models', { params: { brand } });
+        const params = { brand };
+        if (year) params.year = year;
+        const { data } = await api.get('/vehicles/models', { params });
         if (!cancelled) setModels(unwrapList(data));
       } catch (e) {
         if (!cancelled) {
@@ -66,12 +97,12 @@ export function useVehicleModels(brand) {
     return () => {
       cancelled = true;
     };
-  }, [brand]);
+  }, [brand, year]);
 
   return { models, loading, error };
 }
 
-export function useVehicleFuelTransmissions(brand, model) {
+export function useVehicleFuelTransmissions(brand, model, year) {
   const [fuelTypes, setFuelTypes] = useState([]);
   const [transmissions, setTransmissions] = useState([]);
   const [years, setYears] = useState([]);
@@ -90,7 +121,9 @@ export function useVehicleFuelTransmissions(brand, model) {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await api.get('/vehicles/fuel-transmissions', { params: { brand, model } });
+        const params = { brand, model };
+        if (year) params.year = year;
+        const { data } = await api.get('/vehicles/fuel-transmissions', { params });
         if (cancelled) return;
         setFuelTypes(data.fuelTypes || []);
         setTransmissions(data.transmissions || []);
@@ -110,7 +143,7 @@ export function useVehicleFuelTransmissions(brand, model) {
     return () => {
       cancelled = true;
     };
-  }, [brand, model]);
+  }, [brand, model, year]);
 
   return { fuelTypes, transmissions, years, bodyTypes, loading };
 }

@@ -9,10 +9,20 @@ const listBrands = async (_req, res) => {
   }
 };
 
+const listYears = async (req, res) => {
+  try {
+    if (!req.query.brand) return res.status(400).json({ message: 'brand query is required' });
+    const years = await vehicleData.listYears(req.query.brand);
+    res.json({ success: true, data: years });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Could not list years' });
+  }
+};
+
 const listModels = async (req, res) => {
   try {
     if (!req.query.brand) return res.status(400).json({ message: 'brand query is required' });
-    const models = await vehicleData.listModels(req.query.brand);
+    const models = await vehicleData.listModels(req.query.brand, req.query.year);
     res.json({ success: true, data: models });
   } catch (err) {
     res.status(500).json({ message: err.message || 'Could not list models' });
@@ -21,11 +31,11 @@ const listModels = async (req, res) => {
 
 const listFuelTransmissions = async (req, res) => {
   try {
-    const { brand, model } = req.query;
+    const { brand, model, year } = req.query;
     if (!brand || !model) {
       return res.status(400).json({ message: 'brand and model query params are required' });
     }
-    const data = await vehicleData.listFuelTransmissions(brand, model);
+    const data = await vehicleData.listFuelTransmissions(brand, model, year);
     res.json({ success: true, ...data });
   } catch (err) {
     res.status(500).json({ message: err.message || 'Could not list fuel and transmissions' });
@@ -61,4 +71,4 @@ const refresh = async (_req, res) => {
   }
 };
 
-module.exports = { listBrands, listModels, listFuelTransmissions, listVariants, refresh };
+module.exports = { listBrands, listYears, listModels, listFuelTransmissions, listVariants, refresh };

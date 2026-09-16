@@ -1,5 +1,7 @@
 const Vehicle = require('../models/Vehicle');
+const Brand = require('../models/Brand');
 const { ensureVehicleCatalog, seedVehiclesFromRemote } = require('../scripts/seedVehiclesFromRemote');
+const { POPULAR_BRANDS } = require('../data/brandMarket');
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -15,37 +17,79 @@ const modelFilter = (model) => {
   return { model: new RegExp(`^${escapeRegex(name)}$`, 'i') };
 };
 
-async function listBrands() {
-  const brands = (await Vehicle.distinct('brand')).filter(Boolean);
-  brands.sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
-  return brands;
+const currentCatalogYear = () => new Date().getFullYear();
+
+function capCatalogYears(years) {
+  const now = currentCatalogYear();
+  return [...new Set((years || []).map(Number).filter((y) => y >= 1980 && y <= now))].sort((a, b) => b - a);
 }
 
-async function listModels(brand) {
+function yearConstraint(year) {
+  const y = Number(year);
+  if (!y) return null;
+  return { years: y };
+}
+
+async function listBrands() {
+  const names = (await Vehicle.distinct('brand')).filter(Boolean);
+  const docs = await Brand.find({ name: { $in: names } }).select('name logo isPopular').lean();
+  const byName = new Map(docs.map((d) => [d.name, d]));
+  const popularRank = new Map(POPULAR_BRANDS.map((n, i) => [n, i]));
+  return names
+    .map((name) => {
+      const doc = byName.get(name);
+      return {
+        name,
+        logo: doc?.logo || '',
+        isPopular: Boolean(doc?.isPopular) || popularRank.has(name),
+      };
+    })
+    .sort((a, b) => {
+      const pa = popularRank.has(a.name) ? popularRank.get(a.name) : 100;
+      const pb = popularRank.has(b.name) ? popularRank.get(b.name) : 100;
+      if (pa !== pb) return pa - pb;
+      if (a.isPopular !== b.isPopular) return a.isPopular ? -1 : 1;
+      return a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
+    });
+}
+
+async function listYears(brand) {
   const filter = brandFilter(brand);
   if (!filter) return [];
+  const years = await Vehicle.distinct('years', filter);
+  return capCatalogYears(years);
+}
+
+async function listModels(brand, year) {
+  const filter = brandFilter(brand);
+  if (!filter) return [];
+  const yc = yearConstraint(year);
+  if (yc) Object.assign(filter, yc);
   const models = (await Vehicle.distinct('model', filter)).filter(Boolean);
   models.sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
   return models;
 }
 
-async function listFuelTransmissions(brand, model) {
+async function listFuelTransmissions(brand, model, year) {
   const filter = { ...brandFilter(brand), ...modelFilter(model) };
   if (!filter.brand || !filter.model) {
     return { fuelTypes: [], transmissions: [], years: [], bodyTypes: [] };
   }
+  const specFilter = { ...filter };
+  const yc = yearConstraint(year);
+  if (yc) Object.assign(specFilter, yc);
   const [fuelTypes, transmissions, years, bodyTypes] = await Promise.all([
-    Vehicle.distinct('fuelType', filter),
-    Vehicle.distinct('transmission', filter),
+    Vehicle.distinct('fuelType', specFilter),
+    Vehicle.distinct('transmission', specFilter),
     Vehicle.distinct('years', filter),
-    Vehicle.distinct('bodyType', filter),
+    Vehicle.distinct('bodyType', specFilter),
   ]);
   const sort = (arr) =>
     arr.filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), 'en', { sensitivity: 'base' }));
   return {
     fuelTypes: sort(fuelTypes),
     transmissions: sort(transmissions),
-    years: [...new Set(years.filter((y) => Number(y)))].sort((a, b) => b - a),
+    years: capCatalogYears(years),
     bodyTypes: sort(bodyTypes),
   };
 }
@@ -55,21 +99,14 @@ async function listVariants({ brand, model, fuelType, transmission, search, year
   if (!filter.brand || !filter.model) return [];
   if (fuelType) filter.fuelType = new RegExp(`^${escapeRegex(fuelType)}$`, 'i');
   if (transmission) filter.transmission = new RegExp(`^${escapeRegex(transmission)}$`, 'i');
-  if (year) filter.years = Number(year);
+  const yc = yearConstraint(year);
+  if (yc) Object.assign(filter, yc);
   if (search) filter.variant = new RegExp(escapeRegex(search), 'i');
   filter.variant = filter.variant || { $nin: ['', null] };
-  let docs = await Vehicle.find(filter)
+  const docs = await Vehicle.find(filter)
     .select('brand model variant fuelType transmission bodyType engineCc msrp years')
     .sort({ variant: 1 })
     .lean();
-  if (year && docs.length === 0) {
-    const unfiltered = { ...filter };
-    delete unfiltered.years;
-    docs = await Vehicle.find(unfiltered)
-      .select('brand model variant fuelType transmission bodyType engineCc msrp years')
-      .sort({ variant: 1 })
-      .lean();
-  }
   const seen = new Set();
   const unique = [];
   for (const d of docs) {
@@ -87,7 +124,7 @@ async function listVariants({ brand, model, fuelType, transmission, search, year
       bodyType: d.bodyType,
       engineCc: d.engineCc,
       msrp: d.msrp,
-      years: d.years || [],
+      years: capCatalogYears(d.years || []),
     });
   }
   return unique;
@@ -101,6 +138,7 @@ module.exports = {
   ensureVehicleCatalog,
   ingestCatalog,
   listBrands,
+  listYears,
   listModels,
   listFuelTransmissions,
   listVariants,

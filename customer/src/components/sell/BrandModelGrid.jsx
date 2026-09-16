@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
 import { Skeleton } from '../PageShell';
+import { mediaUrl } from '../../pages/profile/hubUtils';
 import {
   useVehicleBrands,
   useVehicleFuelTransmissions,
   useVehicleModels,
   useVehicleVariants,
+  useVehicleYears,
 } from '../../hooks/useVehicleCatalog';
+import { isAutomatic, variantMatches } from '../../lib/vehicleVariant';
 
 export default function BrandModelGrid({ state, patch, onReady }) {
   const [q, setQ] = useState('');
@@ -15,17 +18,19 @@ export default function BrandModelGrid({ state, patch, onReady }) {
   const phase = state.manualPhase;
 
   const { brands, loading: loadingBrands } = useVehicleBrands();
-  const { models, loading: loadingModels } = useVehicleModels(state.brand);
-  const { fuelTypes, transmissions, years, bodyTypes, loading: loadingMeta } = useVehicleFuelTransmissions(
+  const { years, loading: loadingYears } = useVehicleYears(state.brand);
+  const { models, loading: loadingModels } = useVehicleModels(state.brand, state.year);
+  const { fuelTypes, bodyTypes, loading: loadingMeta } = useVehicleFuelTransmissions(
     state.brand,
-    state.model
+    state.model,
+    state.year
   );
   const { variants, loading: loadingVariants } = useVehicleVariants({
     brand: state.brand,
     model: state.model,
     fuelType: state.fuel,
-    transmission: state.transmission,
     search: phase === 'variant' ? debouncedSearch : '',
+    year: state.year,
   });
 
   useEffect(() => {
@@ -43,8 +48,11 @@ export default function BrandModelGrid({ state, patch, onReady }) {
     if (bodyTypes[0] && !state.bodyType) patch({ bodyType: bodyTypes[0] });
   }, [bodyTypes, patch, state.bodyType]);
 
-  const brandNames = useMemo(
-    () => brands.map((b) => (typeof b === 'string' ? b : b.name)).filter(Boolean),
+  const brandRows = useMemo(
+    () =>
+      (brands || [])
+        .map((b) => (typeof b === 'string' ? { name: b, logo: '' } : b))
+        .filter((b) => b.name),
     [brands]
   );
   const modelNames = useMemo(
@@ -53,17 +61,31 @@ export default function BrandModelGrid({ state, patch, onReady }) {
   );
 
   const filteredBrands = q
-    ? brandNames.filter((name) => name.toLowerCase().includes(q.toLowerCase()))
-    : brandNames;
+    ? brandRows.filter((b) => b.name.toLowerCase().includes(q.toLowerCase()))
+    : brandRows;
   const filteredModels = q
     ? modelNames.filter((name) => name.toLowerCase().includes(q.toLowerCase()))
     : modelNames;
 
-  const pickBrand = (name) => {
+  const pickBrand = (name, logo = '') => {
     patch({
       brand: name,
       brandId: '',
-      brandLogo: '',
+      brandLogo: logo,
+      model: '',
+      modelId: '',
+      year: '',
+      variant: '',
+      fuel: '',
+      transmission: '',
+      manualPhase: 'year',
+    });
+    setQ('');
+  };
+
+  const pickYear = (y) => {
+    patch({
+      year: y,
       model: '',
       modelId: '',
       variant: '',
@@ -72,6 +94,7 @@ export default function BrandModelGrid({ state, patch, onReady }) {
       manualPhase: 'model',
     });
     setQ('');
+    setVariantSearch('');
   };
 
   const pickModel = (name) => {
@@ -81,7 +104,7 @@ export default function BrandModelGrid({ state, patch, onReady }) {
       variant: '',
       fuel: '',
       transmission: '',
-      manualPhase: 'year',
+      manualPhase: 'variant',
     });
     setQ('');
     setVariantSearch('');
@@ -91,15 +114,17 @@ export default function BrandModelGrid({ state, patch, onReady }) {
     <div className="space-y-5">
       <div className="flex flex-wrap gap-2">
         {state.brand && (
-          <Chip onClick={() => patch({ manualPhase: 'brand', model: '', variant: '', fuel: '', transmission: '' })}>
+          <Chip onClick={() => patch({ manualPhase: 'brand', model: '', year: '', variant: '', fuel: '', transmission: '' })}>
             {state.brand}
+          </Chip>
+        )}
+        {state.year && (
+          <Chip onClick={() => patch({ manualPhase: 'year', model: '', variant: '', fuel: '', transmission: '' })}>
+            {state.year}
           </Chip>
         )}
         {state.model && (
           <Chip onClick={() => patch({ manualPhase: 'model', variant: '', fuel: '', transmission: '' })}>{state.model}</Chip>
-        )}
-        {state.year && phase !== 'brand' && phase !== 'model' && (
-          <Chip onClick={() => patch({ manualPhase: 'year' })}>{state.year}</Chip>
         )}
         {state.fuel && phase === 'variant' && <Chip>{state.fuel}</Chip>}
         {state.city && <Chip>{state.city}</Chip>}
@@ -107,32 +132,67 @@ export default function BrandModelGrid({ state, patch, onReady }) {
 
       {phase === 'brand' && (
         <>
+          <h3 className="font-display font-black text-slate-900">Select your car brand</h3>
           <Search value={q} onChange={setQ} placeholder="Search brand" />
           {loadingBrands ? (
             <LoaderGrid />
           ) : (
             <>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {filteredBrands.map((name) => (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                {filteredBrands.map((b) => (
                   <button
-                    key={name}
+                    key={b.name}
                     type="button"
-                    onClick={() => pickBrand(name)}
+                    onClick={() => pickBrand(b.name, b.logo)}
                     className={`rounded-2xl border bg-white p-3 text-center hover:border-[#3083ff] hover:shadow-md transition ${
-                      state.brand === name ? 'border-[#3083ff] ring-2 ring-[#3083ff]/20' : 'border-slate-200'
+                      state.brand === b.name ? 'border-[#3083ff] ring-2 ring-[#3083ff]/20' : 'border-slate-200'
                     }`}
                   >
-                    <div className="h-10 w-full rounded-xl bg-slate-50 flex items-center justify-center text-sm font-black text-[#3083ff]">
-                      {name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <p className="text-[11px] font-extrabold text-slate-800 mt-2 truncate">{name}</p>
+                    <BrandMark name={b.name} logo={b.logo} />
+                    <p className="text-[11px] font-extrabold text-slate-800 mt-2 truncate">{b.name}</p>
                   </button>
                 ))}
               </div>
               {!filteredBrands.length && (
-                <p className="text-sm font-medium text-slate-500">No brands in the database yet. Run npm run seed:vehicles.</p>
+                <p className="text-sm font-medium text-slate-500">No brands in the catalogue yet.</p>
               )}
             </>
+          )}
+        </>
+      )}
+
+      {phase === 'year' && (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="font-display font-black text-slate-900">Select registration year</h3>
+            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'brand' })}>
+              ← Brands
+            </button>
+          </div>
+          {loadingYears ? (
+            <LoaderGrid />
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {years.map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => pickYear(y)}
+                  className={`rounded-xl border px-3 py-3 text-sm font-extrabold ${
+                    Number(state.year) === Number(y)
+                      ? 'bg-[#3083ff] text-white border-[#3083ff]'
+                      : 'bg-white border-slate-200 text-slate-800 hover:border-[#3083ff]'
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+              {!years.length && (
+                <p className="col-span-full text-sm font-medium text-slate-500">
+                  No registration years in the catalogue for this brand.
+                </p>
+              )}
+            </div>
           )}
         </>
       )}
@@ -141,8 +201,8 @@ export default function BrandModelGrid({ state, patch, onReady }) {
         <>
           <div className="flex items-center justify-between">
             <h3 className="font-display font-black text-slate-900">Select your car model</h3>
-            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'brand' })}>
-              ← Brands
+            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'year' })}>
+              ← Year
             </button>
           </div>
           <Search value={q} onChange={setQ} placeholder="Search model" />
@@ -157,47 +217,15 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                   onClick={() => pickModel(name)}
                   className={`w-full text-left px-4 py-3.5 text-sm font-bold text-slate-800 hover:bg-[#EAF2FF] hover:text-[#1853ff] ${
                     i ? 'border-t border-slate-100' : ''
-                  }`}
+                  } ${state.model === name ? 'bg-[#EAF2FF] text-[#1853ff]' : ''}`}
                 >
                   {name}
                 </button>
               ))}
               {filteredModels.length === 0 && (
-                <p className="px-4 py-8 text-sm font-medium text-slate-500">No models for this brand in the database.</p>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {phase === 'year' && (
-        <>
-          <div className="flex items-center justify-between">
-            <h3 className="font-display font-black text-slate-900">Registration year</h3>
-            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'model' })}>
-              ← Models
-            </button>
-          </div>
-          {loadingMeta ? (
-            <LoaderGrid />
-          ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {years.map((y) => (
-                <button
-                  key={y}
-                  type="button"
-                  onClick={() => patch({ year: y, manualPhase: 'variant' })}
-                  className={`rounded-xl border px-3 py-3 text-sm font-extrabold ${
-                    Number(state.year) === Number(y)
-                      ? 'bg-[#3083ff] text-white border-[#3083ff]'
-                      : 'bg-white border-slate-200 text-slate-800 hover:border-[#3083ff]'
-                  }`}
-                >
-                  {y}
-                </button>
-              ))}
-              {!years.length && (
-                <p className="col-span-full text-sm font-medium text-slate-500">No years stored for this model.</p>
+                <p className="px-4 py-8 text-sm font-medium text-slate-500">
+                  No models for {state.brand} in {state.year}. Pick another year.
+                </p>
               )}
             </div>
           )}
@@ -208,8 +236,8 @@ export default function BrandModelGrid({ state, patch, onReady }) {
         <>
           <div className="flex items-center justify-between">
             <h3 className="font-display font-black text-slate-900">Select car variant</h3>
-            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'year' })}>
-              ← Year
+            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'model' })}>
+              ← Models
             </button>
           </div>
           {loadingMeta ? (
@@ -232,31 +260,6 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                   ))}
                 </div>
               )}
-              {transmissions.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => patch({ transmission: '' })}
-                    className={`rounded-full border px-4 py-2 text-xs font-extrabold ${
-                      !state.transmission ? 'bg-[#3083ff] text-white border-[#3083ff]' : 'bg-white border-slate-200 text-slate-700'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {transmissions.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => patch({ transmission: t })}
-                      className={`rounded-full border px-4 py-2 text-xs font-extrabold ${
-                        state.transmission === t ? 'bg-[#3083ff] text-white border-[#3083ff]' : 'bg-white border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              )}
               <Search value={variantSearch} onChange={setVariantSearch} placeholder="Search variant" />
               {state.fuel && (
                 <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{state.fuel} variants</p>
@@ -267,6 +270,7 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                 <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
                   {variants.map((v, i) => {
                     const label = v.variant || v.name;
+                    const auto = isAutomatic(v.transmission);
                     return (
                       <button
                         key={v._id || `${label}-${v.fuelType}-${v.transmission}`}
@@ -282,34 +286,62 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                         }}
                         className={`w-full text-left px-4 py-3.5 text-sm font-bold hover:bg-[#EAF2FF] ${
                           i ? 'border-t border-slate-100' : ''
-                        } ${state.variant === label ? 'bg-[#EAF2FF] text-[#1853ff]' : 'text-slate-800'}`}
+                        } ${
+                          variantMatches(v, state.variant, state.transmission)
+                            ? 'bg-[#EAF2FF] text-[#1853ff]'
+                            : 'text-slate-800'
+                        }`}
                       >
-                        {label}
-                        <span className="block text-[11px] font-semibold text-slate-400 mt-0.5">
-                          {[v.fuelType, v.transmission].filter(Boolean).join(' · ')}
+                        <span className="inline-flex flex-wrap items-center gap-2">
+                          {label}
+                          {auto && (
+                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                              Automatic
+                            </span>
+                          )}
                         </span>
                       </button>
                     );
                   })}
                   {!variants.length && (
-                    <p className="px-4 py-8 text-sm font-medium text-slate-500">No variants match these filters.</p>
+                    <p className="px-4 py-8 text-sm font-medium text-slate-500">
+                      No listed trims for this year. Continue if you are not sure of the variant.
+                    </p>
                   )}
                 </div>
               )}
               <button
                 type="button"
-                onClick={() => {
-                  patch({ variant: '' });
-                  onReady?.();
-                }}
-                className="w-full text-xs font-bold text-[#3083ff] py-2"
+                onClick={() => onReady?.()}
+                disabled={!state.year || !state.model}
+                className="w-full rounded-xl bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white py-3.5 text-xs font-black uppercase tracking-wider"
               >
-                I don’t know my variant
+                Continue
+              </button>
+              <button type="button" onClick={() => onReady?.()} className="w-full text-xs font-bold text-[#3083ff] py-2">
+                {state.variant ? 'Keep this variant and continue' : 'I don’t know my variant'}
               </button>
             </>
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function BrandMark({ name, logo }) {
+  const [failed, setFailed] = useState(false);
+  const src = logo && !failed ? mediaUrl(logo) : '';
+  if (src) {
+    return (
+      <div className="h-10 w-full rounded-xl bg-slate-50 flex items-center justify-center px-2">
+        <img src={src} alt="" className="max-h-8 max-w-full object-contain" onError={() => setFailed(true)} />
+      </div>
+    );
+  }
+  return (
+    <div className="h-10 w-full rounded-xl bg-slate-50 flex items-center justify-center text-sm font-black text-[#3083ff]">
+      {String(name || '').slice(0, 2).toUpperCase()}
     </div>
   );
 }
@@ -342,8 +374,8 @@ function Chip({ children, onClick }) {
 
 function LoaderGrid() {
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-      {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => (
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+      {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'].map((k) => (
         <Skeleton key={k} className="h-24" />
       ))}
     </div>

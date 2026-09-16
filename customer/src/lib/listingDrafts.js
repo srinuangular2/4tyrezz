@@ -25,7 +25,12 @@ export function loadSellDraft() {
 export function saveSellDraft(state) {
   if (!state) return;
   const { photoFiles, ...rest } = state;
-  write(SELL_KEY, { ...rest, photoFiles: [], savedAt: Date.now() });
+  write(SELL_KEY, {
+    ...rest,
+    photoFiles: [],
+    photoPreviews: (state.photoPreviews || []).slice(0, 8),
+    savedAt: Date.now(),
+  });
 }
 
 export function clearSellDraft() {

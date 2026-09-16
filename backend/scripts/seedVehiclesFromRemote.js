@@ -7,6 +7,8 @@ const Vehicle = require('../models/Vehicle');
 const Brand = require('../models/Brand');
 const CarModel = require('../models/CarModel');
 const slugify = require('slugify');
+const { POPULAR_BRANDS, marketYears, rangeYears, brandLogoUrl, extraMarketRows } = require('../data/brandMarket');
+const { yearsForModel, historicalModelRows } = require('../data/modelGenerations');
 
 const CACHE_DIR = path.join(__dirname, '..', '.cache');
 
@@ -75,12 +77,23 @@ function bodyTypeFrom(raw = '') {
   return String(raw).replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function yearsRange(start, end) {
-  const to = Number(end) || new Date().getFullYear();
-  let from = Number(start);
-  if (!from || from < 1980 || from > to) from = Math.max(1995, to - 18);
+function parseYear(value) {
+  const n = Number(String(value || '').replace(/\D/g, '').slice(0, 4));
+  const now = new Date().getFullYear();
+  if (!n || n < 1980 || n > now) return null;
+  return n;
+}
+
+/** Only verified source years. Never invent an 18-year span when launch is missing. */
+function yearsFromSource(start, end) {
+  const now = new Date().getFullYear();
+  const from = parseYear(start);
+  if (!from) return [];
+  const to = parseYear(end) || now;
+  const last = Math.min(to, now);
+  if (from > last) return [from].filter((y) => y <= now);
   const years = [];
-  for (let y = to; y >= from; y -= 1) years.push(y);
+  for (let y = last; y >= from; y -= 1) years.push(y);
   return years;
 }
 
@@ -124,25 +137,13 @@ function parseVariantWise(payload) {
     const modelName = String(model.name || '').trim();
     if (!brand || !modelName) continue;
     const bodyType = bodyTypeFrom(model.bodyStyle || model.bodyType);
-    const years = yearsRange(model.launched || model.yearStart || model.introduced, dataYear);
+    let years = yearsFromSource(model.launched || model.yearStart || model.introduced, dataYear);
+    if (!years.length) years = yearsForModel(brand, modelName) || [];
+    if (!years.length) years = marketYears(brand, 'variantwise');
     const engines = new Map((model.engines || []).map((e) => [e.id, e]));
     const trims = new Map((model.trims || []).map((t) => [t.id, t]));
     const variants = Array.isArray(model.variants) ? model.variants : [];
-    if (!variants.length) {
-      rows.push({
-        brand,
-        model: modelName,
-        bodyType,
-        fuelType: '',
-        transmission: '',
-        variant: '',
-        engineCc: undefined,
-        years,
-        source: 'variantwise',
-        sourceKey: `variantwise::${model.id}::base`,
-      });
-      continue;
-    }
+    if (!variants.length) continue;
     for (const variant of variants) {
       const engine = engines.get(variant.engineId) || {};
       const trim = trims.get(variant.trimId) || {};
@@ -174,22 +175,24 @@ function parseVariantWise(payload) {
 function parseIndianCarsList(payload) {
   const cars = payload?.cars;
   if (!Array.isArray(cars) || !cars.length) return [];
-  const years = yearsRange(1998, new Date().getFullYear());
   return cars
     .map((row) => {
       const brand = titleBrand(row.brand);
       const model = String(row.model || '').trim();
       if (!brand || !model) return null;
+      const variant = String(row.variant || row.trim || '').trim();
       return {
         brand,
         model,
         bodyType: '',
-        fuelType: '',
-        transmission: '',
-        variant: '',
-        years,
+        fuelType: fuelTypeFrom(row.fuel || row.fuelType),
+        transmission: transmissionFrom(row.transmission),
+        variant,
+        years: marketYears(brand, 'indiancars'),
         source: 'indiancars',
-        sourceKey: `indiancars::${toSlug(brand)}::${toSlug(model)}`,
+        sourceKey: variant
+          ? `indiancars::${toSlug(brand)}::${toSlug(model)}::${toSlug(variant)}`
+          : `indiancars::${toSlug(brand)}::${toSlug(model)}`,
       };
     })
     .filter(Boolean);
@@ -200,7 +203,6 @@ function parseDeadpoolHub(payload) {
   const entries = Object.values(payload);
   if (!entries.length || typeof entries[0] !== 'object') return [];
   if (!('brand name' in entries[0] || 'brandName' in entries[0] || entries[0].brand)) return [];
-  const years = yearsRange(2005, new Date().getFullYear());
   const rows = [];
   for (const row of entries) {
     const brand = titleBrand(row['brand name'] || row.brandName || row.brand);
@@ -208,22 +210,10 @@ function parseDeadpoolHub(payload) {
     if (!brand || !model) continue;
     const bodyType = bodyTypeFrom(row['body type'] || row.bodyType || row['vehicle type']);
     const variants = row.variants && typeof row.variants === 'object' ? Object.values(row.variants) : [];
-    if (!variants.length) {
-      rows.push({
-        brand,
-        model,
-        bodyType,
-        fuelType: '',
-        transmission: '',
-        variant: '',
-        years,
-        source: 'indian-automotive-hub',
-        sourceKey: `hub::${toSlug(brand)}::${toSlug(model)}`,
-      });
-      continue;
-    }
+    if (!variants.length) continue;
     for (const variant of variants) {
       const name = String(variant.name || variant['car variant'] || '').trim();
+      if (!name) continue;
       rows.push({
         brand,
         model,
@@ -231,13 +221,39 @@ function parseDeadpoolHub(payload) {
         fuelType: fuelTypeFrom(variant['fuel type'] || variant.fuel),
         transmission: transmissionFrom(variant.transmission || variant.name),
         variant: name,
-        years,
+        years: (() => {
+          const explicit = yearsFromSource(variant.year || variant.launched || row.year || row.launched);
+          return explicit.length ? explicit : marketYears(brand, 'indian-automotive-hub');
+        })(),
         source: 'indian-automotive-hub',
         sourceKey: `hub::${toSlug(brand)}::${toSlug(model)}::${toSlug(name)}`,
       });
     }
   }
   return rows;
+}
+
+function applyYearWindows(rows) {
+  const now = new Date().getFullYear();
+  const currentKeys = new Set(
+    rows.filter((r) => r.source === 'variantwise').map((r) => `${r.brand}::${r.model}`.toLowerCase())
+  );
+  const currentBrands = new Set(rows.filter((r) => r.source === 'variantwise').map((r) => r.brand));
+  return rows.map((row) => {
+    const mapped = yearsForModel(row.brand, row.model);
+    if (mapped && mapped.length) return { ...row, years: mapped };
+    if (row.source === 'variantwise') return row;
+    const key = `${row.brand}::${row.model}`.toLowerCase();
+    let years;
+    if (currentKeys.has(key)) {
+      years = rangeYears(1998, now - 15);
+    } else if (currentBrands.has(row.brand)) {
+      years = rangeYears(1998, 2016);
+    } else {
+      years = marketYears(row.brand, row.source || 'indiancars');
+    }
+    return { ...row, years };
+  });
 }
 
 function parseRemote(payload) {
@@ -272,8 +288,19 @@ async function upsertVehicles(rows) {
     brandNames.map((name) => ({
       updateOne: {
         filter: { name },
-        update: { $setOnInsert: { name, slug: toSlug(name), logo: '', isPopular: false } },
+        update: {
+          $setOnInsert: { name, slug: toSlug(name), logo: brandLogoUrl(name), isPopular: false },
+        },
         upsert: true,
+      },
+    })),
+    { ordered: false }
+  );
+  await Brand.bulkWrite(
+    brandNames.map((name) => ({
+      updateOne: {
+        filter: { name, $or: [{ logo: '' }, { logo: null }, { logo: { $exists: false } }] },
+        update: { $set: { logo: brandLogoUrl(name) } },
       },
     })),
     { ordered: false }
@@ -302,15 +329,8 @@ async function upsertVehicles(rows) {
   }
   if (modelOps.length) await CarModel.bulkWrite(modelOps, { ordered: false });
 
-  const top = await Vehicle.aggregate([
-    { $group: { _id: '$brand', n: { $sum: 1 } } },
-    { $sort: { n: -1 } },
-    { $limit: 8 },
-  ]);
   await Brand.updateMany({}, { $set: { isPopular: false } });
-  if (top.length) {
-    await Brand.updateMany({ name: { $in: top.map((t) => t._id) } }, { $set: { isPopular: true } });
-  }
+  await Brand.updateMany({ name: { $in: POPULAR_BRANDS } }, { $set: { isPopular: true } });
 
   return {
     upserted: unique.length,
@@ -325,6 +345,9 @@ async function seedVehiclesFromRemote({ force = false } = {}) {
   if (existing > 0 && !force) {
     return { skipped: true, existing };
   }
+  if (force && existing > 0) {
+    await Vehicle.deleteMany({});
+  }
 
   const rows = [];
   try {
@@ -332,15 +355,19 @@ async function seedVehiclesFromRemote({ force = false } = {}) {
   } catch (err) {
     console.warn('Catalogue fetch failed:', err.message);
   }
-  try {
-    rows.push(...parseRemote(await downloadJson(HISTORICAL_URLS, 'indiancars.json')));
-  } catch (err) {
-    console.warn('Historical list fetch failed:', err.message);
+  for (let i = 0; i < HISTORICAL_URLS.length; i += 1) {
+    try {
+      rows.push(...parseRemote(await downloadJson([HISTORICAL_URLS[i]], `historical-${i}.json`)));
+    } catch (err) {
+      console.warn('Historical fetch failed:', HISTORICAL_URLS[i], err.message);
+    }
   }
+  rows.push(...extraMarketRows());
+  rows.push(...historicalModelRows());
   if (!rows.length) {
     throw new Error('Could not load any Indian vehicle catalogue from remote sources');
   }
-  const stats = await upsertVehicles(rows);
+  const stats = await upsertVehicles(applyYearWindows(rows));
   console.log(
     `Vehicles seeded: ${stats.brands} brands, ${stats.models} models, ${stats.variants} variants (${stats.upserted} rows)`
   );

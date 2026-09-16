@@ -6,7 +6,7 @@ import { useAuthGuard } from '../AuthGuardModal';
 import useReferenceData from '../../hooks/useReferenceData';
 import { clearSellDraft, loadSellDraft, saveSellDraft, sellDraftReady } from '../../lib/listingDrafts';
 import { Card, formatINR } from '../PageShell';
-import { conditionScoreFromPills, initialSellCarState, vehicleReady } from './sellCarState';
+import { conditionScoreFromPills, filesFromPreviews, initialSellCarState, resumeSellStep, vehicleReady } from './sellCarState';
 import ResumeListingCard from './ResumeListingCard';
 import { Stepper } from './ui';
 import StepIdentify from './StepIdentify';
@@ -138,7 +138,10 @@ export default function SellCarFlow() {
         if (v !== '' && v != null) form.append(k, v);
       });
       (state.conditions || []).forEach((c) => form.append('conditions', c));
-      (state.photoFiles || []).forEach((file) => form.append('photos', file));
+      const photos = (state.photoFiles || []).length
+        ? state.photoFiles
+        : filesFromPreviews(state.photoPreviews);
+      photos.forEach((file) => form.append('photos', file));
 
       await api.post('/enquiries/seller', form);
       const next = { ...state, done: true };
@@ -155,12 +158,14 @@ export default function SellCarFlow() {
 
   const resumeEditing = () => {
     const saved = draft || loadSellDraft() || state;
+    const previews = saved.photoPreviews || [];
     setState({
       ...initialSellCarState(),
       ...saved,
-      photoFiles: [],
+      photoPreviews: previews,
+      photoFiles: filesFromPreviews(previews),
       done: false,
-      step: 1,
+      step: resumeSellStep(saved),
     });
     setGate('form');
   };

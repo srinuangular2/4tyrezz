@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { protect, authorize } = require('../middleware/auth');
 const {
   listBrands,
+  listYears,
   listModels,
   listFuelTransmissions,
   listVariants,
@@ -64,6 +65,7 @@ const {
  *         schema: { type: string }
  */
 router.get('/brands', listBrands);
+router.get('/years', listYears);
 router.get('/models', listModels);
 router.get('/fuel-transmissions', listFuelTransmissions);
 router.get('/variants', listVariants);

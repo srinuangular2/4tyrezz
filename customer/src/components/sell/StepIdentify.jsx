@@ -97,7 +97,13 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
 
       <button
         type="button"
-        onClick={() => patch({ identifyMode: 'manual', editManual: true, manualPhase: state.brand ? 'model' : 'brand' })}
+        onClick={() =>
+          patch({
+            identifyMode: 'manual',
+            editManual: true,
+            manualPhase: state.model ? 'variant' : state.year ? 'model' : state.brand ? 'year' : 'brand',
+          })
+        }
         className="text-sm font-extrabold text-[#3083ff] hover:underline"
       >
         Or search manually by brand
@@ -112,6 +118,7 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
           />
         </div>
       )}
+
     </div>
   );
 }

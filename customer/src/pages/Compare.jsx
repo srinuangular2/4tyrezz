@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { Plus, X } from 'lucide-react';
 import api from '../api/axios';
-import { GhostButton, PageHero, PrimaryButton, Section, Skeleton, formatINR } from '../components/PageShell';
+import { GhostButton, PrimaryButton, Section, Skeleton, formatINR } from '../components/PageShell';
+import CompareBanner from '../components/compare/CompareBanner';
 import CompareVsCard from '../components/CompareVsCard';
 import CompareCarPicker from '../components/CompareCarPicker';
 import CompareDetailsBoard from '../components/CompareDetailsBoard';
@@ -104,12 +105,8 @@ export default function Compare() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <PageHero
-        eyebrow="Garage matchup"
-        title="Compare inspected cars"
-        subtitle="Pick a pairing or add up to four cars. Compare price, engine, safety, comfort and condition on one page."
-      >
-        <nav className="mt-5 text-sm text-white/70 flex flex-wrap items-center gap-1.5">
+      <CompareBanner>
+        <nav className="mt-6 text-sm text-white/75 flex flex-wrap items-center gap-1.5">
           <Link to="/" className="hover:text-white transition">Home</Link>
           <span>/</span>
           <Link to="/compare" className="hover:text-white transition">Compare</Link>
@@ -145,7 +142,7 @@ export default function Compare() {
             </GhostButton>
           )}
         </div>
-      </PageHero>
+      </CompareBanner>
 
       {ids.length < 2 && (
         <Section eyebrow="Build a matchup" title={<>Compare <span className="font-black"> cars</span></>}>
@@ -156,14 +153,14 @@ export default function Compare() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-8 shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
               {ids.length === 1 && (
                 <p className="text-sm font-semibold text-slate-500 mb-5">Add a second listing to compare.</p>
               )}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {slots.map((c, i) =>
                   c ? (
-                    <div key={c.id} className="relative rounded-2xl border border-slate-200 p-4 text-center">
+                    <div key={c.id} className="relative rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-center">
                       <button
                         type="button"
                         onClick={() => removeCar(c.id)}
@@ -172,7 +169,7 @@ export default function Compare() {
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
-                      <img src={c.images?.[0] || '/pwa-192.png'} alt="" className="w-full h-28 object-contain bg-slate-50 rounded-xl" />
+                      <img src={c.images?.[0] || '/pwa-192.png'} alt="" className="w-full h-28 object-contain bg-white rounded-xl" />
                       <p className="text-[11px] font-bold text-slate-400 mt-2">{c.brand || '—'}</p>
                       <p className="font-semibold text-slate-900 text-sm truncate">{c.model || c.title}</p>
                       <p className="font-bold text-slate-900 mt-1">{formatINR(c.price)}</p>
@@ -182,12 +179,12 @@ export default function Compare() {
                       key={`empty-${i}`}
                       type="button"
                       onClick={() => setPickerOpen(true)}
-                      className="rounded-2xl border border-dashed border-slate-300 min-h-[220px] flex flex-col items-center justify-center gap-3 text-slate-500 hover:border-[#3083ff] hover:text-[#3083ff]"
+                      className="rounded-2xl border-2 border-dashed border-slate-200 min-h-[220px] flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-[#3083ff] hover:text-[#3083ff] hover:bg-[#3083ff]/5 transition"
                     >
-                      <span className="w-14 h-14 rounded-full border border-dashed border-current flex items-center justify-center">
+                      <span className="w-14 h-14 rounded-full border-2 border-dashed border-current flex items-center justify-center">
                         <Plus className="w-6 h-6" />
                       </span>
-                      <span className="text-sm font-semibold">Add car</span>
+                      <span className="text-sm font-semibold">Add car {i + 1}</span>
                     </button>
                   )
                 )}

@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ClipboardCheck, Gauge, IndianRupee, ScanSearch, Sparkles } from 'lucide-react';
 import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
+import FaqsSection from '../components/FaqsSection';
+import ValuationBanner from '../components/valuation/ValuationBanner';
+import WhyValuation from '../components/valuation/WhyValuation';
+import PriceFactors from '../components/valuation/PriceFactors';
 import useReferenceData from '../hooks/useReferenceData';
 import {
   useVehicleBrands,
   useVehicleFuelTransmissions,
   useVehicleModels,
   useVehicleVariants,
+  useVehicleYears,
 } from '../hooks/useVehicleCatalog';
 import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../lib/fetchVehicleDetailsByReg';
 import {
@@ -19,11 +23,12 @@ import {
   valuationDraftReady,
 } from '../lib/listingDrafts';
 import ResumeListingCard from '../components/sell/ResumeListingCard';
+import SearchableSelect from '../components/common/SearchableSelect';
+import { isAutomatic, variantRowKey } from '../lib/vehicleVariant';
 import {
   BRAND,
   Card,
   Field,
-  GhostButton,
   PrimaryButton,
   Section,
   formatINR,
@@ -45,22 +50,51 @@ const EMPTY_FORM = {
   plate: '',
 };
 
-const HOW = [
-  { icon: ClipboardCheck, title: 'Tell us about the car', body: 'Pick brand, model, year and variant from our live catalogue — or enter the RC number.' },
-  { icon: Gauge, title: 'Usage and owners', body: 'Kilometres, ownership and condition adjust the SmartPrice band instantly.' },
-  { icon: ScanSearch, title: 'See the market range', body: 'Depreciation, mileage, demand and condition produce a fair resale window.' },
-  { icon: IndianRupee, title: 'Get real dealer offers', body: 'Share your details and verified dealers in your city bid on the car.' },
+const VALUATION_FAQS = [
+  {
+    q: 'What is used car valuation on 4tyrezz?',
+    a: 'It is a free SmartPrice estimate of what your car may fetch in the current market. It is a guide only. A final offer is confirmed after physical inspection.',
+  },
+  {
+    q: 'How do I check my car’s worth?',
+    a: 'Enter brand, model, year and variant, or type your RC number. Add kilometres, owners and condition, then tap Check value.',
+  },
+  {
+    q: 'Do I need to register to see the estimate?',
+    a: 'You need to be signed in so we can save the check and follow up if you want. There is no extra fee to run the calculator.',
+  },
+  {
+    q: 'Is the valuation tool free?',
+    a: 'Yes. Checking SmartPrice does not cost anything. Selling later is also without a listing fee. Payout is discussed only after inspection.',
+  },
+  {
+    q: 'Is the estimated price the final selling price?',
+    a: 'No. Online range is indicative. Condition, documents and kilometres are verified in person before 4tyrezz confirms an offer.',
+  },
+  {
+    q: 'What decides my car’s value?',
+    a: 'Year, brand demand, kilometres, number of owners, fuel, gearbox, city demand and the condition you report. Inspection can move the number up or down.',
+  },
+  {
+    q: 'How often does the estimate update?',
+    a: 'Each time you run Check value we recalculate from current catalogue and demand data. Run it again if kilometres or condition change.',
+  },
+  {
+    q: 'I’m happy with the price — how do I sell next?',
+    a: 'Go to Sell your car, share the same details, and book inspection. 4tyrezz handles the next step. You do not have to accept any offer.',
+  },
+  {
+    q: 'How does valuation help if I am buying or selling?',
+    a: 'Sellers see a realistic band before they commit. Buyers on 4tyrezz see listings priced against the same market logic after inspection.',
+  },
+  {
+    q: 'Why check price on 4tyrezz?',
+    a: 'The same team that inspects and lists cars runs SmartPrice. Your enquiry stays with 4tyrezz — we do not publish your phone for public callers.',
+  },
 ];
 
 function nameOf(item) {
   return typeof item === 'string' ? item : item?.name || '';
-}
-
-function yearRange(from = 2012) {
-  const now = new Date().getFullYear();
-  const list = [];
-  for (let y = now; y >= from; y -= 1) list.push(y);
-  return list;
 }
 
 function matchFromList(list, value) {
@@ -83,7 +117,6 @@ export default function Valuation() {
   const { cities } = useReferenceData();
   const { brands, loading: loadingBrands } = useVehicleBrands();
   const [form, setForm] = useState(EMPTY_FORM);
-  const [variantQ, setVariantQ] = useState('');
   const [result, setResult] = useState(null);
   const [estimating, setEstimating] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
@@ -110,26 +143,49 @@ export default function Valuation() {
     saveValuationDraft({ form, result, contact });
   }, [form, result, contact, gate]);
 
-  const { models, loading: loadingModels } = useVehicleModels(form.brand);
-  const { years: catalogYears, loading: loadingMeta } = useVehicleFuelTransmissions(form.brand, form.model);
+  const { models, loading: loadingModels } = useVehicleModels(form.brand, form.year);
+  const { years: catalogYears, loading: loadingYears } = useVehicleYears(form.brand);
+  const { fuelTypes } = useVehicleFuelTransmissions(form.brand, form.model, form.year);
   const { variants, loading: loadingVariants } = useVehicleVariants({
     brand: form.brand,
     model: form.model,
     year: form.year,
+    fuelType: form.fuel,
   });
 
   const brandNames = useMemo(() => (brands || []).map(nameOf).filter(Boolean), [brands]);
   const modelNames = useMemo(() => (models || []).map(nameOf).filter(Boolean), [models]);
   const yearOptions = useMemo(() => {
-    const fallback = yearRange(2012);
-    if (!catalogYears?.length) return fallback;
-    return [...new Set([...catalogYears.map(Number), ...fallback])].sort((a, b) => b - a);
-  }, [catalogYears]);
-  const variantList = useMemo(() => {
-    const q = variantQ.trim().toLowerCase();
-    if (!q) return variants;
-    return variants.filter((v) => String(v.variant || v.name || '').toLowerCase().includes(q));
-  }, [variants, variantQ]);
+    const now = new Date().getFullYear();
+    const fromCatalog = (catalogYears || []).map(Number).filter((y) => y >= 1980 && y <= now);
+    return ensureOption(fromCatalog, form.year ? Number(form.year) : '').filter(Boolean);
+  }, [catalogYears, form.year]);
+  const variantOptions = useMemo(() => {
+    const list = (variants || []).map((v) => {
+      const label = v.variant || v.name || '';
+      return {
+        value: variantRowKey(v),
+        label,
+        badge: isAutomatic(v.transmission) ? 'Automatic' : '',
+      };
+    });
+    if (form.variant) {
+      const current = variantRowKey({ variant: form.variant, fuelType: form.fuel, transmission: form.transmission });
+      if (!list.some((o) => o.value === current)) {
+        list.unshift({
+          value: current,
+          label: form.variant,
+          badge: isAutomatic(form.transmission) ? 'Automatic' : '',
+        });
+      }
+    }
+    return list;
+  }, [variants, form.variant, form.fuel, form.transmission]);
+  const selectedVariantValue = variantRowKey({
+    variant: form.variant,
+    fuelType: form.fuel,
+    transmission: form.transmission,
+  });
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setC = (k, v) => setContact((f) => ({ ...f, [k]: v }));
@@ -162,6 +218,12 @@ export default function Valuation() {
     if (matched && modelNames.includes(matched)) set('model', matched);
   }, [modelNames, form.model]);
 
+  useEffect(() => {
+    if (!fuelTypes.length) return;
+    if (form.fuel && fuelTypes.includes(form.fuel)) return;
+    set('fuel', fuelTypes[0]);
+  }, [fuelTypes, form.fuel]);
+
   const pickBrand = (brand) => {
     setForm((f) => ({
       ...f,
@@ -173,18 +235,16 @@ export default function Valuation() {
       transmission: '',
       bodyType: '',
     }));
-    setVariantQ('');
     setResult(null);
   };
 
   const pickModel = (model) => {
-    setForm((f) => ({ ...f, model, year: '', variant: '', fuel: '', transmission: '', bodyType: '' }));
-    setVariantQ('');
+    setForm((f) => ({ ...f, model, variant: '', fuel: '', transmission: '', bodyType: '' }));
     setResult(null);
   };
 
   const pickYear = (year) => {
-    setForm((f) => ({ ...f, year, variant: '', fuel: '', transmission: '', bodyType: '' }));
+    setForm((f) => ({ ...f, year, model: '', variant: '', fuel: '', transmission: '', bodyType: '' }));
     setResult(null);
   };
 
@@ -306,7 +366,7 @@ export default function Valuation() {
           expectedPrice: result?.estimate || result?.valuation?.fairMarketValue,
           message: `Valuation ${formatINR(result?.valuation?.fairMarketValue || result?.estimate)} (${formatINR(result?.valuation?.estimatedMinPrice || result?.minPrice)}–${formatINR(result?.valuation?.estimatedMaxPrice || result?.maxPrice)}). Requesting dealer offers.`,
         });
-        toast.success('Request sent. Verified dealers will contact you shortly.');
+        toast.success('Request sent. The 4tyrezz team will contact you shortly.');
         saveValuationDraft({ form, result, contact, submitted: true });
         setContact({ name: '', phone: '', city: '' });
       } catch (e) {
@@ -374,48 +434,27 @@ export default function Valuation() {
 
   return (
     <div className="bg-slate-50">
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-[#EAF2FF]">
-        <div className="container-px mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-start">
-          <div className="pt-4">
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">
-              <Sparkles className="w-3.5 h-3.5" /> 4TYREZZ SmartPrice
-            </p>
-            <h1 className="font-display text-4xl sm:text-5xl font-black text-slate-900 tracking-tight mt-3 leading-tight">
-              Used car <span className="text-[#3083ff]">valuation</span>
-            </h1>
-            <p className="text-sm sm:text-base font-medium text-slate-500 mt-4 max-w-lg leading-relaxed">
-              Instant resale range from our live Indian catalogue — depreciation, kilometres, owners and demand scored the same way our listing desk prices cars.
-            </p>
-            <ul className="mt-8 space-y-2 text-sm font-bold text-slate-700">
-              <li>Live brand, model and variant lists from the database</li>
-              <li>Optional RC lookup to auto-fill make, model and year</li>
-              <li>100% free · No sign-up · Instant estimate</li>
-            </ul>
-            <div className="flex flex-wrap gap-3 mt-8">
-              <Link to="/sell">
-                <GhostButton>List your car for free</GhostButton>
-              </Link>
-            </div>
-          </div>
+      <ValuationBanner />
 
-          {gate === 'resume' && valuationDraftReady(draft) ? (
-            <ResumeListingCard
-              subtitle="Thanks for sharing the details"
-              year={draft.form.year}
-              brand={draft.form.brand}
-              model={draft.form.model}
-              variant={draft.form.variant}
-              kmDriven={draft.form.kmDriven}
-              fuel={draft.form.fuel}
-              city={draft.form.city}
-              plate={draft.form.plate}
-              resumeLabel="Resume editing"
-              newLabel="Start a new valuation"
-              onResume={() => resumeEditing(draft)}
-              onNew={startNewValuation}
-            />
-          ) : gate === 'form' ? (
-          <Card id="valuation-form" className="p-6 sm:p-7 shadow-xl shadow-blue-500/5">
+      <Section eyebrow="SmartPrice" title="Used car price calculator">
+        {gate === 'resume' && valuationDraftReady(draft) ? (
+          <ResumeListingCard
+            subtitle="Thanks for sharing the details"
+            year={draft.form.year}
+            brand={draft.form.brand}
+            model={draft.form.model}
+            variant={draft.form.variant}
+            kmDriven={draft.form.kmDriven}
+            fuel={draft.form.fuel}
+            city={draft.form.city}
+            plate={draft.form.plate}
+            resumeLabel="Resume editing"
+            newLabel="Start a new valuation"
+            onResume={() => resumeEditing(draft)}
+            onNew={startNewValuation}
+          />
+        ) : gate === 'form' ? (
+          <Card id="valuation-form" className="p-6 sm:p-7 shadow-xl shadow-blue-500/5 max-w-3xl mx-auto">
             <div className="flex items-start justify-between gap-3 mb-5">
               <div>
                 <h2 className="font-display font-black text-xl text-slate-900">Used car price calculator</h2>
@@ -434,107 +473,86 @@ export default function Valuation() {
 
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Brand">
-                <select
-                  className={inputClass}
+                <SearchableSelect
                   value={form.brand}
                   disabled={loadingBrands}
-                  onChange={(e) => pickBrand(e.target.value)}
-                >
-                  <option value="">{loadingBrands ? 'Loading brands…' : 'Select brand'}</option>
-                  {brandOptions.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Model">
-                <select
-                  className={inputClass}
-                  value={form.model}
-                  disabled={!form.brand || loadingModels}
-                  onChange={(e) => pickModel(e.target.value)}
-                >
-                  <option value="">
-                    {!form.brand ? 'Select brand first' : loadingModels ? 'Loading models…' : 'Select model'}
-                  </option>
-                  {modelOptions.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={loadingBrands ? 'Loading brands…' : 'Select brand'}
+                  searchPlaceholder="Search brand"
+                  options={brandOptions.map((name) => ({ value: name, label: name }))}
+                  onChange={pickBrand}
+                />
               </Field>
               <Field label="Registration year">
-                <select
-                  className={inputClass}
+                <SearchableSelect
                   value={form.year}
-                  disabled={!form.model || loadingMeta}
-                  onChange={(e) => pickYear(e.target.value)}
-                >
-                  <option value="">{!form.model ? 'Select model first' : 'Select year'}</option>
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
+                  disabled={!form.brand || loadingYears}
+                  placeholder={!form.brand ? 'Select brand first' : loadingYears ? 'Loading years…' : 'Select year'}
+                  searchPlaceholder="Search year"
+                  options={yearOptions.map((y) => ({ value: y, label: String(y) }))}
+                  onChange={pickYear}
+                />
+              </Field>
+              <Field label="Model">
+                <SearchableSelect
+                  value={form.model}
+                  disabled={!form.year || loadingModels}
+                  placeholder={!form.year ? 'Select year first' : loadingModels ? 'Loading models…' : 'Select model'}
+                  searchPlaceholder="Search model"
+                  options={modelOptions.map((name) => ({ value: name, label: name }))}
+                  onChange={pickModel}
+                />
               </Field>
               <Field label="Variant">
-                <select
-                  className={inputClass}
-                  value={form.variant}
-                  disabled={!form.year || loadingVariants}
-                  onChange={(e) => {
-                    const v = variants.find((x) => (x.variant || x.name) === e.target.value);
-                    if (v) pickVariant(v);
-                    else set('variant', e.target.value);
-                  }}
-                >
-                  <option value="">
-                    {!form.year ? 'Select year first' : loadingVariants ? 'Loading variants…' : 'Select variant'}
-                  </option>
-                  {form.variant && !variantList.some((v) => (v.variant || v.name) === form.variant) && (
-                    <option value={form.variant}>{form.variant}</option>
-                  )}
-                  {variantList.map((v) => {
-                    const label = v.variant || v.name;
-                    return (
-                      <option key={v._id || label} value={label}>
-                        {label}
-                        {v.fuelType ? ` · ${v.fuelType}` : ''}
-                        {v.transmission ? ` ${v.transmission}` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-                {form.model && (
-                  <input
-                    className={`${inputClass} mt-2 py-2 text-xs`}
-                    placeholder="Search variant, e.g. AX7 L Turbo"
-                    value={variantQ}
-                    onChange={(e) => setVariantQ(e.target.value)}
-                  />
+                {fuelTypes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {fuelTypes.map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setForm((cur) => ({ ...cur, fuel: f, variant: '', transmission: '' }))}
+                        className={`rounded-full border px-4 py-1.5 text-xs font-extrabold ${
+                          form.fuel === f ? 'bg-[#3083ff] text-white border-[#3083ff]' : 'bg-white border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
                 )}
+                <SearchableSelect
+                  value={form.variant ? selectedVariantValue : ''}
+                  disabled={!form.model || loadingVariants}
+                  placeholder={!form.model ? 'Select model first' : loadingVariants ? 'Loading variants…' : 'Select variant'}
+                  searchPlaceholder="Search variant"
+                  options={variantOptions}
+                  onChange={(value) => {
+                    const v = variants.find((x) => variantRowKey(x) === value);
+                    if (v) pickVariant(v);
+                    else set('variant', value);
+                  }}
+                />
               </Field>
               <Field label="City">
-                <select className={inputClass} value={form.city} onChange={(e) => set('city', e.target.value)}>
-                  <option value="">City or pincode</option>
-                  {(cities || []).map((c) => (
-                    <option key={c._id || c.name} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  value={form.city}
+                  placeholder="City or pincode"
+                  searchPlaceholder="Search city"
+                  options={(cities || []).map((c) => ({ value: c.name, label: c.name }))}
+                  onChange={(value) => set('city', value)}
+                />
               </Field>
               <Field label="Ownership">
-                <select className={inputClass} value={form.ownership} onChange={(e) => set('ownership', Number(e.target.value))}>
-                  {[1, 2, 3, 4].map((n) => (
-                    <option key={n} value={n}>
-                      {n === 1 ? '1st owner' : n === 2 ? '2nd owner' : n === 3 ? '3rd owner' : '4th+ owner'}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  value={form.ownership}
+                  searchPlaceholder="Search ownership"
+                  options={[
+                    { value: 1, label: '1st owner' },
+                    { value: 2, label: '2nd owner' },
+                    { value: 3, label: '3rd owner' },
+                    { value: 4, label: '4th+ owner' },
+                  ]}
+                  onChange={(value) => set('ownership', Number(value))}
+                />
               </Field>
               <Field label="Kilometres">
                 <div className="relative">
@@ -563,14 +581,6 @@ export default function Valuation() {
               </Field>
             </div>
 
-            {(form.fuel || form.transmission || form.bodyType) && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {form.fuel && <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 rounded-full px-2.5 py-1">{form.fuel}</span>}
-                {form.transmission && <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 rounded-full px-2.5 py-1">{form.transmission}</span>}
-                {form.bodyType && <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 rounded-full px-2.5 py-1">{form.bodyType}</span>}
-              </div>
-            )}
-
             <div className="relative my-5 text-center">
               <span className="absolute inset-x-0 top-1/2 border-t border-slate-200" />
               <span className="relative bg-white px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">or</span>
@@ -588,11 +598,10 @@ export default function Valuation() {
             <PrimaryButton className="w-full mt-5" disabled={estimating || lookingUp} onClick={checkValue}>
               {lookingUp ? 'Looking up RC…' : estimating ? 'Calculating…' : 'Check value'}
             </PrimaryButton>
-            <p className="text-center text-[11px] font-semibold text-emerald-600 mt-3">100% free · No sign-up · Instant estimate</p>
+            <p className="text-center text-[11px] font-semibold text-emerald-600 mt-3">100% free · Instant estimate</p>
           </Card>
-          ) : null}
-        </div>
-      </section>
+        ) : null}
+      </Section>
 
       <div id="result" className="scroll-mt-24">
         {result && (
@@ -639,17 +648,19 @@ export default function Valuation() {
                 <div className="mt-4 space-y-3">
                   <input className={inputClass} placeholder="Your name" value={contact.name} onChange={(e) => setC('name', e.target.value)} />
                   <input className={inputClass} placeholder="Mobile number" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
-                  <select className={inputClass} value={contact.city} onChange={(e) => setC('city', e.target.value)}>
-                    <option value="">Select city</option>
-                    {(cities || []).map((c) => (
-                      <option key={c._id || c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    value={contact.city}
+                    placeholder="Select city"
+                    searchPlaceholder="Search city"
+                    options={(cities || []).map((c) => ({ value: c.name, label: c.name }))}
+                    onChange={(value) => setC('city', value)}
+                  />
                   <PrimaryButton className="w-full" disabled={submitting} onClick={requestOffers}>
-                    {submitting ? 'Sending…' : 'Get dealer offers'}
+                    {submitting ? 'Sending…' : 'Request a 4tyrezz follow-up'}
                   </PrimaryButton>
+                  <Link to="/sell" className="block text-center text-xs font-black uppercase tracking-wider text-[#3083ff] pt-1">
+                    Or sell this car
+                  </Link>
                 </div>
               </Card>
             </div>
@@ -657,19 +668,33 @@ export default function Valuation() {
         )}
       </div>
 
-      <Section eyebrow="How it works" title="Four steps to a fair price" bg>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {HOW.map(({ icon: Icon, title, body }, i) => (
-            <Card key={title} className="p-5 relative">
-              <span className="absolute top-5 right-5 font-black text-3xl text-slate-100">0{i + 1}</span>
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center">
-                <Icon className="w-5 h-5 text-white" strokeWidth={2.25} />
-              </div>
-              <h3 className="font-black text-slate-900 text-sm mt-4">{title}</h3>
-              <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{body}</p>
-            </Card>
-          ))}
+      <Section bg>
+        <WhyValuation />
+      </Section>
+
+      <Section>
+        <PriceFactors />
+      </Section>
+
+      <Section className="bg-gradient-to-b from-blue-50/70">
+        <div className="rounded-3xl border border-[#3083ff]/20 bg-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-[#3083ff]">Next step</p>
+            <h3 className="font-display text-2xl font-black text-slate-900 mt-1">Happy with the range?</h3>
+            <p className="text-sm font-medium text-slate-500 mt-1">Book inspection on Sell your car. 4tyrezz confirms the offer in person.</p>
+          </div>
+          <Link to="/sell">
+            <PrimaryButton>Sell this car</PrimaryButton>
+          </Link>
         </div>
+      </Section>
+
+      <Section className="bg-gradient-to-b from-blue-50/70">
+        <FaqsSection
+          faqs={VALUATION_FAQS}
+          subtitle="Everything you need to know about checking your car’s price on 4tyrezz."
+          layout="stack"
+        />
       </Section>
 
       {history.length > 0 && (
