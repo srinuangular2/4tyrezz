@@ -39,4 +39,8 @@ router.delete('/comparisons/:id', ...customer, portal.removeComparison);
 router.get('/saved-searches', ...customer, portal.listSavedSearches);
 router.patch('/saved-searches/:id/alerts', ...customer, portal.toggleSavedSearchAlerts);
 
+const viewHistory = require('../controllers/viewHistoryController');
+router.get('/view-history', protect, viewHistory.listMine);
+router.post('/view-history', protect, viewHistory.recordView);
+
 module.exports = router;

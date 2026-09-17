@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { formatPrice, formatKm } from '../utils/format';
 import { mediaUrl } from '../pages/profile/hubUtils';
-import { readRecentlyViewed, subscribeRecentlyViewed } from '../lib/recentlyViewed';
+import { readRecentlyViewed, subscribeRecentlyViewed, fetchRecentlyViewed } from '../lib/recentlyViewed';
 
 function CarTile({ car }) {
   return (
@@ -41,12 +42,31 @@ function CarTile({ car }) {
 }
 
 export default function LastViewedCars() {
-  const [items, setItems] = useState(readRecentlyViewed);
+  const userId = useSelector((s) => s.auth?.user?._id || s.auth?.user?.id || '');
+  const isAuthed = useSelector((s) => Boolean(s.auth?.user && s.auth?.token));
+  const [items, setItems] = useState([]);
   const scrollerRef = useRef(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
 
-  useEffect(() => subscribeRecentlyViewed(setItems), []);
+  useEffect(() => {
+    if (!isAuthed || !userId) {
+      setItems([]);
+      return undefined;
+    }
+    setItems(readRecentlyViewed(userId));
+    let cancelled = false;
+    fetchRecentlyViewed(userId).then((rows) => {
+      if (!cancelled) setItems(rows);
+    });
+    const unsub = subscribeRecentlyViewed((next) => {
+      if (!cancelled) setItems(next);
+    }, () => userId);
+    return () => {
+      cancelled = true;
+      unsub();
+    };
+  }, [isAuthed, userId]);
 
   const updateArrows = () => {
     const el = scrollerRef.current;
@@ -67,7 +87,7 @@ export default function LastViewedCars() {
     };
   }, [items.length]);
 
-  if (!items.length) return null;
+  if (!isAuthed || !items.length) return null;
 
   const nudge = (dir) => scrollerRef.current?.scrollBy({ left: dir * 240, behavior: 'smooth' });
 

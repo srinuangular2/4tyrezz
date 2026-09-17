@@ -113,7 +113,6 @@ export default function CarDetails() {
         if (!isMounted) return;
         const carData = carRes.data;
         setCar(carData);
-        rememberRecentlyViewed(carData);
         if (carData?.price) setLoanAmount(carData.emiDetails?.suggestedLoan || Math.round(carData.price * 0.9));
         if (carData?.emiDetails?.defaultRate) setInterestRate(carData.emiDetails.defaultRate);
         if (carData?.emiDetails?.defaultTenureMonths) setTenureYears(Math.max(1, Math.round(carData.emiDetails.defaultTenureMonths / 12)));
@@ -134,6 +133,13 @@ export default function CarDetails() {
     fetchData();
     return () => { isMounted = false; };
   }, [id]);
+
+  useEffect(() => {
+    if (!car || car === 'error') return;
+    const uid = user?._id || user?.id;
+    if (!uid) return;
+    rememberRecentlyViewed(car, uid);
+  }, [car, user?._id, user?.id]);
 
   const insights = car?.quickInsights || {};
   const rto = car?.rtoDetails || {};

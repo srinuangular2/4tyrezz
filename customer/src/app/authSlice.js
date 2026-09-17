@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/axios';
+import { flushRecentlyViewed } from '../lib/recentlyViewed';
 
 function persistAuth(state, payload) {
   state.user = payload.user;
@@ -108,6 +109,7 @@ const authSlice = createSlice({
       state.otpMode = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      flushRecentlyViewed();
     },
     clearAuthError(state) {
       state.error = null;
