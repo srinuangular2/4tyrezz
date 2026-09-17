@@ -292,11 +292,13 @@ export default function Home() {
 
       <LastViewedCars />
 
+{/* ---- LATEST CARS ---- */}
+     <Section className='' eyebrow="Fresh Listings" title={<>Latest <span className="font-black"> Used Cars</span></>}  viewAllHref="/cars?sort=-createdAt">
       {/* ---- LATEST CARS ---- */}
       <Section className="bg-gradient-to-b from-blue-50/70" eyebrow="Fresh Listings" title={<>Latest <span className="font-black"> Used Cars</span></>} viewAllHref="/cars?sort=-createdAt">
         {loading ? <CarGridSkeleton /> : <CarSlider cars={latest} />}
       </Section>
-
+      </Section>
       <BudgetCarsByTabs />
 
    
