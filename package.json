@@ -1,4 +1,9 @@
 {
+  "name": "4tyrezz",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix customer"
+  },
   "dependencies": {
     "recharts": "^2.15.4"
   }
