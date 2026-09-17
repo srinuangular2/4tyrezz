@@ -128,20 +128,28 @@ export default function Valuation() {
   const { requireAuth, isAuthed } = useAuthGuard();
 
   useEffect(() => {
-    const saved = loadValuationDraft();
-    if (valuationDraftReady(saved)) {
-      setDraft(saved);
-      setGate('resume');
-    } else {
-      setGate('form');
-    }
+    let cancelled = false;
+    (async () => {
+      const saved = await loadValuationDraft();
+      if (cancelled) return;
+      if (valuationDraftReady(saved)) {
+        setDraft(saved);
+        setGate('resume');
+      } else {
+        setGate('form');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (gate !== 'form') return;
     if (!form.brand) return;
+    if (!isAuthed) return;
     saveValuationDraft({ form, result, contact });
-  }, [form, result, contact, gate]);
+  }, [form, result, contact, gate, isAuthed]);
 
   const { models, loading: loadingModels } = useVehicleModels(form.brand, form.year);
   const { years: catalogYears, loading: loadingYears } = useVehicleYears(form.brand);
@@ -367,7 +375,7 @@ export default function Valuation() {
           message: `Valuation ${formatINR(result?.valuation?.fairMarketValue || result?.estimate)} (${formatINR(result?.valuation?.estimatedMinPrice || result?.minPrice)}–${formatINR(result?.valuation?.estimatedMaxPrice || result?.maxPrice)}). Requesting dealer offers.`,
         });
         toast.success('Request sent. The 4tyrezz team will contact you shortly.');
-        saveValuationDraft({ form, result, contact, submitted: true });
+        saveValuationDraft({ form, result, contact, submitted: true }, { immediate: true });
         setContact({ name: '', phone: '', city: '' });
       } catch (e) {
         toast.error(e.response?.data?.message || 'Could not submit request');
@@ -377,7 +385,7 @@ export default function Valuation() {
     });
   };
 
-  const resumeEditing = (saved = draft || loadValuationDraft()) => {
+  const resumeEditing = (saved = draft) => {
     if (!saved?.form) {
       setGate('form');
       return;

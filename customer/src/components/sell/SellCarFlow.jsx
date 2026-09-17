@@ -28,23 +28,31 @@ export default function SellCarFlow() {
   const [draft, setDraft] = useState(null);
   const [valuating, setValuating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const { requireAuth } = useAuthGuard();
+  const { requireAuth, isAuthed } = useAuthGuard();
 
   useEffect(() => {
-    const saved = loadSellDraft();
-    if (sellDraftReady(saved)) {
-      setDraft(saved);
-      setGate('resume');
-    } else {
-      setGate('form');
-    }
+    let cancelled = false;
+    (async () => {
+      const saved = await loadSellDraft();
+      if (cancelled) return;
+      if (sellDraftReady(saved)) {
+        setDraft(saved);
+        setGate('resume');
+      } else {
+        setGate('form');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (gate !== 'form') return;
     if (!state.brand && !state.done) return;
+    if (!isAuthed) return;
     saveSellDraft(state);
-  }, [state, gate]);
+  }, [state, gate, isAuthed]);
 
   const patch = useCallback((partial) => {
     setState((s) => ({ ...s, ...partial }));
@@ -145,7 +153,7 @@ export default function SellCarFlow() {
 
       await api.post('/enquiries/seller', form);
       const next = { ...state, done: true };
-      saveSellDraft(next);
+      saveSellDraft(next, { immediate: true });
       setDraft(next);
       setGate('resume');
       patch({ done: true });
@@ -157,7 +165,7 @@ export default function SellCarFlow() {
   };
 
   const resumeEditing = () => {
-    const saved = draft || loadSellDraft() || state;
+    const saved = draft || state;
     const previews = saved.photoPreviews || [];
     setState({
       ...initialSellCarState(),

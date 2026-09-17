@@ -71,6 +71,7 @@ app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/promotions', require('./routes/promotionRoutes'));
 app.use('/api/saved-searches', require('./routes/savedSearchRoutes'));
+app.use('/api/drafts', require('./routes/draftRoutes'));
 app.use('/api/vehicles', require('./routes/vehicles'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 
