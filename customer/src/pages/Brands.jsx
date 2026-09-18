@@ -3,13 +3,37 @@ import { Link } from 'react-router-dom';
 import { Search, Car } from 'lucide-react';
 import useReferenceData from '../hooks/useReferenceData';
 import { mediaUrl } from './profile/hubUtils';
-import {
-  EmptyState,
-  PageHero,
-  Section,
-  Skeleton,
-  inputClass,
-} from '../components/PageShell';
+import { EmptyState, Section, Skeleton } from '../components/PageShell';
+import BrandsBanner from '../components/brands/BrandsBanner';
+import WhyBrands from '../components/brands/WhyBrands';
+import FaqsSection from '../components/FaqsSection';
+
+const BRAND_FAQS = [
+  {
+    q: 'What is 4tyrezz?',
+    a: '4tyrezz is a used-car marketplace. You can buy inspected cars, check a fair price, sell your car, compare models, and apply for finance — without sharing your number with random callers.',
+  },
+  {
+    q: 'How do I use the All Brands page?',
+    a: 'Search or tap a logo. You will see only that manufacturer’s live listings. From there open a car for photos, kilometres, price and next steps.',
+  },
+  {
+    q: 'Are these new cars?',
+    a: 'No. 4tyrezz lists pre-owned cars. Brand pages help you stay with a make you already trust, such as Maruti or Hyundai.',
+  },
+  {
+    q: 'How do I buy a car after I pick a brand?',
+    a: 'Open a listing, check details, then contact 4tyrezz. You can also compare two cars or check EMI on Finance before you decide.',
+  },
+  {
+    q: 'I want to sell, not buy. Is this page still useful?',
+    a: 'Yes. Seeing what your brand sells for helps. Then use Car Valuation for an estimate and Sell my car to book inspection.',
+  },
+  {
+    q: 'Why should I buy or sell with 4tyrezz?',
+    a: 'Listings are reviewed, valuation uses the same catalogue as Sell, and our team handles follow-up. You talk to 4tyrezz, not a public phone board.',
+  },
+];
 
 export default function Brands() {
   const { brands, loading } = useReferenceData();
@@ -24,24 +48,49 @@ export default function Brands() {
 
   return (
     <div className="bg-slate-50">
-      <PageHero
-        eyebrow="Inventory"
-        title="All brands"
-        subtitle="Browse every make we list. Tap a brand to see live cars for that manufacturer."
-      >
-        <p className="text-white/60 text-sm font-bold mt-6">{brands.length || '—'} brands</p>
-      </PageHero>
-
-      <Section eyebrow="Browse" title="Choose a manufacturer">
-        <div className="relative mb-8 max-w-xl">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={2.5} />
-          <input
-            className={`${inputClass} pl-10`}
-            placeholder="Search brand…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+      <BrandsBanner>
+        <div className="mt-8 max-w-md">
+          <label className="sr-only" htmlFor="brand-search">Search brand</label>
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" strokeWidth={2.5} />
+            <input
+              id="brand-search"
+              className="w-full bg-white rounded-full pl-11 pr-4 py-3.5 text-sm font-semibold text-slate-800 placeholder:text-slate-400 shadow-xl border border-white/80 outline-none focus:ring-2 focus:ring-[#3083ff]/40"
+              placeholder="Search Maruti, Hyundai, Honda…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          {query.trim() && visible.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {visible.slice(0, 6).map((b) => (
+                <Link
+                  key={b._id}
+                  to={`/cars?brand=${b._id}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-[#3083ff] hover:text-white transition-colors shadow-sm"
+                >
+                  {b.logo ? (
+                    <img src={mediaUrl(b.logo)} alt="" className="w-4 h-4 object-contain" />
+                  ) : null}
+                  {b.name}
+                </Link>
+              ))}
+              {visible.length > 6 && (
+                <span className="inline-flex items-center text-[11px] font-bold text-white/80 px-1">
+                  +{visible.length - 6} more below
+                </span>
+              )}
+            </div>
+          )}
         </div>
+      </BrandsBanner>
+
+      <Section eyebrow="Browse" title="Tap a brand to see cars">
+        <p className="text-slate-500 text-sm font-medium -mt-2 mb-6 max-w-2xl">
+          {brands.length
+            ? `${brands.length} makes on 4tyrezz. Pick one to open live used cars for that brand.`
+            : 'Manufacturers appear here as inventory is added.'}
+        </p>
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -84,6 +133,17 @@ export default function Brands() {
             body={brands.length ? 'Try a different name.' : 'Manufacturers appear here as inventory is added.'}
           />
         )}
+      </Section>
+
+      <Section bg>
+        <WhyBrands />
+      </Section>
+
+      <Section className="bg-gradient-to-b from-blue-50/70">
+        <FaqsSection
+          faqs={BRAND_FAQS}
+          subtitle="Simple answers about brands, buying, and selling on 4tyrezz."
+        />
       </Section>
     </div>
   );

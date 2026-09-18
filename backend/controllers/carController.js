@@ -120,6 +120,11 @@ exports.getCars = async (req, res) => {
       ];
     }
 
+    function splitCsv(value) {
+      if (!value) return [];
+      return String(value).split(',').map((v) => v.trim()).filter(Boolean);
+    }
+
     async function resolveRef(Model, value) {
       if (!value) return null;
       if (/^[a-fA-F0-9]{24}$/.test(String(value))) return value;
@@ -130,6 +135,21 @@ exports.getCars = async (req, res) => {
         ],
       }).select('_id');
       return doc?._id || null;
+    }
+
+    async function resolveRefs(Model, value) {
+      const ids = [];
+      for (const part of splitCsv(value)) {
+        const id = await resolveRef(Model, part);
+        if (id) ids.push(id);
+      }
+      return [...new Set(ids.map((id) => String(id)))];
+    }
+
+    function applyInOrEq(target, key, values, cast = (v) => v) {
+      const next = values.map(cast).filter((v) => v !== '' && v != null && !(typeof v === 'number' && Number.isNaN(v)));
+      if (!next.length) return;
+      target[key] = next.length === 1 ? next[0] : { $in: next };
     }
 
     async function resolveCityRef(value) {
@@ -145,8 +165,8 @@ exports.getCars = async (req, res) => {
       return partial?._id || null;
     }
 
-    const brandId = await resolveRef(Brand, brand);
-    const modelId = await resolveRef(CarModel, model);
+    const brandIds = await resolveRefs(Brand, brand);
+    const modelIds = await resolveRefs(CarModel, model);
     const cityId = await resolveCityRef(city || location);
     const cityIsName = city && !/^[a-fA-F0-9]{24}$/.test(String(city));
     applyLocationFilters(filter, {
@@ -154,8 +174,8 @@ exports.getCars = async (req, res) => {
       area: area || areas,
       cityName: cityIsName ? city : '',
     });
-    if (brandId) filter.brand = brandId;
-    if (modelId) filter.model = modelId;
+    applyInOrEq(filter, 'brand', brandIds);
+    applyInOrEq(filter, 'model', modelIds);
     if (cityId && filter['location.city']) {
       const cityRx = filter['location.city'];
       delete filter['location.city'];
@@ -163,11 +183,11 @@ exports.getCars = async (req, res) => {
     } else if (cityId) {
       filter.city = cityId;
     }
-    if (fuel) filter.fuel = fuel;
-    if (transmission) filter.transmission = transmission;
-    if (bodyType) filter.bodyType = bodyType;
-    if (color) filter.color = color;
-    if (ownership) filter.ownership = ownership;
+    applyInOrEq(filter, 'fuel', splitCsv(fuel));
+    applyInOrEq(filter, 'transmission', splitCsv(transmission));
+    applyInOrEq(filter, 'bodyType', splitCsv(bodyType));
+    applyInOrEq(filter, 'color', splitCsv(color));
+    applyInOrEq(filter, 'ownership', splitCsv(ownership), (v) => Number(v));
     if (isFeatured) filter.isFeatured = true;
     if (isPremium) filter.isPremium = true;
 

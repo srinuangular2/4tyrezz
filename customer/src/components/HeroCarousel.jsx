@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
 import { mediaUrl } from '../pages/profile/hubUtils';
+import SearchableSelect from './common/SearchableSelect';
+import { BUDGETS, budgetQuery } from '../utils/filterOptions';
 
 const FALLBACK_SLIDE = {
   _id: 'fallback',
@@ -87,7 +89,9 @@ export default function HeroCarousel() {
   const touchX = useRef(null);
 
   const [selectedMake, setSelectedMake] = useState('');
-  const [selectedPrice, setSelectedPrice] = useState('');
+  const [selectedMakeMeta, setSelectedMakeMeta] = useState(null);
+  const [selectedBudget, setSelectedBudget] = useState('');
+  const [popularModels, setPopularModels] = useState([]);
 
   useEffect(() => {
     api.get('/banners')
@@ -102,6 +106,10 @@ export default function HeroCarousel() {
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
+
+    api.get('/cars/autocomplete', { params: { q: '' } })
+      .then((r) => setPopularModels(r.data?.popularModels || r.data?.models || []))
+      .catch(() => setPopularModels([]));
   }, []);
 
   const startTimer = () => {
@@ -123,11 +131,60 @@ export default function HeroCarousel() {
   const prev = () => go(active - 1);
   const next = () => go(active + 1);
 
+  const makeOptions = useMemo(() => {
+    const brandOpts = (brands || []).map((b) => ({
+      value: `brand:${b.name}`,
+      label: b.name,
+      badge: 'Brand',
+      brand: b.name,
+      brandId: b._id,
+    }));
+    const seen = new Set(brandOpts.map((o) => o.label.toLowerCase()));
+    const modelOpts = (popularModels || [])
+      .filter((m) => m?.brand && m?.model)
+      .map((m) => ({
+        value: `model:${m.brand}:${m.model}`,
+        label: `${m.brand} ${m.model}`,
+        badge: 'Model',
+        brand: m.brand,
+        model: m.model,
+      }))
+      .filter((o) => {
+        const key = o.value.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    return [...brandOpts, ...modelOpts];
+  }, [brands, popularModels]);
+
+  const budgetOptions = useMemo(
+    () => BUDGETS.map((b) => ({ value: b.label, label: b.label, min: b.min, max: b.max })),
+    []
+  );
+
+  const compactTrigger =
+    'w-full text-xs font-semibold bg-transparent focus:outline-none cursor-pointer py-0.5 pr-1';
+
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (selectedMake) params.set('brand', selectedMake);
-    if (selectedPrice) params.set('maxPrice', selectedPrice);
+    if (selectedMakeMeta?.model) {
+      params.set('brand', selectedMakeMeta.brand);
+      params.set('model', selectedMakeMeta.model);
+    } else if (selectedMakeMeta?.brand) {
+      params.set('brand', selectedMakeMeta.brandId || selectedMakeMeta.brand);
+    } else if (selectedMake.startsWith('brand:')) {
+      params.set('brand', selectedMake.slice(6));
+    } else if (selectedMake.startsWith('model:')) {
+      const parts = selectedMake.split(':');
+      if (parts[1]) params.set('brand', parts[1]);
+      if (parts[2]) params.set('model', parts[2]);
+    }
+    const budget = BUDGETS.find((b) => b.label === selectedBudget);
+    if (budget) {
+      Object.entries(budgetQuery(budget)).forEach(([key, value]) => params.set(key, String(value)));
+    }
     navigate(`/cars?${params.toString()}`);
   };
 
@@ -149,7 +206,7 @@ export default function HeroCarousel() {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-slate-900 text-white"
+      className="relative w-full overflow-visible bg-slate-900 text-white"
       onMouseEnter={() => clearInterval(timer.current)}
       onMouseLeave={startTimer}
       onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
@@ -160,7 +217,7 @@ export default function HeroCarousel() {
         if (Math.abs(dx) > 50) (dx > 0 ? prev() : next());
       }}
     >
-      <div className="relative h-[520px] md:h-[600px] lg:h-[690px] w-full flex flex-col justify-between pb-8">
+      <div className="relative h-[520px] md:h-[600px] lg:h-[690px] w-full flex flex-col justify-between pb-8 overflow-visible">
         <div className="absolute inset-0 overflow-hidden">
           {slides.map((slide, i) => (
             <div
@@ -186,7 +243,7 @@ export default function HeroCarousel() {
         )}
 
         {/* Main Banner Content */}
-        <div className="relative z-20 max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 w-full my-auto">
+        <div className="relative z-40 max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 w-full my-auto">
           <div key={active} className="max-w-4xl text-left animate-heroCopyIn space-y-3">
             
             {/* Eyebrow Badges */}
@@ -232,35 +289,36 @@ export default function HeroCarousel() {
                 <svg className="w-5 h-5 text-slate-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <div className="w-full text-left">
+                <div className="w-full text-left min-w-0">
                   <label className="block text-[10px] font-bold text-slate-900 uppercase tracking-tight">Make / Model</label>
-                  <select
+                  <SearchableSelect
                     value={selectedMake}
-                    onChange={(e) => setSelectedMake(e.target.value)}
-                    className="w-full text-xs font-semibold text-slate-500 bg-transparent focus:outline-none cursor-pointer"
-                  >
-                    <option value="">Select Make</option>
-                    {brands.map((b) => (
-                      <option key={b._id} value={b._id}>{b.name}</option>
-                    ))}
-                  </select>
+                    options={makeOptions}
+                    placeholder="Search make or model"
+                    searchPlaceholder="Search brand or model"
+                    triggerClassName={`${compactTrigger} ${selectedMake ? 'text-slate-800' : 'text-slate-500'}`}
+                    menuClassName="min-w-[260px]"
+                    onChange={(value, raw) => {
+                      setSelectedMake(value);
+                      setSelectedMakeMeta(raw || null);
+                    }}
+                  />
                 </div>
               </div>
 
               <div className="flex items-center gap-2 flex-1 px-4 py-1.5 w-full">
                 <span className="text-slate-800 font-bold text-base">₹</span>
-                <div className="w-full text-left">
+                <div className="w-full text-left min-w-0">
                   <label className="block text-[10px] font-bold text-slate-900 uppercase tracking-tight">Price Range</label>
-                  <select
-                    value={selectedPrice}
-                    onChange={(e) => setSelectedPrice(e.target.value)}
-                    className="w-full text-xs font-semibold text-slate-500 bg-transparent focus:outline-none cursor-pointer"
-                  >
-                    <option value="">Select Range</option>
-                    <option value="500000">Under 5 Lakhs</option>
-                    <option value="1000000">Under 10 Lakhs</option>
-                    <option value="2000000">Under 20 Lakhs</option>
-                  </select>
+                  <SearchableSelect
+                    value={selectedBudget}
+                    options={budgetOptions}
+                    placeholder="Search by budget"
+                    searchPlaceholder="Search budget"
+                    triggerClassName={`${compactTrigger} ${selectedBudget ? 'text-slate-800' : 'text-slate-500'}`}
+                    menuClassName="min-w-[240px]"
+                    onChange={(value) => setSelectedBudget(value)}
+                  />
                 </div>
               </div>
 
@@ -277,7 +335,7 @@ export default function HeroCarousel() {
           </div>
         </div>
 
-        <div className="relative z-20 max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 w-full pt-4">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 w-full pt-4 pointer-events-none">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl">
             {FEATURES.map((feat, idx) => (
               <div

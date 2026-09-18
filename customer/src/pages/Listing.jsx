@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import { SlidersHorizontal, X } from 'lucide-react';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
 import CarCard from '../components/CarCard';
@@ -10,15 +11,26 @@ import Pagination from '../components/Pagination';
 import FilterSidebar from '../components/listing/FilterSidebar';
 import { describeFilters } from './profile/hubUtils';
 import { useAuthGuard } from '../components/AuthGuardModal';
-import { BUDGETS, budgetQuery, isBudgetActive, parseBudgetQuery } from '../utils/filterOptions';
-
-const FUELS = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
-const TRANSMISSIONS = ['Manual', 'Automatic'];
-const BODY_TYPES = ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Luxury', 'Convertible'];
-const OWNERSHIP = [1, 2, 3];
+import {
+  BUDGETS,
+  BODY_TYPES,
+  FUEL_TYPES,
+  KM_RANGES,
+  OWNER_TYPES,
+  TRANSMISSIONS,
+  YEAR_RANGES,
+  isBudgetActive,
+  parseBudgetQuery,
+} from '../utils/filterOptions';
 
 function sameName(a, b) {
   return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+}
+
+function asList(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).map(String);
+  if (!value) return [];
+  return String(value).split(',').map((v) => v.trim()).filter(Boolean);
 }
 
 function matchRef(list, value) {
@@ -31,6 +43,20 @@ function matchRef(list, value) {
   );
 }
 
+function matchRefs(list, value) {
+  return asList(value).map((v) => matchRef(list, v)).filter(Boolean);
+}
+
+function isBucketActive(bucket, minKey, maxKey, filters) {
+  const min = filters[minKey] === '' || filters[minKey] == null ? '' : Number(filters[minKey]);
+  const max = filters[maxKey] === '' || filters[maxKey] == null ? '' : Number(filters[maxKey]);
+  const bMin = bucket[minKey] == null ? '' : Number(bucket[minKey]);
+  const bMax = bucket[maxKey] == null ? '' : Number(bucket[maxKey]);
+  return min === bMin && max === bMax;
+}
+
+const KEEP_ON_CLEAR = ['sort'];
+
 export default function Listing() {
   const [params, setParams] = useSearchParams();
   const { user } = useSelector((s) => s.auth);
@@ -39,17 +65,18 @@ export default function Listing() {
   const [cars, setCars] = useState([]);
   const [meta, setMeta] = useState({ total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Parse URL search params into object
   const currentParamsObj = Object.fromEntries([...params.entries()]);
   const [filters, setFilters] = useState(currentParamsObj);
 
-  // 1. Keep state synced with URL search params when route changes
   useEffect(() => {
     const next = Object.fromEntries([...params.entries()]);
     const budget = parseBudgetQuery(next.q || next.search);
     if (budget && !next.minPrice && !next.maxPrice) {
-      const q = budgetQuery(budget);
+      const q = {};
+      if (budget.minPrice) q.minPrice = budget.minPrice;
+      if (budget.maxPrice) q.maxPrice = budget.maxPrice;
       delete next.q;
       delete next.search;
       Object.assign(next, q);
@@ -60,20 +87,16 @@ export default function Listing() {
     setFilters(next);
   }, [params]);
 
-  const searchValue = filters.search || filters.q || '';
-  const brandDoc = matchRef(brands, filters.brand);
-  const modelDoc = matchRef(
-    models.filter((m) => !brandDoc || String(m.brand) === String(brandDoc._id) || m.brand?._id === brandDoc._id),
-    filters.model
-  );
-  const cityDoc = matchRef(cities, filters.city || filters.location);
+  const brandDocs = matchRefs(brands, filters.brand);
+  const selectedBrandIds = brandDocs.map((b) => String(b._id));
   const brandModels = models.filter((m) => {
-    if (!brandDoc) return true;
+    if (!selectedBrandIds.length) return true;
     const bid = m.brand?._id || m.brand;
-    return String(bid) === String(brandDoc._id);
+    return selectedBrandIds.includes(String(bid));
   });
+  const modelDocs = matchRefs(brandModels, filters.model);
+  const cityDoc = matchRef(cities, filters.city || filters.location);
 
-  // 2. Main data fetching effect triggered whenever filters change
   useEffect(() => {
     const controller = new AbortController();
 
@@ -84,12 +107,12 @@ export default function Listing() {
           Object.entries(filters).filter(([, v]) => v !== '' && v !== null && v !== undefined)
         );
         if (clean.q && !clean.search) clean.search = clean.q;
-        if (brandDoc) clean.brand = brandDoc._id;
-        if (modelDoc) clean.model = modelDoc._id;
+        if (brandDocs.length) clean.brand = brandDocs.map((b) => b._id).join(',');
+        if (modelDocs.length) clean.model = modelDocs.map((m) => m._id).join(',');
         if (cityDoc) clean.city = cityDoc.name || cityDoc._id;
         if (filters.state) clean.state = filters.state;
         if (filters.area) clean.area = filters.area;
-        
+
         const { data } = await api.get('/cars', {
           params: { ...clean, limit: 12 },
           signal: controller.signal,
@@ -116,9 +139,8 @@ export default function Listing() {
     fetchCars();
 
     return () => controller.abort();
-  }, [JSON.stringify(filters), brandDoc?._id, modelDoc?._id, cityDoc?._id]);
+  }, [JSON.stringify(filters), brandDocs.map((b) => b._id).join(','), modelDocs.map((m) => m._id).join(','), cityDoc?._id]);
 
-  // Apply new filters to state + URL query string
   const apply = (next) => {
     const clean = Object.fromEntries(
       Object.entries(next).filter(([, v]) => v !== '' && v !== null && v !== undefined)
@@ -133,9 +155,17 @@ export default function Listing() {
     apply(next);
   };
 
+  const clearAll = () => {
+    const kept = {};
+    KEEP_ON_CLEAR.forEach((key) => {
+      if (filters[key]) kept[key] = filters[key];
+    });
+    apply(kept);
+  };
+
   const saveSearch = async () => {
     const run = async () => {
-      const brandName = brandDoc?.name || filters.brand;
+      const brandName = brandDocs.map((b) => b.name).join(', ') || filters.brand;
       const cityName = cityDoc?.name || filters.city;
       const named = describeFilters({ ...filters, brand: brandName, city: cityName });
       try {
@@ -154,6 +184,82 @@ export default function Listing() {
     requireAuth(run);
   };
 
+  const chips = useMemo(() => {
+    const items = [];
+    const push = (key, label, next) => items.push({ key, label, next });
+
+    if (filters.search || filters.q) {
+      push('search', `"${filters.search || filters.q}"`, { ...filters, search: '', q: '', page: 1 });
+    }
+    brandDocs.forEach((b) => {
+      const nextBrand = brandDocs.filter((x) => x._id !== b._id).map((x) => x._id).join(',');
+      const nextModel = modelDocs
+        .filter((m) => String(m.brand?._id || m.brand) !== String(b._id))
+        .map((m) => m._id)
+        .join(',');
+      push(`brand-${b._id}`, b.name, { ...filters, brand: nextBrand, model: nextModel, page: 1 });
+    });
+    modelDocs.forEach((m) => {
+      const nextModel = modelDocs.filter((x) => x._id !== m._id).map((x) => x._id).join(',');
+      push(`model-${m._id}`, m.name, { ...filters, model: nextModel, page: 1 });
+    });
+    const budget = BUDGETS.find((b) => isBudgetActive(b, filters.minPrice, filters.maxPrice));
+    if (budget) {
+      push('budget', budget.label, { ...filters, minPrice: '', maxPrice: '', page: 1 });
+    } else if (filters.minPrice || filters.maxPrice) {
+      push('budget', 'Custom budget', { ...filters, minPrice: '', maxPrice: '', page: 1 });
+    }
+    const year = YEAR_RANGES.find(([, p]) => isBucketActive(p, 'minYear', 'maxYear', filters));
+    if (year) push('year', year[0], { ...filters, minYear: '', maxYear: '', page: 1 });
+    const km = KM_RANGES.find(([, p]) => isBucketActive(p, 'minKm', 'maxKm', filters));
+    if (km) push('km', km[0], { ...filters, minKm: '', maxKm: '', page: 1 });
+    asList(filters.fuel).forEach((fuel) => {
+      const next = asList(filters.fuel).filter((v) => v !== fuel).join(',');
+      push(`fuel-${fuel}`, FUEL_TYPES.find((f) => sameName(f, fuel)) || fuel, { ...filters, fuel: next, page: 1 });
+    });
+    asList(filters.transmission).forEach((t) => {
+      const next = asList(filters.transmission).filter((v) => v !== t).join(',');
+      push(`tr-${t}`, TRANSMISSIONS.find((x) => sameName(x, t)) || t, { ...filters, transmission: next, page: 1 });
+    });
+    asList(filters.bodyType).forEach((t) => {
+      const next = asList(filters.bodyType).filter((v) => v !== t).join(',');
+      push(`body-${t}`, BODY_TYPES.find((x) => sameName(x, t)) || t, { ...filters, bodyType: next, page: 1 });
+    });
+    asList(filters.ownership).forEach((o) => {
+      const next = asList(filters.ownership).filter((v) => String(v) !== String(o)).join(',');
+      const label = OWNER_TYPES.find(([, p]) => String(p.ownership) === String(o))?.[0] || `${o} owner`;
+      push(`own-${o}`, label, { ...filters, ownership: next, page: 1 });
+    });
+    if (filters.city) push('city', cityDoc?.name || filters.city, { ...filters, city: '', area: '', page: 1 });
+    asList(filters.area).forEach((area) => {
+      const next = asList(filters.area).filter((v) => v !== area).join(',');
+      push(`area-${area}`, area, { ...filters, area: next, page: 1 });
+    });
+    return items;
+  }, [filters, brandDocs, modelDocs, cityDoc]);
+
+  const sidebar = (compact) => (
+    <FilterSidebar
+      filters={{ ...filters, city: cityDoc?.name || filters.city }}
+      apply={apply}
+      brands={brands}
+      models={models}
+      onClear={clearAll}
+      canSave={user?.role !== 'dealer'}
+      onSaveSearch={saveSearch}
+      compact={compact}
+    />
+  );
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
   return (
     <>
       <div className="bg-ink py-8">
@@ -163,178 +269,36 @@ export default function Listing() {
         </div>
       </div>
 
-      <div className="container-px py-8 grid lg:grid-cols-[260px_1fr] gap-7 items-start">
-        <aside className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/80 rounded-2xl p-5 lg:sticky lg:top-24">
-          <FilterGroup title="Search">
-            <input
-              value={searchValue}
-              onChange={(e) => set('search', e.target.value)}
-              placeholder="Title, brand or model"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
-            />
-          </FilterGroup>
-
-          <FilterSidebar
-            filters={{ ...filters, city: cityDoc?.name || filters.city }}
-            apply={apply}
-          />
-
-          <FilterGroup title="Budget">
-            <div className="flex flex-wrap gap-2 mb-3">
-              {BUDGETS.map((b) => {
-                const active = isBudgetActive(b, filters.minPrice, filters.maxPrice);
-                return (
-                  <button
-                    key={b.label}
-                    type="button"
-                    onClick={() => {
-                      const q = budgetQuery(b);
-                      apply({
-                        ...filters,
-                        minPrice: q.minPrice || '',
-                        maxPrice: q.maxPrice || '',
-                        page: 1,
-                      });
-                    }}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                      active
-                        ? 'border-[#3083ff] bg-blue-50 text-[#3083ff]'
-                        : 'border-slate-200 text-slate-700 hover:border-[#3083ff]'
-                    }`}
-                  >
-                    {b.label}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Custom range</p>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Min ₹"
-                value={filters.minPrice || ''}
-                onChange={(e) => set('minPrice', e.target.value)}
-                className="w-1/2 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900"
-              />
-              <input
-                type="number"
-                placeholder="Max ₹"
-                value={filters.maxPrice || ''}
-                onChange={(e) => set('maxPrice', e.target.value)}
-                className="w-1/2 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900"
-              />
-            </div>
-          </FilterGroup>
-
-          <FilterGroup title="Brand">
-            <select
-              value={brandDoc?._id || ''}
-              onChange={(e) => apply({ ...filters, brand: e.target.value, model: '', page: 1 })}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
-            >
-              <option value="">Any brand</option>
-              {brands.map((b) => (
-                <option key={b._id} value={b._id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </FilterGroup>
-
-          <FilterGroup title="Model">
-            <select
-              value={modelDoc?._id || ''}
-              onChange={(e) => set('model', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
-            >
-              <option value="">Any model</option>
-              {brandModels.map((m) => (
-                <option key={m._id} value={m._id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </FilterGroup>
-
-          <FilterGroup title="Body type">
-            <select
-              value={filters.bodyType || ''}
-              onChange={(e) => set('bodyType', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
-            >
-              <option value="">Any</option>
-              {BODY_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </FilterGroup>
-
-          <FilterGroup title="Fuel type">
-            <select
-              value={filters.fuel || ''}
-              onChange={(e) => set('fuel', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
-            >
-              <option value="">Any</option>
-              {FUELS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-          </FilterGroup>
-
-          <FilterGroup title="Transmission">
-            <select
-              value={filters.transmission || ''}
-              onChange={(e) => set('transmission', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
-            >
-              <option value="">Any</option>
-              {TRANSMISSIONS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </FilterGroup>
-
-          <FilterGroup title="Ownership">
-            <select
-              value={filters.ownership || ''}
-              onChange={(e) => set('ownership', e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"
-            >
-              <option value="">Any</option>
-              {OWNERSHIP.map((o) => (
-                <option key={o} value={o}>
-                  {o === 1 ? '1st owner' : `${o}${o === 2 ? 'nd' : 'rd'} owner`}
-                </option>
-              ))}
-            </select>
-          </FilterGroup>
-          {user?.role !== 'dealer' && (
-            <button
-              type="button"
-              onClick={saveSearch}
-              className="mt-4 w-full bg-[#3083ff] text-white font-black rounded-xl py-2.5 text-xs shadow-lg shadow-blue-500/20 hover:brightness-110 transition"
-            >
-              Save this search
-            </button>
-          )}
+      <div className="bg-slate-50">
+      <div className="container-px py-8 pb-24 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">
+        <aside className="hidden lg:block lg:sticky lg:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1">
+          {sidebar(false)}
         </aside>
 
         <div>
-          <div className="flex justify-between items-center mb-4">
-            <strong className="font-display font-semibold text-xl">
-              {loading ? '...' : `${meta.total} cars found`}
-            </strong>
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="lg:hidden inline-flex items-center gap-2 border border-slate-200 bg-white rounded-xl px-3 py-2 text-sm font-bold text-slate-800"
+              >
+                <SlidersHorizontal className="w-4 h-4 text-[#3083ff]" />
+                Filters
+                {chips.length > 0 && (
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#3083ff] text-white text-[10px] leading-[18px] text-center">
+                    {chips.length}
+                  </span>
+                )}
+              </button>
+              <strong className="font-display font-semibold text-xl">
+                {loading ? '...' : `${meta.total} cars found`}
+              </strong>
+            </div>
             <select
               value={filters.sort || '-createdAt'}
               onChange={(e) => set('sort', e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm"
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
             >
               <option value="-createdAt">Newest first</option>
               <option value="price">Price: Low to High</option>
@@ -342,6 +306,25 @@ export default function Listing() {
               <option value="-year">Year: Newest first</option>
             </select>
           </div>
+
+          {chips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {chips.map((chip) => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={() => apply(chip.next)}
+                  className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-blue-50 text-[#1853ff] text-[12px] font-bold border border-blue-100"
+                >
+                  {chip.label}
+                  <X className="w-3 h-3" />
+                </button>
+              ))}
+              <button type="button" onClick={clearAll} className="text-[12px] font-bold text-slate-500 hover:text-[#3083ff]">
+                Clear all
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <CarGridSkeleton />
@@ -366,15 +349,38 @@ export default function Listing() {
           )}
         </div>
       </div>
-    </>
-  );
-}
+      </div>
 
-function FilterGroup({ title, children, last }) {
-  return (
-    <div className={`pb-5 mb-5 ${last ? '' : 'border-b border-slate-100'}`}>
-      <h4 className="text-xs font-bold uppercase tracking-wide text-slate2 mb-2">{title}</h4>
-      {children}
-    </div>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[80] lg:hidden">
+          <button type="button" aria-label="Close filters" className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-[min(100%,360px)] bg-slate-50 shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
+              <strong className="text-sm font-black">Filters</strong>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={clearAll} className="text-[12px] font-bold text-[#3083ff]">
+                  Clear all
+                </button>
+                <button type="button" onClick={() => setMobileOpen(false)} className="p-1 text-slate-500" aria-label="Close">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 pb-24">
+              {sidebar(true)}
+            </div>
+            <div className="absolute bottom-0 inset-x-0 p-3 bg-white border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="w-full bg-[#3083ff] text-white font-black rounded-xl py-3 text-sm"
+              >
+                Show {loading ? 'cars' : `${meta.total} cars`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
