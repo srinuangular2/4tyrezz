@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Routes, Route, useParams } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -8,7 +8,9 @@ import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import CompareTray from './components/CompareTray';
 import ProtectedRoute from './components/ProtectedRoute';
+import DealerChrome from './components/dealer/DealerChrome';
 import { fetchWishlist } from './app/wishlistSlice';
+import { fetchMe } from './app/authSlice';
 import { RealtimeAlertsProvider } from './hooks/useRealtimeAlerts';
 
 import Home from './pages/Home';
@@ -22,21 +24,15 @@ import DealerLayout from './pages/dealer/DealerLayout';
 import DealerAnalytics from './pages/dealer/DealerAnalytics';
 import DealerInventory from './pages/dealer/DealerInventory';
 import DealerAddCar from './pages/dealer/DealerAddCar';
-import DealerLeads from './pages/dealer/DealerLeads';
 import DealerSettings from './pages/dealer/DealerSettings';
 import DealerBulkUpload from './pages/dealer/DealerBulkUpload';
-import DealerLeadCrm from './pages/dealer/DealerLeadCrm';
-import DealerTestDrives from './pages/dealer/DealerTestDrives';
-import DealerBookings from './pages/dealer/DealerBookings';
 import DealerPromotions from './pages/dealer/DealerPromotions';
-import DealerPerformance from './pages/dealer/DealerPerformance';
 import Compare from './pages/Compare';
 import SellCar from './pages/SellCar';
 import Finance from './pages/Finance';
 import Insurance from './pages/Insurance';
 import Offers from './pages/Offers';
 import Valuation from './pages/Valuation';
-import { DealersList, DealerProfile } from './pages/DealersPages';
 import { About, Contact, FAQs, Blog, Careers, Terms, Privacy, CorporatePolicies } from './pages/Static';
 
 import DashboardLayout from './pages/dashboard/DashboardLayout';
@@ -111,24 +107,41 @@ function InventoryEditAlias() {
   return <Navigate to={`/dealer/dashboard/inventory/edit/${id}`} replace />;
 }
 
+function KickDealerFromMarketplace() {
+  const { user } = useSelector((s) => s.auth);
+  const location = useLocation();
+  if (user?.role === 'dealer' && !location.pathname.startsWith('/dealer')) {
+    return <Navigate to="/dealer/dashboard" replace />;
+  }
+  return null;
+}
+
 export default function App() {
   const dispatch = useDispatch();
   const { user } = useSelector((s) => s.auth);
+  const location = useLocation();
+  const dealerWindow = location.pathname.startsWith('/dealer');
 
   useEffect(() => {
-    if (user) dispatch(fetchWishlist());
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
+    if (token) dispatch(fetchMe());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (user && user.role !== 'dealer') dispatch(fetchWishlist());
   }, [user, dispatch]);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
-  const alertsEnabled = Boolean(user && token && (user.role === 'dealer' || user.role === 'customer'));
+  const alertsEnabled = Boolean(user && token && (user.role === 'customer' || user.role === 'dealer'));
   const alertsVariant = user?.role === 'dealer' ? 'dealer' : 'customer';
 
   return (
     <RealtimeAlertsProvider token={token} enabled={alertsEnabled} variant={alertsVariant}>
       <div className="min-h-screen flex flex-col">
         <div className="w-full flex flex-col flex-1">
-          <Header />
-          <main className="flex-1 pb-20 lg:pb-0">
+          <KickDealerFromMarketplace />
+          {!dealerWindow && <Header />}
+          <main className={`flex-1 ${dealerWindow ? '' : 'pb-20 lg:pb-0'}`}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/brands" element={<Brands />} />
@@ -141,8 +154,8 @@ export default function App() {
               <Route path="/insurance" element={<Insurance />} />
               <Route path="/offers" element={<Offers />} />
               <Route path="/valuation" element={<Valuation />} />
-              <Route path="/dealers" element={<DealersList />} />
-              <Route path="/dealers/:id" element={<DealerProfile />} />
+              <Route path="/dealers" element={<Navigate to="/cars" replace />} />
+              <Route path="/dealers/:id" element={<Navigate to="/cars" replace />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Navigate to="/customer/register" replace />} />
               <Route path="/forgot-password" element={<Navigate to="/customer/forgot-password" replace />} />
@@ -151,36 +164,43 @@ export default function App() {
               <Route path="/customer/forgot-password" element={<ForgotPassword />} />
               <Route path="/customer/reset-password" element={<ResetPassword />} />
               <Route path="/customer/verify-email" element={<VerifyEmail />} />
-              <Route path="/dealer/login" element={<DealerLogin />} />
-              <Route path="/dealer/register" element={<Navigate to="/dealer/onboarding" replace />} />
-              <Route path="/dealer/onboarding" element={<DealerOnboarding />} />
               <Route
-                path="/dealer/kyc"
-                element={
-                  <ProtectedRoute roles={['dealer']}>
-                    <Navigate to="/dealer/onboarding" replace />
-                  </ProtectedRoute>
-                }
+                path="/dealer/login"
+                element={(
+                  <DealerChrome>
+                    <DealerLogin />
+                  </DealerChrome>
+                )}
               />
+              <Route path="/dealer/register" element={<Navigate to="/dealer/login" replace />} />
+              <Route path="/dealer/onboarding" element={<Navigate to="/dealer/dashboard/onboarding" replace />} />
+              <Route path="/dealer/kyc" element={<Navigate to="/dealer/dashboard/onboarding" replace />} />
               <Route
-                path="/dealer/add-car"
-                element={
+                path="/dealer/dashboard"
+                element={(
                   <ProtectedRoute roles={['dealer']}>
-                    <Navigate to="/dealer/dashboard/inventory/add" replace />
+                    <DealerChrome>
+                      <DealerLayout />
+                    </DealerChrome>
                   </ProtectedRoute>
-                }
-              />
-              <Route path="/dealer/inventory" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/inventory" replace /></ProtectedRoute>} />
-              <Route path="/dealer/inventory/add" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/inventory/add" replace /></ProtectedRoute>} />
-              <Route path="/dealer/inventory/edit/:id" element={<ProtectedRoute roles={['dealer']}><InventoryEditAlias /></ProtectedRoute>} />
-              <Route path="/dealer/inventory/bulk" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/inventory/bulk" replace /></ProtectedRoute>} />
-              <Route path="/dealer/bulk-upload" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/inventory/bulk" replace /></ProtectedRoute>} />
-              <Route path="/dealer/leads" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/leads" replace /></ProtectedRoute>} />
-              <Route path="/dealer/leads-crm" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/leads" replace /></ProtectedRoute>} />
-              <Route path="/dealer/test-drives" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/test-drives" replace /></ProtectedRoute>} />
-              <Route path="/dealer/bookings" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/bookings" replace /></ProtectedRoute>} />
-              <Route path="/dealer/promotions" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/promotions" replace /></ProtectedRoute>} />
-              <Route path="/dealer/analytics" element={<ProtectedRoute roles={['dealer']}><Navigate to="/dealer/dashboard/analytics" replace /></ProtectedRoute>} />
+                )}
+              >
+                <Route index element={<DealerAnalytics />} />
+                <Route path="inventory" element={<DealerInventory />} />
+                <Route path="inventory/add" element={<DealerAddCar />} />
+                <Route path="inventory/edit/:id" element={<DealerAddCar />} />
+                <Route path="inventory/bulk" element={<DealerBulkUpload />} />
+                <Route path="bulk-upload" element={<Navigate to="/dealer/dashboard/inventory/bulk" replace />} />
+                <Route path="add-car" element={<Navigate to="/dealer/dashboard/inventory/add" replace />} />
+                <Route path="edit-car/:id" element={<InventoryEditAlias />} />
+                <Route path="promotions" element={<DealerPromotions />} />
+                <Route path="analytics" element={<Navigate to="/dealer/dashboard" replace />} />
+                <Route path="performance" element={<Navigate to="/dealer/dashboard" replace />} />
+                <Route path="settings" element={<DealerSettings />} />
+                <Route path="onboarding" element={<DealerOnboarding />} />
+                <Route path="kyc" element={<Navigate to="/dealer/dashboard/onboarding" replace />} />
+              </Route>
+              <Route path="/dealer/*" element={<Navigate to="/dealer/login" replace />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/faqs" element={<FAQs />} />
@@ -218,35 +238,6 @@ export default function App() {
               </Route>
 
               <Route
-                path="/dealer/dashboard"
-                element={
-                  <ProtectedRoute roles={['dealer']}>
-                    <DealerLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<DealerAnalytics />} />
-                <Route path="inventory" element={<DealerInventory />} />
-                <Route path="inventory/add" element={<DealerAddCar />} />
-                <Route path="inventory/edit/:id" element={<DealerAddCar />} />
-                <Route path="inventory/bulk" element={<DealerBulkUpload />} />
-                <Route path="bulk-upload" element={<Navigate to="/dealer/dashboard/inventory/bulk" replace />} />
-                <Route path="add-car" element={<Navigate to="/dealer/dashboard/inventory/add" replace />} />
-                <Route path="edit-car/:id" element={<InventoryEditAlias />} />
-                <Route path="leads" element={<DealerLeadCrm />} />
-                <Route path="sell-leads" element={<DealerLeads mode="seller" />} />
-                <Route path="leads-crm" element={<Navigate to="/dealer/dashboard/leads" replace />} />
-                <Route path="finance-leads" element={<DealerLeads mode="finance" />} />
-                <Route path="test-drives" element={<DealerTestDrives />} />
-                <Route path="bookings" element={<DealerBookings />} />
-                <Route path="promotions" element={<DealerPromotions />} />
-                <Route path="analytics" element={<DealerPerformance />} />
-                <Route path="performance" element={<Navigate to="/dealer/dashboard/analytics" replace />} />
-                <Route path="kyc" element={<Navigate to="/dealer/onboarding" replace />} />
-                <Route path="settings" element={<DealerSettings />} />
-              </Route>
-
-              <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
@@ -259,9 +250,9 @@ export default function App() {
               </Route>
             </Routes>
           </main>
-          <Footer />
-          <BottomNav />
-          <CompareTray />
+          {!dealerWindow && <Footer />}
+          {!dealerWindow && <BottomNav />}
+          {!dealerWindow && <CompareTray />}
         </div>
       </div>
       <Toaster position="top-right" reverseOrder={false} />

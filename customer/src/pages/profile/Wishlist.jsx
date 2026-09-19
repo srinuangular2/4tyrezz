@@ -6,6 +6,7 @@ import api from '../../api/axios';
 import { fetchWishlist } from '../../app/wishlistSlice';
 import { formatINR } from '../../components/PageShell';
 import { addCompare } from '../../lib/compareTray';
+import { COMPANY_WHATSAPP } from '../../lib/companyContact';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
 
 function imgSrc(car) {
@@ -57,12 +58,10 @@ export default function ProfileWishlist() {
   };
 
   const contact = (car) => {
-    const phone = car.owner?.mobile;
-    if (phone) {
-      window.open(`https://wa.me/91${String(phone).replace(/\D/g, '').slice(-10)}`, '_blank');
-      return;
-    }
-    window.location.href = `/cars/${car._id}`;
+    const title = `${car?.year || ''} ${car?.brand?.name || ''} ${car?.model?.name || car?.title || 'car'}`.trim();
+    const ref = String(car?._id || '').slice(-6).toUpperCase();
+    const text = `Hi, I am interested in ${title} (Ref: #4T${ref}). Is it available?`;
+    window.open(`https://wa.me/${COMPANY_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (

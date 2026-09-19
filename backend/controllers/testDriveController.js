@@ -47,9 +47,9 @@ exports.create = async (req, res) => {
     event: EVENTS.NEW_TEST_DRIVE,
     title: 'New Test Drive',
     message: `${customerName} requested Test Drive for ${car.title}`,
-    dealerId: car.owner,
     entityId: doc._id,
-    meta: { testDriveId: doc._id, carId: car._id, phone: customerPhone },
+    meta: { testDriveId: doc._id, carId: car._id, phone: customerPhone, inventoryOwner: car.owner },
+    adminOnly: true,
   });
 
   sendWhatsAppTemplate({
@@ -58,7 +58,9 @@ exports.create = async (req, res) => {
     bodyValues: [customerName, car.title, String(preferredDate)],
   }).catch(() => {});
 
-  res.status(201).json({ data: doc });
+  const payload = doc.toObject ? doc.toObject() : { ...doc };
+  delete payload.dealer;
+  res.status(201).json({ data: payload });
 };
 
 exports.listMine = async (req, res) => {
@@ -67,22 +69,34 @@ exports.listMine = async (req, res) => {
   const filter = {};
 
   if (req.user.role === 'customer') filter.user = req.user._id;
-  else if (req.user.role === 'dealer') filter.dealer = req.user._id;
-  else if (req.query.dealer) filter.dealer = req.query.dealer;
+  else if (req.user.role === 'dealer') {
+    return res.json({ data: [], page, limit, total: 0, totalPages: 1 });
+  } else if (req.query.dealer) filter.dealer = req.query.dealer;
   if (req.query.status) filter.status = req.query.status;
+
+  const query = TestDrive.find(filter)
+    .populate('vehicle', 'title images price year')
+    .populate('user', 'name mobile')
+    .sort('-createdAt')
+    .skip((page - 1) * limit)
+    .limit(limit);
+  if (req.user.role === 'admin' || req.user.role === 'super_admin') {
+    query.populate('dealer', 'name dealershipName');
+  }
 
   const [total, data] = await Promise.all([
     TestDrive.countDocuments(filter),
-    TestDrive.find(filter)
-      .populate('vehicle', 'title images price year')
-      .populate('user', 'name mobile')
-      .populate('dealer', 'name dealershipName')
-      .sort('-createdAt')
-      .skip((page - 1) * limit)
-      .limit(limit),
+    query,
   ]);
+  const rows = (req.user.role === 'admin' || req.user.role === 'super_admin')
+    ? data
+    : data.map((row) => {
+      const obj = row.toObject ? row.toObject() : { ...row };
+      delete obj.dealer;
+      return obj;
+    });
 
-  res.json({ data, page, limit, total, totalPages: Math.ceil(total / limit) || 1 });
+  res.json({ data: rows, page, limit, total, totalPages: Math.ceil(total / limit) || 1 });
 };
 
 const TEST_DRIVE_STATUSES = [
@@ -102,9 +116,8 @@ exports.updateStatus = async (req, res) => {
   const doc = await TestDrive.findById(req.params.id);
   if (!doc) return res.status(404).json({ message: 'Not found' });
 
-  const isDealer = String(doc.dealer) === String(req.user._id);
   const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
-  if (!isDealer && !isAdmin) return res.status(403).json({ message: 'Forbidden' });
+  if (!isAdmin) return res.status(403).json({ message: 'Test drives are handled by 4tyrezz admin' });
 
   if (status) {
     if (!TEST_DRIVE_STATUSES.includes(status)) {

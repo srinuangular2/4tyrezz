@@ -148,8 +148,9 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
         <div className="fixed inset-0 z-[90] bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
           <form
             onSubmit={confirmOtp}
-            className="w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 shadow-2xl"
+            className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 shadow-2xl"
           >
+            <button type="button" onClick={() => setOtpOpen(false)} aria-label="Close" className="absolute top-3 right-3 w-8 h-8 rounded-full border border-slate-200 text-slate-500 font-black">✕</button>
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">Verify OTP</p>
             <h3 className="font-display font-black text-xl text-slate-900 mt-1">Code sent to +91 {state.phone}</h3>
             <DevOtpHint />

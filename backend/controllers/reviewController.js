@@ -20,7 +20,9 @@ exports.list = async (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Number(req.query.limit) || 20);
   const filter = {};
-  if (req.query.dealer) filter.dealer = req.query.dealer;
+  if (req.query.dealer && (req.user?.role === 'admin' || req.user?.role === 'super_admin')) {
+    filter.dealer = req.query.dealer;
+  }
   if (req.query.vehicle) filter.vehicle = req.query.vehicle;
   if (req.user?.role === 'admin' && req.query.status) filter.status = req.query.status;
   else if (!req.user || req.user.role !== 'admin') filter.status = 'approved';
@@ -34,7 +36,19 @@ exports.list = async (req, res) => {
       .limit(limit),
   ]);
 
-  res.json({ data, page, limit, total, totalPages: Math.ceil(total / limit) || 1 });
+  res.json({
+    data: (req.user?.role === 'admin' || req.user?.role === 'super_admin')
+      ? data
+      : data.map((row) => {
+        const obj = row.toObject ? row.toObject() : { ...row };
+        delete obj.dealer;
+        return obj;
+      }),
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit) || 1,
+  });
 };
 
 exports.moderate = async (req, res) => {

@@ -1,6 +1,5 @@
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import AuthFlow from '../components/AuthFlow';
-import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,7 +22,7 @@ export default function Login() {
             <ul className="mt-8 space-y-3">
               {[
                 'Save inspected cars to your wishlist',
-                SHOW_TEST_DRIVE ? 'Schedule test drives with verified dealers' : 'Talk to verified dealers before you buy',
+                'Talk to 4tyrezz before you buy',
                 'Finance and insurance desk on the same account',
               ].map((item) => (
                 <li key={item} className="flex items-center gap-3 text-sm font-bold text-slate-800">
@@ -44,9 +43,7 @@ export default function Login() {
             </p>
             <p className="text-center text-sm font-semibold text-slate-500 mt-3">
               Dealer or showroom?{' '}
-              <Link to="/dealer/login" className="text-[#3083ff] font-black hover:underline">Sign in</Link>
-              {' · '}
-              <Link to="/dealer/onboarding" className="text-[#3083ff] font-black hover:underline">Register + KYC</Link>
+              <Link to="/dealer/login" className="text-[#3083ff] font-black hover:underline">Sign in with Dealer ID</Link>
             </p>
           </div>
         </div>

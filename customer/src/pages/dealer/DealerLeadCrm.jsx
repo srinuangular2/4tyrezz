@@ -207,6 +207,7 @@ export default function DealerLeadCrm() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button type="button" className="absolute inset-0 bg-slate-900/40" onClick={() => setActive(null)} aria-label="Close" />
           <div className="relative bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button type="button" onClick={() => setActive(null)} aria-label="Close" className="absolute top-3 right-3 w-8 h-8 rounded-full border border-slate-200 text-slate-500 font-black">✕</button>
             <p className="text-[10px] font-black uppercase tracking-wider text-[#3083ff]">{active.kind} lead</p>
             <h2 className="font-display font-black text-xl mt-1">{active.customerName}</h2>
             <p className="text-xs font-semibold text-slate-500 mt-1">{active.carTitle} · {active.mobile}</p>

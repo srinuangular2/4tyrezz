@@ -12,7 +12,6 @@ const CAR_POPULATE = [
   { path: 'brand', select: 'name logo' },
   { path: 'model', select: 'name' },
   { path: 'city', select: 'name' },
-  { path: 'owner', select: 'name mobile dealershipName' },
 ];
 
 const DEFAULT_CONSENTS = {

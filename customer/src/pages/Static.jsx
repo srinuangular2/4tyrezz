@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import api from '../api/axios';
 
 // ==========================================
@@ -37,103 +37,21 @@ function PageShell({ title, subtitle, badge, children }) {
   );
 }
 
-// ==========================================
-// DEALERS MULTI-ITEM SLIDER COMPONENT
-// ==========================================
-const DealerSlider = () => {
-  const dealers = [
-    { name: "Metro Auto Hub", city: "Hyderabad", inventory: "42 Vehicles", rating: "4.9 ★", badge: "Premium Partner" },
-    { name: "Apex Pre-Owned Cars", city: "Bangalore", inventory: "38 Vehicles", rating: "4.8 ★", badge: "Verified Dealer" },
-    { name: "Royal Motor World", city: "Mumbai", inventory: "55 Vehicles", rating: "4.9 ★", badge: "Platinum Partner" },
-    { name: "Deccan Wheels & Co.", city: "Secunderabad", inventory: "29 Vehicles", rating: "4.7 ★", badge: "Verified Dealer" },
-    { name: "Speedway Automobiles", city: "Chennai", inventory: "34 Vehicles", rating: "4.8 ★", badge: "Verified Dealer" },
-    { name: "Elite Car Studio", city: "Pune", inventory: "23 Vehicles", rating: "4.9 ★", badge: "Premium Partner" },
-  ];
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % (dealers.length - 2));
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [dealers.length]);
-
-  const handleNext = () => {
-    setCurrentIndex((prev) => Math.min(prev + 1, dealers.length - 3));
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#3083ff] font-black text-xs uppercase tracking-wider">
-            <span>Verified Partners</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            Featured Commercial Dealer Network
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrev}
-            disabled={currentIndex === 0}
-            className="w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center font-black text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
-          >
-            ←
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={currentIndex >= dealers.length - 3}
-            className="w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center font-black text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
-          >
-            →
-          </button>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl py-2">
-        <div
-          className="flex gap-5 transition-transform duration-500 ease-out"
-          style={{ transform: `translateX(-${currentIndex * (100 / 3 + 1.2)}%)` }}
-        >
-          {dealers.map((dealer, idx) => (
-            <div
-              key={idx}
-              className="min-w-[85%] sm:min-w-[45%] md:min-w-[31%] bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-[#3083ff]/50 transition shrink-0"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
-                    {dealer.badge}
-                  </span>
-                  <span className="text-xs font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md">
-                    {dealer.rating}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-base leading-snug">{dealer.name}</h4>
-                  <p className="text-xs font-semibold text-slate-400 mt-0.5">{dealer.city}</p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-600">{dealer.inventory}</span>
-                <span className="font-black text-[#3083ff] hover:underline cursor-pointer">
-                  View Showroom →
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
+const CompanyInventoryCard = () => (
+  <div className="space-y-3">
+    <p className="text-[#3083ff] font-black text-xs uppercase tracking-wider">Listed by 4tyrezz</p>
+    <h2 className="text-xl sm:text-2xl font-black text-slate-900">Every car is sold through 4tyrezz</h2>
+    <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-2xl">
+      Inventory is uploaded by verified partners, then approved by 4tyrezz. Buyers never see dealer names or numbers — call or WhatsApp 4tyrezz to enquire, book a test drive, or close a deal.
+    </p>
+    <a
+      href="/cars"
+      className="inline-flex mt-2 px-5 py-2.5 rounded-xl bg-[#3083ff] text-white text-xs font-black uppercase tracking-wider"
+    >
+      Browse cars
+    </a>
+  </div>
+);
 
 // ==========================================
 // 1. ABOUT US PAGE
@@ -259,7 +177,7 @@ export const About = () => {
             <span className="font-black text-[#3083ff] text-lg">04. Dedicated Portals</span>
             <h4 className="font-extrabold text-slate-900 text-sm">Pro Dealer Dashboards</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Commercial dealers get separate, secured portal credentials to manage stock, post bids, and handle client inquiries.
+              Commercial dealers get a secured portal with a unique Dealer ID to complete KYC and upload inventory. 4tyrezz admin approves listings and handles every buyer enquiry.
             </p>
           </div>
         </div>
@@ -267,7 +185,7 @@ export const About = () => {
 
       {/* 4. MULTI-ITEM DEALERS SLIDER */}
       <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xs">
-        <DealerSlider />
+        <CompanyInventoryCard />
       </div>
 
       {/* 5. TEAM DETAILS */}

@@ -283,6 +283,15 @@ function mapRcPayload(payload) {
     'registration_authority', 'rto', 'rto_name', 'office',
   ]);
   const insuranceUpto = pick(flat, ['rc_insurance_upto', 'insurance_upto', 'vehicleInsuranceUpto', 'insuranceUpto']);
+  const insuranceCompany = pick(flat, [
+    'rc_insurance_comp', 'insurance_company', 'insuranceCompany', 'insurer',
+    'vehicleInsuranceCompanyName', 'insurance_comp',
+  ]);
+  const puccUpto = pick(flat, ['rc_pucc_upto', 'pucc_upto', 'puc_upto', 'pollution_upto', 'puccValidUpto']);
+  const fitnessUpto = pick(flat, ['rc_fit_upto', 'fit_upto', 'fitness_upto', 'fitnessValidUpto']);
+  const cubicCap = pick(flat, ['rc_cubic_cap', 'cubic_capacity', 'engine_capacity', 'displacement']);
+  const rcStatus = pick(flat, ['rc_status', 'rc_status_desc', 'vehicle_status', 'status_desc']);
+  const engineCC = Number(String(cubicCap).replace(/[^\d.]/g, '')) || null;
 
   if (!maker && !makerModel && !modelHint) return null;
 
@@ -316,6 +325,12 @@ function mapRcPayload(payload) {
     city: '',
     rto: rtoName,
     insuranceUpto,
+    insuranceCompany: titleCase(insuranceCompany),
+    puccValidUpto: puccUpto,
+    fitnessValidUpto: fitnessUpto,
+    engineCapacityCC: engineCC,
+    rcStatus: titleCase(rcStatus),
+    registrationDate: regDate,
     source: payload.source || 'rc',
   };
 }
@@ -341,6 +356,12 @@ function publicVehicle(details) {
     rto: details.rto || '',
     source: details.source,
     insuranceUpto: details.insuranceUpto || '',
+    insuranceCompany: details.insuranceCompany || '',
+    puccValidUpto: details.puccValidUpto || '',
+    fitnessValidUpto: details.fitnessValidUpto || '',
+    engineCapacityCC: details.engineCapacityCC || null,
+    rcStatus: details.rcStatus || '',
+    registrationDate: details.registrationDate || '',
   };
 }
 

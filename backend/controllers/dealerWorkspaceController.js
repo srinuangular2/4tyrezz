@@ -250,181 +250,36 @@ exports.bulkUpload = async (req, res) => {
   res.json({ success: true, imported: imported.length, failed: log.failed, logId: log._id, preview });
 };
 
-exports.listCrmLeads = async (req, res) => {
-  const leads = await Lead.find({ seller: dealerId(req) }).populate('car', 'title price year').sort('-createdAt').lean();
-  const ids = leads.map((l) => l._id);
-  const activities = await LeadFollowUp.find({ lead: { $in: ids } }).sort('-createdAt').lean();
-  const byLead = {};
-  activities.forEach((a) => {
-    const key = String(a.lead);
-    if (!byLead[key]) byLead[key] = [];
-    byLead[key].push(a);
-  });
-  const data = leads.map((l) => {
-    const column = crmColumn(l.status);
-    const next = l.followUpAt;
-    return {
-      id: l._id,
-      leadId: `L-${String(l._id).slice(-6).toUpperCase()}`,
-      customerName: l.name,
-      mobile: l.phone,
-      carTitle: l.car?.title || '',
-      status: l.status,
-      column,
-      followUpAt: next,
-      alert: followUpAlert(next),
-      message: l.message,
-      activities: byLead[String(l._id)] || [],
-      createdAt: l.createdAt,
-    };
-  });
-  res.json({ success: true, columns: CRM_COLUMNS, data });
+exports.listCrmLeads = async (_req, res) => {
+  res.json({ success: true, data: [] });
 };
 
-exports.updateLeadStatus = async (req, res) => {
-  const status = req.body.status || req.body.column;
-  const doc = await Lead.findOneAndUpdate(
-    { _id: req.params.id, seller: dealerId(req) },
-    { status },
-    { new: true }
-  );
-  if (!doc) return res.status(404).json({ message: 'Lead not found' });
-  res.json({ success: true, data: doc });
+exports.updateLeadStatus = async (_req, res) => {
+  return res.status(403).json({ message: 'Buyer leads are handled by 4tyrezz admin' });
 };
 
-exports.addLeadActivity = async (req, res) => {
-  const lead = await Lead.findOne({ _id: req.params.id, seller: dealerId(req) });
-  if (!lead) return res.status(404).json({ message: 'Lead not found' });
-  const nextFollowUpAt = req.body.nextFollowUpAt ? new Date(req.body.nextFollowUpAt) : null;
-  const activity = await LeadFollowUp.create({
-    lead: lead._id,
-    dealer: dealerId(req),
-    type: req.body.type || 'note',
-    note: req.body.note || '',
-    nextFollowUpAt,
-  });
-  lead.followUpAt = nextFollowUpAt || lead.followUpAt;
-  if (req.body.note) lead.remarks = req.body.note;
-  if (lead.status === 'New' || lead.status === 'New Lead') lead.status = 'Follow-Up';
-  await lead.save();
-  res.status(201).json({ success: true, data: activity });
+exports.addLeadActivity = async (_req, res) => {
+  return res.status(403).json({ message: 'Buyer leads are handled by 4tyrezz admin' });
 };
 
-exports.listTestDrives = async (req, res) => {
-  const drives = await TestDrive.find({ dealer: dealerId(req) })
-    .populate('vehicle', 'title price year')
-    .sort('preferredDate')
-    .lean();
-  const slots = await TestDriveSlot.find({ dealer: dealerId(req) }).lean();
-  const slotByDrive = Object.fromEntries(slots.map((s) => [String(s.testDrive), s]));
-  res.json({
-    success: true,
-    data: drives.map((d) => {
-      const slot = slotByDrive[String(d._id)] || {};
-      return {
-        id: d._id,
-        customerName: d.customerName,
-        mobile: d.customerPhone,
-        carTitle: d.vehicle?.title || '',
-        preferredDate: d.preferredDate,
-        preferredTime: d.preferredTime || slot.slotTime || '',
-        homeTestDrive: d.homeTestDrive,
-        status: driveStatus(d.status),
-        dlNumber: d.dlNumber || slot.dlNumber || '',
-        feedback: d.feedback || slot.feedback || '',
-        notes: d.notes,
-      };
-    }),
-  });
+exports.listTestDrives = async (_req, res) => {
+  res.json({ success: true, data: [], slots: [] });
 };
 
-exports.updateTestDrive = async (req, res) => {
-  const drive = await TestDrive.findOne({ _id: req.params.id, dealer: dealerId(req) });
-  if (!drive) return res.status(404).json({ message: 'Test drive not found' });
-  if (req.body.status) drive.status = req.body.status;
-  if (req.body.dlNumber != null) drive.dlNumber = String(req.body.dlNumber).toUpperCase();
-  if (req.body.feedback != null) drive.feedback = req.body.feedback;
-  if (req.body.dealerNotes != null) drive.dealerNotes = req.body.dealerNotes;
-  if (req.body.preferredDate) drive.preferredDate = req.body.preferredDate;
-  if (req.body.preferredTime != null) drive.preferredTime = req.body.preferredTime;
-  await drive.save();
-  await TestDriveSlot.findOneAndUpdate(
-    { dealer: dealerId(req), testDrive: drive._id },
-    {
-      dealer: dealerId(req),
-      testDrive: drive._id,
-      vehicle: drive.vehicle,
-      slotDate: drive.preferredDate,
-      slotTime: drive.preferredTime,
-      homeTestDrive: drive.homeTestDrive,
-      dlNumber: drive.dlNumber,
-      status: driveStatus(drive.status),
-      feedback: drive.feedback,
-      checklistComplete: Boolean(drive.dlNumber),
-    },
-    { upsert: true, new: true }
-  );
-  res.json({ success: true, data: drive });
+exports.updateTestDrive = async (_req, res) => {
+  return res.status(403).json({ message: 'Customer bookings are handled by 4tyrezz admin' });
 };
 
-exports.listBookings = async (req, res) => {
-  const data = await Booking.find({ dealer: dealerId(req) })
-    .populate('vehicle', 'title price year')
-    .populate('user', 'name mobile email')
-    .sort('-createdAt')
-    .lean();
-  res.json({
-    success: true,
-    data: data.map((b) => ({
-      id: b._id,
-      bookingRef: b.bookingRef,
-      customerName: b.customerName || b.user?.name || '',
-      mobile: b.user?.mobile || '',
-      carTitle: b.vehicle?.title || '',
-      tokenAmount: b.tokenAmount || b.amount,
-      paymentId: b.paymentId || b.razorpayPaymentId || '',
-      bookingDate: b.createdAt,
-      deliveryDeadline: b.deliveryDeadline,
-      status: ledgerStatus(b.status),
-      invoiceRef: b.invoiceRef,
-    })),
-  });
+exports.listBookings = async (_req, res) => {
+  res.json({ success: true, data: [] });
 };
 
-exports.bookingInvoice = async (req, res) => {
-  const booking = await Booking.findOne({ _id: req.params.id, dealer: dealerId(req) })
-    .populate('vehicle', 'title price year')
-    .populate('user', 'name mobile email')
-    .populate('dealer', 'name dealershipName');
-  if (!booking) return res.status(404).json({ message: 'Booking not found' });
-  booking.invoiceRef = booking.invoiceRef || `INV-${booking.bookingRef}`;
-  await booking.save();
-  const html = `<!doctype html><html><head><title>${booking.invoiceRef}</title>
-    <style>body{font-family:Montserrat,Arial,sans-serif;padding:32px;color:#111}h1{color:#3083ff}table{width:100%;border-collapse:collapse;margin-top:24px}td,th{border-bottom:1px solid #eee;padding:8px;text-align:left}</style>
-    </head><body>
-    <h1>4TYREZZ Token Invoice</h1>
-    <p>${booking.invoiceRef} · ${booking.bookingRef}</p>
-    <table>
-      <tr><th>Customer</th><td>${booking.user?.name || booking.customerName || ''}</td></tr>
-      <tr><th>Vehicle</th><td>${booking.vehicle?.title || ''}</td></tr>
-      <tr><th>Token</th><td>₹${Number(booking.tokenAmount || booking.amount).toLocaleString('en-IN')}</td></tr>
-      <tr><th>Payment ID</th><td>${booking.paymentId || booking.razorpayPaymentId || '—'}</td></tr>
-      <tr><th>Status</th><td>${ledgerStatus(booking.status)}</td></tr>
-    </table>
-    </body></html>`;
-  res.json({ success: true, invoiceRef: booking.invoiceRef, html });
+exports.bookingInvoice = async (_req, res) => {
+  return res.status(403).json({ message: 'Customer bookings are handled by 4tyrezz admin' });
 };
 
-exports.updateBooking = async (req, res) => {
-  const booking = await Booking.findOne({ _id: req.params.id, dealer: dealerId(req) });
-  if (!booking) return res.status(404).json({ message: 'Booking not found' });
-  if (req.body.status) booking.status = req.body.status;
-  if (req.body.deliveryDeadline) booking.deliveryDeadline = req.body.deliveryDeadline;
-  await booking.save();
-  if (req.body.status === 'Fully Paid' || req.body.status === 'Completed') {
-    await Car.findByIdAndUpdate(booking.vehicle, { status: 'sold' });
-  }
-  res.json({ success: true, data: booking });
+exports.updateBooking = async (_req, res) => {
+  return res.status(403).json({ message: 'Customer bookings are handled by 4tyrezz admin' });
 };
 
 exports.listPromotions = async (req, res) => {
@@ -491,10 +346,6 @@ exports.performance = async (req, res) => {
     if (monthlyMap[key]) monthlyMap[key].sold += 1;
   });
 
-  const [leads, drives] = await Promise.all([
-    Lead.countDocuments({ seller: owner }),
-    TestDrive.countDocuments({ dealer: owner }),
-  ]);
   const views = cars.reduce((s, c) => s + Number(c.views || 0), 0);
   const brandCount = {};
   cars.forEach((c) => {
@@ -515,8 +366,8 @@ exports.performance = async (req, res) => {
       monthly: Object.values(monthlyMap),
       funnel: [
         { stage: 'Views', value: views },
-        { stage: 'Leads', value: leads },
-        { stage: 'Test drives', value: drives },
+        { stage: 'Pending', value: cars.filter((c) => c.status === 'pending').length },
+        { stage: 'Live', value: cars.filter((c) => c.status === 'approved').length },
         { stage: 'Closed sales', value: sold.length },
       ],
       topInventory,

@@ -115,6 +115,7 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
             state={state}
             patch={patch}
             onReady={onNext}
+            onClose={() => patch({ identifyMode: '', editManual: false })}
           />
         </div>
       )}

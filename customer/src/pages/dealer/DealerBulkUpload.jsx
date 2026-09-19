@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import { ProfileCard } from '../profile/ProfileLayout';
+import { GlassCard, PageHeader, btnPrimary } from '../../components/dealer/ui';
 
 const HEADERS = ['registration_no', 'brand', 'model', 'variant', 'year', 'km_driven', 'price', 'fuel_type', 'transmission', 'city'];
 const REG_RX = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}$/;
@@ -91,15 +91,17 @@ export default function DealerBulkUpload() {
   };
 
   return (
-    <ProfileCard
-      eyebrow="Inventory"
-      title="Bulk upload"
-      action={<button type="button" onClick={downloadTemplate} className="text-xs font-black uppercase tracking-wider text-[#3083ff]">Download CSV template</button>}
-    >
+    <div className="space-y-6">
+      <PageHeader
+        kicker="Inventory"
+        title="Bulk upload"
+        actions={<button type="button" onClick={downloadTemplate} className="text-xs font-black uppercase tracking-wider text-blue-400">Download CSV template</button>}
+      />
+      <GlassCard className="p-5">
       <label
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); loadFile(e.dataTransfer.files?.[0]); }}
-        className="block rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center cursor-pointer hover:border-[#3083ff]"
+        className="block rounded-2xl border-2 border-dashed border-slate-700 p-10 text-center cursor-pointer hover:border-blue-500"
       >
         <p className="font-black text-slate-900">Drop CSV / Excel (CSV) here</p>
         <p className="text-xs font-semibold text-slate-400 mt-1">Headers: {HEADERS.join(', ')}</p>
@@ -110,7 +112,7 @@ export default function DealerBulkUpload() {
         <div className="mt-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-bold text-slate-600">{validCount}/{rows.length} valid rows</p>
-            <button type="button" disabled={!validCount || importing} onClick={importValid} className="bg-[#3083ff] text-white font-black text-xs uppercase tracking-wider rounded-xl px-4 py-2.5 disabled:opacity-50">
+            <button type="button" disabled={!validCount || importing} onClick={importValid} className={`${btnPrimary} disabled:opacity-50`}>
               {importing ? 'Importing…' : 'Import valid cars'}
             </button>
           </div>
@@ -121,7 +123,7 @@ export default function DealerBulkUpload() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r._row} className={r.errors.length ? 'bg-rose-50 text-rose-700' : 'border-t border-slate-100'}>
+                  <tr key={r._row} className={r.errors.length ? 'bg-rose-50 text-rose-700' : 'border-t border-slate-100 text-slate-700'}>
                     <td className="py-2 pr-3 font-bold">{r._row}</td>
                     {HEADERS.map((h) => <td key={h} className="py-2 pr-3">{r[h] || '—'}</td>)}
                     <td className="py-2">{r.errors.join(', ') || 'OK'}</td>
@@ -132,6 +134,7 @@ export default function DealerBulkUpload() {
           </div>
         </div>
       )}
-    </ProfileCard>
+      </GlassCard>
+    </div>
   );
 }

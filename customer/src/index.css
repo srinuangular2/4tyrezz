@@ -18,10 +18,23 @@
     caret-color: #0f172a;
   }
 
+  .dark input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='hidden']):not([type='color']):not([type='submit']):not([type='button']),
+  .dark select,
+  .dark textarea {
+    color: #f8fafc;
+    caret-color: #f8fafc;
+    background-color: #020617;
+  }
+
   input::placeholder,
   textarea::placeholder {
     color: #94a3b8;
     opacity: 1;
+  }
+
+  .dark select option {
+    color: #f8fafc;
+    background-color: #020617;
   }
 }
 

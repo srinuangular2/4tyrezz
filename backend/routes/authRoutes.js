@@ -14,6 +14,7 @@ router.post('/register', ctrl.registerCustomer);
 router.post('/register-customer', ctrl.registerCustomer);
 router.post('/forgot-password', ctrl.forgotPassword);
 router.post('/reset-password', ctrl.resetPassword);
+router.post('/change-password', protect, ctrl.changePassword);
 router.get('/verify-email', ctrl.verifyEmail);
 router.post('/verify-email', ctrl.verifyEmail);
 router.post('/resend-verification', protect, ctrl.resendVerification);

@@ -97,21 +97,70 @@ function buildGoodBuyReason(car, marketMin, marketMax) {
   return `Verified listing with complete specs for a ${ordinalOwner(car.ownership || 1)} owner ${car.fuel || ''} ${car.transmission || ''} variant.`.trim();
 }
 
+function hasText(value) {
+  if (value == null) return false;
+  const s = String(value).trim();
+  return s !== '' && s !== '—' && !/^n\/?a$/i.test(s);
+}
+
+function documentUrlSet(car) {
+  const docs = car.listingDocuments || {};
+  return new Set(
+    [docs.rcCopy, docs.insurancePolicy, docs.serviceHistory, car.inspectionReport]
+      .filter(Boolean)
+      .map(String)
+  );
+}
+
+function listingPhotos(car) {
+  const blocked = documentUrlSet(car);
+  return (car.images || []).filter((url) => {
+    if (!url) return false;
+    const u = String(url);
+    if (blocked.has(u)) return false;
+    if (/\.pdf($|\?)/i.test(u)) return false;
+    return true;
+  });
+}
+
+function isInventedRegDate(value, car) {
+  const s = String(value || '').trim();
+  const m = s.match(/^01[-/\s]Jan(?:uary)?[-/\s](\d{4})$/i);
+  if (!m) return false;
+  const y = Number(m[1]);
+  return y === Number(car.registrationYear || car.year);
+}
+
 function buildRtoDetails(car) {
   const rto = car.rtoDetails || {};
-  const cityName = car.city?.name || '';
-  const regYear = car.registrationYear || car.year;
+  const registrationDate = isInventedRegDate(rto.registrationDate, car) ? '' : (rto.registrationDate || '');
+  const hasRcFacts = Boolean(
+    hasText(registrationDate) ||
+    hasText(rto.insuranceCompany) ||
+    hasText(rto.fitnessValidUpto) ||
+    hasText(rto.engineCapacityCC)
+  );
+  const storedStatus = String(rto.rcStatus || '').trim();
+  const rcStatus = storedStatus && (hasRcFacts || storedStatus.toLowerCase() !== 'active') ? storedStatus : '';
 
   return {
     rcNumber: rto.rcNumber || '',
-    rcStatus: rto.rcStatus || 'Active',
-    registrationDate: rto.registrationDate || (regYear ? `01-Jan-${regYear}` : ''),
-    rtoLocation: rto.rtoLocation || car.rto || (cityName ? `${cityName.toUpperCase()} RTO` : ''),
-    insuranceExpiryDate: rto.insuranceExpiryDate || '',
+    rcStatus,
+    registrationDate,
+    registrationYear: rto.registrationYear || car.registrationYear || '',
+    rtoLocation: rto.rtoLocation || car.rto || '',
+    insuranceExpiryDate: rto.insuranceExpiryDate || car.insuranceExpiry || '',
     insuranceCompany: rto.insuranceCompany || '',
     engineCapacityCC: rto.engineCapacityCC ?? car.engineDisplacement ?? null,
-    puccValidUpto: rto.puccValidUpto || '',
+    puccValidUpto: rto.puccValidUpto || car.pucExpiry || '',
     fitnessValidUpto: rto.fitnessValidUpto || '',
+    insuranceType: car.insuranceType || rto.insuranceType || '',
+    color: car.color || rto.color || '',
+    fuel: car.fuel || rto.fuel || '',
+    bodyType: car.bodyType || rto.bodyType || '',
+    documentsOnFile: Boolean(
+      car.listingDocuments?.rcCopy || car.listingDocuments?.insurancePolicy || car.listingDocuments?.serviceHistory
+    ),
   };
 }
 
@@ -183,12 +232,20 @@ async function enrichCarForDetail(carDoc, extras = {}) {
   };
 
   car.rtoDetails = buildRtoDetails(car);
+  if (!extras.staffView && car.rtoDetails) {
+    delete car.rtoDetails.documentsOnFile;
+  }
 
   const owner = car.owner || {};
   const dealerProfile = car.dealerProfile || null;
   const phone = dealerProfile?.contactPhone || owner.mobile || '';
   const loc = car.location || {};
-  car.photos = car.images || [];
+  car.photos = listingPhotos(car);
+  if (!extras.staffView) {
+    car.images = car.photos;
+    delete car.listingDocuments;
+    delete car.inspectionReport;
+  }
   car.emiDetails = {
     defaultRate: Number(process.env.FINANCE_DEFAULT_RATE || 10.5),
     defaultTenureMonths: Number(process.env.FINANCE_DEFAULT_TENURE || 60),
@@ -235,6 +292,14 @@ async function enrichCarForDetail(carDoc, extras = {}) {
       { label: 'Interior', value: checklist.floodDamage === 'Yes' ? 'Flood damage flagged' : checklist.floodDamage || '' },
     ].filter((row) => row.value),
   };
+  const { companyDealerCard } = require('./companyContact');
+  if (!extras.staffView) {
+    car.dealer = companyDealerCard();
+    delete car.owner;
+    delete car.dealerProfile;
+    delete car.sellerType;
+    return car;
+  }
   car.dealer = {
     name: dealerProfile?.businessName || owner.dealershipName || owner.name || 'Private Seller',
     phone,
@@ -386,4 +451,6 @@ module.exports = {
   getPriceVerdict,
   getKmCondition,
   resolveListingRefs,
+  listingPhotos,
+  documentUrlSet,
 };

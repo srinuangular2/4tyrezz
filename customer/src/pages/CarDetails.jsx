@@ -16,6 +16,7 @@ import { addCompare } from '../lib/compareTray';
 import { rememberRecentlyViewed } from '../lib/recentlyViewed';
 import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 import { mediaUrl } from './profile/hubUtils';
+import { COMPANY_NAME, COMPANY_PHONE_DIGITS, COMPANY_WHATSAPP } from '../lib/companyContact';
 
 const glassCard = 'bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.08)]';
 const glassPanel = 'bg-white/80 backdrop-blur-md border border-white/20 shadow-[0_12px_32px_rgba(15,23,42,0.1)]';
@@ -146,6 +147,21 @@ export default function CarDetails() {
   const condition = insights.condition || {};
   const priceVerdict = insights.priceVerdict;
   const images = useMemo(() => ((car?.photos?.length ? car.photos : car?.images) || []).map(resolveImage), [car]);
+  const hasRtoFacts = Boolean(
+    rto.rcNumber ||
+    rto.rcStatus ||
+    rto.registrationDate ||
+    rto.rtoLocation ||
+    rto.insuranceExpiryDate ||
+    rto.insuranceCompany ||
+    rto.puccValidUpto ||
+    rto.fitnessValidUpto ||
+    rto.engineCapacityCC ||
+    car?.insuranceType ||
+    car?.bodyType ||
+    car?.fuel ||
+    car?.color
+  );
 
   const submitContact = (e) => {
     e.preventDefault();
@@ -217,8 +233,8 @@ export default function CarDetails() {
   };
 
   const handleCallDealer = () => {
-    const phone = String(car?.dealer?.phone || car?.owner?.mobile || '').replace(/\D/g, '');
-    if (!phone) return toast.error('Dealer phone is not available');
+    const phone = String(car?.dealer?.phone || COMPANY_PHONE_DIGITS).replace(/\D/g, '');
+    if (!phone) return toast.error('4tyrezz phone is not available');
     requireAuth(() => {
       logInteraction('call');
       window.location.href = `tel:+${phone.startsWith('91') ? phone : `91${phone}`}`;
@@ -227,7 +243,7 @@ export default function CarDetails() {
 
   const handleWhatsApp = () => {
     requireAuth(() => {
-      const phone = String(car?.dealer?.whatsapp || car?.dealer?.phone || car?.owner?.mobile || '916304135959').replace(/\D/g, '');
+      const phone = String(car?.dealer?.whatsapp || car?.dealer?.phone || COMPANY_WHATSAPP).replace(/\D/g, '');
       const ref = String(car?._id || id).slice(-6).toUpperCase();
       const text = `Hi, I am interested in ${car?.year || ''} ${car?.brand?.name || ''} ${car?.model?.name || car?.title || ''} (Ref: #4T${ref}). Is it available?`;
       logInteraction('whatsapp', { message: text });
@@ -636,7 +652,7 @@ export default function CarDetails() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-slate-500">{SHOW_TEST_DRIVE ? 'Schedule a test drive and physical inspection before purchase.' : 'Ask the dealer for a physical inspection before purchase.'}</p>
+                  <p className="text-sm text-slate-500">{SHOW_TEST_DRIVE ? 'Schedule a test drive and physical inspection before purchase.' : 'Ask 4tyrezz for a physical inspection before purchase.'}</p>
                 )}
               </div>
             </section>
@@ -821,19 +837,19 @@ export default function CarDetails() {
 
             {car.description && (
               <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-soft">
-                <h3 className="font-display text-lg font-bold text-ink mb-3">Seller&apos;s description</h3>
+                <h3 className="font-display text-lg font-bold text-ink mb-3">Listing description</h3>
                 <p className="text-sm text-slate2 leading-relaxed whitespace-pre-line">{car.description}</p>
               </section>
             )}
 
             {/* Seller */}
             <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft">
-              <h3 className="font-display text-lg font-bold text-ink mb-3">Seller details</h3>
+              <h3 className="font-display text-lg font-bold text-ink mb-3">Listed by 4tyrezz</h3>
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-bold text-ink">{car.owner?.dealershipName || car.owner?.name || 'Private Seller'}</p>
+                  <p className="font-bold text-ink">{COMPANY_NAME}</p>
                   <p className="text-sm text-slate2 mt-0.5">
-                    {car.sellerType === 'dealer' ? 'Verified Dealer' : 'Individual Owner'}
+                    Inspected listing · Contact 4tyrezz only
                     {car.city?.name ? ` · ${car.city.name}` : ''}
                   </p>
                 </div>
@@ -909,7 +925,7 @@ export default function CarDetails() {
                 onClick={() => requireAuth(() => setShowContact(true))}
                 className="w-full mt-5 bg-brand-gradient hover:opacity-95 text-white font-bold py-3.5 rounded-xl transition shadow-sm"
               >
-                Contact dealer
+                Contact 4tyrezz
               </button>
               {SHOW_TEST_DRIVE && (
                 <button
@@ -921,7 +937,7 @@ export default function CarDetails() {
                 </button>
               )}
               <div className={`${glassCard} rounded-2xl p-3 mt-3 grid grid-cols-2 gap-2`}>
-                <button type="button" onClick={handleCallDealer} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Call dealer</button>
+                <button type="button" onClick={handleCallDealer} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Call 4tyrezz</button>
                 <button type="button" onClick={handleWhatsApp} className="text-xs font-bold py-2.5 rounded-xl bg-[#25D366]/90 text-white border border-white/20">WhatsApp</button>
                 <button type="button" onClick={() => requireAuth(() => { setSent(false); setShowContact(true); })} className="text-xs font-bold py-2.5 rounded-xl bg-white/70 border border-white/20 hover:bg-white">Send enquiry</button>
                 {SHOW_TEST_DRIVE && (
@@ -1001,32 +1017,50 @@ export default function CarDetails() {
       {showRTOModal && (
         <ModalShell onClose={() => setShowRTOModal(false)}>
           <h3 className="text-xl font-bold text-ink">RTO details</h3>
-          <p className="text-xs text-slate2 mb-5">Document information linked to this listing</p>
+          <p className="text-xs text-slate2 mb-5">Values from RC lookup and this listing — document scans stay private</p>
 
-          <ModalSection title="Registration">
-            <RTORow label="RC Number" value={rto.rcNumber} />
-            <RTORow label="RC Status" value={rto.rcStatus} />
-            <RTORow label="Registration Date" value={rto.registrationDate} />
-            <RTORow label="Registering RTO" value={rto.rtoLocation} />
-          </ModalSection>
-
-          <ModalSection title="Insurance">
-            <RTORow label="Insurance Type" value={car.insuranceType} />
-            <RTORow label="Expiry Date" value={rto.insuranceExpiryDate} />
-            <RTORow label="Insurance Company" value={rto.insuranceCompany} />
-          </ModalSection>
-
-          <ModalSection title="Vehicle">
-            <RTORow label="Body Type" value={car.bodyType} />
-            <RTORow label="Engine (CC)" value={rto.engineCapacityCC || car.engineDisplacement} />
-            <RTORow label="Fuel Type" value={car.fuel} />
-            <RTORow label="Color" value={car.color} />
-          </ModalSection>
-
-          <ModalSection title="Compliance">
-            <RTORow label="PUCC Valid Upto" value={rto.puccValidUpto} />
-            <RTORow label="Fitness Valid Upto" value={rto.fitnessValidUpto} />
-          </ModalSection>
+          {!hasRtoFacts ? (
+            <p className="text-sm text-slate2 bg-slate-50 rounded-xl p-4">
+              Full RC record is not on file for this listing yet. Contact 4tyrezz for verified registration details.
+            </p>
+          ) : (
+            <>
+              <RtoSection
+                title="Registration"
+                rows={[
+                  ['RC Number', rto.rcNumber],
+                  ['RC Status', rto.rcStatus],
+                  ['Registration Date', formatDetailDate(rto.registrationDate)],
+                  ['Registering RTO', rto.rtoLocation],
+                ]}
+              />
+              <RtoSection
+                title="Insurance"
+                rows={[
+                  ['Insurance Type', car.insuranceType || rto.insuranceType],
+                  ['Expiry Date', formatDetailDate(rto.insuranceExpiryDate)],
+                  ['Insurance Company', rto.insuranceCompany],
+                ]}
+              />
+              <RtoSection
+                title="Vehicle"
+                rows={[
+                  ['Body Type', car.bodyType || rto.bodyType],
+                  ['Engine (CC)', rto.engineCapacityCC || car.engineDisplacement],
+                  ['Fuel Type', car.fuel || rto.fuel],
+                  ['Colour', car.color || rto.color],
+                  ['Interior', car.interiorColor],
+                ]}
+              />
+              <RtoSection
+                title="Compliance"
+                rows={[
+                  ['PUCC Valid Upto', formatDetailDate(rto.puccValidUpto)],
+                  ['Fitness Valid Upto', formatDetailDate(rto.fitnessValidUpto)],
+                ]}
+              />
+            </>
+          )}
         </ModalShell>
       )}
 
@@ -1099,12 +1133,12 @@ export default function CarDetails() {
           {sent ? (
             <>
               <h3 className="font-display text-xl font-bold text-ink">Message sent</h3>
-              <p className="text-sm text-slate2 mt-2">The seller will contact you shortly.</p>
+              <p className="text-sm text-slate2 mt-2">4tyrezz will contact you shortly.</p>
               <button type="button" onClick={() => setShowContact(false)} className="w-full bg-ink text-white font-semibold py-2.5 rounded-xl mt-5">Close</button>
             </>
           ) : (
             <form onSubmit={submitContact} className="space-y-3">
-              <h3 className="font-display text-xl font-bold text-ink">Contact dealer</h3>
+              <h3 className="font-display text-xl font-bold text-ink">Contact 4tyrezz</h3>
               <input name="name" required placeholder="Your name" defaultValue={user?.name} className="w-full border border-white/30 bg-white/70 rounded-xl px-3.5 py-2.5 text-sm focus:border-ember focus:ring-2 focus:ring-ember/20 outline-none" />
               <input name="phone" required placeholder="Your phone" defaultValue={user?.mobile} className="w-full border border-white/30 bg-white/70 rounded-xl px-3.5 py-2.5 text-sm focus:border-ember focus:ring-2 focus:ring-ember/20 outline-none" />
               <input name="email" type="email" placeholder="Your email" defaultValue={user?.email} className="w-full border border-white/30 bg-white/70 rounded-xl px-3.5 py-2.5 text-sm focus:border-ember focus:ring-2 focus:ring-ember/20 outline-none" />
@@ -1120,7 +1154,7 @@ export default function CarDetails() {
           {driveSent ? (
             <>
               <h3 className="font-display text-xl font-bold text-ink">Test drive requested</h3>
-              <p className="text-sm text-slate2 mt-2">The dealer will confirm a slot shortly.</p>
+              <p className="text-sm text-slate2 mt-2">4tyrezz will confirm a slot shortly.</p>
               <button type="button" onClick={() => setShowTestDrive(false)} className="w-full bg-ink text-white font-semibold py-2.5 rounded-xl mt-5">Close</button>
             </>
           ) : (
@@ -1320,6 +1354,29 @@ function ModalSection({ title, children }) {
       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{title}</h4>
       <div className="space-y-1">{children}</div>
     </div>
+  );
+}
+
+function formatDetailDate(value) {
+  if (!value && value !== 0) return '';
+  const s = String(value).trim();
+  if (!s || /^01-Jan-\d{4}$/i.test(s)) return '';
+  const parsed = Date.parse(s);
+  if (!Number.isNaN(parsed) && /\d{4}/.test(s)) {
+    return new Date(parsed).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+  return s;
+}
+
+function RtoSection({ title, rows }) {
+  const visible = (rows || []).filter(([, value]) => value || value === 0);
+  if (!visible.length) return null;
+  return (
+    <ModalSection title={title}>
+      {visible.map(([label, value]) => (
+        <RTORow key={label} label={label} value={value} />
+      ))}
+    </ModalSection>
   );
 }
 

@@ -172,10 +172,9 @@ export default function Header() {
 
             {/* Actions: Wishlist, Phone, Auth */}
             <div className="hidden lg:flex items-center gap-5 shrink-0">
-              {!isDealer && (
+              {isUser && (
                 <Link
-                  to={isUser ? '/profile/wishlist' : '#'}
-                  onClick={() => !user && setShowLogin(true)}
+                  to="/profile/wishlist"
                   className="relative text-slate-700 hover:text-[#3083ff] transition p-1"
                   aria-label="Wishlist"
                 >
@@ -185,6 +184,16 @@ export default function Header() {
                       {wishlistCount}
                     </span>
                   )}
+                </Link>
+              )}
+              {!user && (
+                <Link
+                  to="#"
+                  onClick={() => setShowLogin(true)}
+                  className="relative text-slate-700 hover:text-[#3083ff] transition p-1"
+                  aria-label="Wishlist"
+                >
+                  <Heart className="w-6 h-6" />
                 </Link>
               )}
 
@@ -203,7 +212,7 @@ export default function Header() {
                 </div>
               </a>
 
-              {(isDealer || isUser) && <NotificationBell variant="dealer" />}
+              {isUser && <NotificationBell variant="customer" />}
 
               {user ? (
                 <div className="relative">
@@ -220,16 +229,6 @@ export default function Header() {
 
                   {userMenu && (
                     <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 w-56 py-2 z-50 animate-fadeUp">
-                      {isDealer && (
-                        <>
-                          <Link to="/dealer/dashboard" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Dashboard</Link>
-                          <Link to="/dealer/onboarding" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Onboarding / KYC</Link>
-                          <Link to="/dealer/dashboard/inventory" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Inventory</Link>
-                          <Link to="/dealer/dashboard/inventory/add" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Add Car</Link>
-                          <Link to="/dealer/dashboard/leads" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Leads</Link>
-                          <Link to="/dealer/dashboard/settings" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Profile</Link>
-                        </>
-                      )}
                       {isUser && (
                         <>
                           <Link to="/profile/settings" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Profile</Link>
@@ -273,9 +272,9 @@ export default function Header() {
             </div>
 
             <MobileSearchButton onClick={() => setMobileSearch(true)} />
-            {(isDealer || isUser) && (
+            {isUser && (
               <div className="lg:hidden">
-                <NotificationBell variant="dealer" />
+                <NotificationBell variant="customer" />
               </div>
             )}
             <button className="lg:hidden text-slate-900 p-2" onClick={() => setMobileOpen(true)}>

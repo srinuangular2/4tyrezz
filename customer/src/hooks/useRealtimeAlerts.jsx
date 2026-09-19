@@ -218,7 +218,7 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
   const [soundOn, setSoundOn] = useState(() => localStorage.getItem(SOUND_KEY) !== 'off');
   const [connected, setConnected] = useState(false);
   const seenRef = useRef(new Set());
-  const dark = variant === 'admin';
+  const dark = variant !== 'customer';
 
   const refresh = useCallback(async () => {
     if (!enabled || !token) return;

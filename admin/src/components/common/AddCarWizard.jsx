@@ -1,23 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Check, FileText, Gauge, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import api from '../../api/axios';
-import {
-  useVehicleBrands,
-  useVehicleFuelTransmissions,
-  useVehicleModels,
-  useVehicleVariants,
-  useVehicleYears,
-} from '../../hooks/useVehicleCatalog';
+import { useVehicleBrands } from '../../hooks/useVehicleCatalog';
 import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../../lib/fetchVehicleDetailsByReg';
 import LocationAddressInput from './LocationAddressInput';
 import AiDescriptionField from './AiDescriptionField';
+import BrandModelGrid from './BrandModelGrid';
+import VehicleColorFields from './VehicleColorFields';
 
 const STEPS = [
-  { n: 1, title: 'Vehicle Identity', hint: 'RC & catalogue' },
-  { n: 2, title: 'Specs & Pricing', hint: 'KM & resale' },
-  { n: 3, title: 'Health & Features', hint: 'Condition' },
-  { n: 4, title: 'Media & Documents', hint: '360° photos' },
+  { n: 1, title: 'Vehicle', hint: 'RC & catalogue' },
+  { n: 2, title: 'Price', hint: 'Health, range & ask' },
+  { n: 3, title: 'Condition', hint: 'Features & history' },
+  { n: 4, title: 'Photos', hint: 'Media & documents' },
 ];
 
 const FEATURES = [
@@ -36,6 +32,16 @@ const HEALTH = [
   { label: 'Excellent', score: 9 },
   { label: 'Good', score: 7 },
   { label: 'Needs Minor Work', score: 5 },
+];
+
+const ACCIDENT_TYPES = [
+  'Cosmetic scratch or dent',
+  'Bumper or panel repaired',
+  'One panel replaced',
+  'Multiple panels repaired',
+  'Structural / chassis repair',
+  'Insurance claim (minor)',
+  'Insurance claim (major)',
 ];
 
 const PHOTO_SLOTS = [
@@ -132,13 +138,16 @@ export default function AddCarWizard({
   dealers = [],
   ownerId = '',
   onOwnerChange,
+  embedded = false,
 }) {
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [editManual, setEditManual] = useState(true);
+  const [editManual, setEditManual] = useState(false);
+  const [manualPhase, setManualPhase] = useState('brand');
   const [valuation, setValuation] = useState(null);
+  const [quoting, setQuoting] = useState(false);
   const [features, setFeatures] = useState([]);
   const [slots, setSlots] = useState({});
   const [extras, setExtras] = useState([]);
@@ -183,31 +192,31 @@ export default function AddCarWizard({
     pucExpiry: '',
     accidentDetails: '',
     serviceHistoryLog: '',
+    rtoLookup: null,
   });
 
-  const { brands, loading: loadingBrands } = useVehicleBrands();
-  const { years, loading: loadingYears } = useVehicleYears(form.brand);
-  const { models, loading: loadingModels } = useVehicleModels(form.brand, form.year);
-  const { fuelTypes, transmissions } = useVehicleFuelTransmissions(form.brand, form.model, form.year);
-  const { variants, loading: loadingVariants } = useVehicleVariants({
-    brand: form.brand,
-    model: form.model,
-    year: form.year,
-    fuelType: form.fuel,
-    transmission: form.transmission,
-  });
+  const { brands } = useVehicleBrands();
 
   const brandNames = useMemo(() => (brands || []).map(nameOf).filter(Boolean), [brands]);
-  const modelNames = useMemo(() => (models || []).map(nameOf).filter(Boolean), [models]);
-  const yearOptions = useMemo(() => {
-    const now = new Date().getFullYear();
-    const list = (years || []).map(Number).filter((y) => y >= 1980 && y <= now);
-    const y = Number(form.year);
-    if (Number.isInteger(y) && y >= 1980 && y <= now && !list.includes(y)) list.unshift(y);
-    return list;
-  }, [years, form.year]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const patchIdentity = useCallback((partial) => {
+    if (partial.manualPhase) setManualPhase(partial.manualPhase);
+    setForm((f) => {
+      const next = { ...f };
+      Object.entries(partial).forEach(([k, v]) => {
+        if (k === 'manualPhase' || k === 'brandId' || k === 'modelId' || k === 'brandLogo') return;
+        next[k] = v;
+      });
+      return next;
+    });
+  }, []);
+
+  const openManualPicker = () => {
+    setEditManual(true);
+    setManualPhase(form.model ? 'variant' : form.year ? 'model' : form.brand ? 'year' : 'brand');
+  };
 
   useEffect(() => {
     if (!editId) return;
@@ -254,9 +263,12 @@ export default function AddCarWizard({
         pucExpiry: c.pucExpiry || c.rtoDetails?.puccValidUpto || '',
         accidentDetails: c.accidentDetails || '',
         serviceHistoryLog: c.serviceHistoryLog || '',
+        rtoLookup: c.rtoDetails || null,
       }));
       setFeatures(c.features || []);
-      setExistingImages(c.images || []);
+      const blocked = new Set(Object.values(c.listingDocuments || {}).filter(Boolean));
+      if (c.inspectionReport) blocked.add(c.inspectionReport);
+      setExistingImages((c.photos || c.images || []).filter((src) => src && !blocked.has(src) && !/\.pdf($|\?)/i.test(src)));
       const filled = {};
       PHOTO_SLOTS.forEach(({ key }) => {
         if (c.mediaSlots?.[key]) filled[key] = { preview: c.mediaSlots[key], existing: c.mediaSlots[key] };
@@ -267,7 +279,7 @@ export default function AddCarWizard({
         setEditManual(false);
       }
     });
-  }, [editId]);
+  }, [editId, embedded]);
 
   const lookup = async () => {
     const reg = normalizeReg(form.plate);
@@ -293,6 +305,10 @@ export default function AddCarWizard({
         city: details.city || f.city,
         rto: details.rto || details.rtoName || details.rtoLocation || f.rto,
         ownership: Number(details.ownership || details.ownerCount || f.ownership) || 1,
+        color: details.color || f.color,
+        insuranceExpiry: details.insuranceUpto || details.insuranceExpiryDate || f.insuranceExpiry,
+        pucExpiry: details.puccValidUpto || f.pucExpiry,
+        rtoLookup: details,
       }));
       setVerified(true);
       setEditManual(false);
@@ -307,6 +323,7 @@ export default function AddCarWizard({
 
   const quote = async () => {
     if (!form.brand || !form.model || !form.year) return;
+    setQuoting(true);
     try {
       const { data } = await api.post('/valuation/calculate', {
         brand: form.brand,
@@ -315,6 +332,7 @@ export default function AddCarWizard({
         year: Number(form.year),
         kmDriven: Number(form.kmDriven) || 45000,
         ownership: Number(form.ownership) || 1,
+        numberOfOwners: Number(form.ownership) || 1,
         fuel: form.fuel,
         transmission: form.transmission,
         bodyType: form.bodyType,
@@ -325,13 +343,17 @@ export default function AddCarWizard({
       if (!form.price && v?.fairMarketValue) set('price', v.fairMarketValue);
     } catch {
       setValuation(null);
+    } finally {
+      setQuoting(false);
     }
   };
 
   useEffect(() => {
-    if (step === 2 && form.brand && form.model && form.year) quote();
+    if (step !== 2 || !form.brand || !form.model || !form.year) return undefined;
+    const timer = setTimeout(quote, 50);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, form.brand, form.model, form.year, form.variant, form.kmDriven, form.conditionScore]);
+  }, [step, form.brand, form.model, form.year, form.variant, form.kmDriven, form.ownership, form.conditionScore, form.fuel, form.transmission]);
 
   const go = (next) => {
     if (next > 1 && (!form.brand || !form.model || !form.year)) {
@@ -342,8 +364,14 @@ export default function AddCarWizard({
       toast.error('Enter an expected selling price');
       return;
     }
+    if (next > 3 && form.accidental === 'Yes' && !form.accidentDetails) {
+      toast.error('Select the accident type');
+      return;
+    }
     setStep(next);
   };
+
+  const visible = (n) => step === n;
 
   const assignSlot = (key, file) => {
     if (!file) return;
@@ -398,15 +426,25 @@ export default function AddCarWizard({
     data.append('accidentDetails', form.accidentDetails);
     data.append('serviceHistoryLog', form.serviceHistoryLog);
     data.append('rto', form.rto);
+    data.append('registrationYear', form.rtoLookup?.year || form.year || '');
     data.append('description', form.description);
     data.append('conditionScore', form.conditionScore);
     data.append('features', JSON.stringify(features));
+    const lookup = form.rtoLookup || {};
     data.append('rtoDetails', JSON.stringify({
-      rcNumber: form.plate,
-      rtoLocation: form.rto,
-      rcStatus: 'Active',
-      insuranceExpiryDate: form.insuranceExpiry,
-      puccValidUpto: form.pucExpiry,
+      rcNumber: form.plate || lookup.rcNumber || lookup.registrationNumber || '',
+      rtoLocation: form.rto || lookup.rto || lookup.rtoLocation || '',
+      rcStatus: lookup.rcStatus || '',
+      registrationDate: lookup.registrationDate || '',
+      registrationYear: lookup.year || form.year || '',
+      insuranceExpiryDate: form.insuranceExpiry || lookup.insuranceUpto || lookup.insuranceExpiryDate || '',
+      insuranceCompany: lookup.insuranceCompany || '',
+      engineCapacityCC: lookup.engineCapacityCC || null,
+      puccValidUpto: form.pucExpiry || lookup.puccValidUpto || '',
+      fitnessValidUpto: lookup.fitnessValidUpto || '',
+      color: form.color || lookup.color || '',
+      fuel: form.fuel || lookup.fuel || '',
+      bodyType: form.bodyType || lookup.bodyType || '',
     }));
     data.append('inspectionChecklist', JSON.stringify({
       engineState: form.engineState,
@@ -471,10 +509,11 @@ export default function AddCarWizard({
     }
   };
 
-  const showCascade = !verified || editManual;
+  const showCascade = editManual;
 
   return (
-    <div className="max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-8">
+    <div className={`${embedded ? 'p-5 sm:p-7' : 'max-w-5xl mx-auto p-5 sm:p-8'} bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800`}>
+      {!embedded && (
       <div className="flex flex-wrap items-end justify-between gap-3 mb-7">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Spinny-style listing</p>
@@ -494,6 +533,7 @@ export default function AddCarWizard({
           </label>
         )}
       </div>
+      )}
 
       <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1">
         {STEPS.map((s, i) => (
@@ -518,7 +558,7 @@ export default function AddCarWizard({
       </div>
 
       <div className="transition-all duration-300">
-        {step === 1 && (
+        {visible(1) && (
           <div className="space-y-5">
             <div className="rounded-2xl bg-slate-950 text-white p-5 sm:p-6 shadow-xl">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-300">RTO plate lookup</p>
@@ -545,7 +585,7 @@ export default function AddCarWizard({
                       {[form.year, form.brand, form.model, form.variant].filter(Boolean).join(' ')}
                     </p>
                   </div>
-                  <button type="button" onClick={() => setEditManual((v) => !v)} className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600">
+                  <button type="button" onClick={openManualPicker} className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600">
                     {editManual ? 'Hide manual edit' : 'Edit manually'}
                   </button>
                 </div>
@@ -567,69 +607,31 @@ export default function AddCarWizard({
 
             {showCascade && (
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400 mb-4">Or pick from catalogue</p>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <label>
-                    <span className={labelCls}>Brand</span>
-                    <select className={input} value={form.brand} disabled={loadingBrands} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value, year: '', model: '', variant: '' }))}>
-                      <option value="">{loadingBrands ? 'Loading…' : 'Select brand'}</option>
-                      {brandNames.map((n) => <option key={n}>{n}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    <span className={labelCls}>Registration year</span>
-                    <select className={input} value={form.year} disabled={!form.brand || loadingYears} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value, model: '', variant: '' }))}>
-                      <option value="">{!form.brand ? 'Select brand first' : loadingYears ? 'Loading years…' : 'Select year'}</option>
-                      {yearOptions.map((y) => <option key={y}>{y}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    <span className={labelCls}>Model</span>
-                    <select className={input} value={form.model} disabled={!form.year || loadingModels} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value, variant: '' }))}>
-                      <option value="">{!form.year ? 'Select year first' : 'Select model'}</option>
-                      {modelNames.map((n) => <option key={n}>{n}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    <span className={labelCls}>Fuel</span>
-                    <select className={input} value={form.fuel} onChange={(e) => set('fuel', e.target.value)}>
-                      <option value="">Fuel</option>
-                      {fuelTypes.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    <span className={labelCls}>Transmission</span>
-                    <select className={input} value={form.transmission} onChange={(e) => set('transmission', e.target.value)}>
-                      <option value="">Transmission</option>
-                      {transmissions.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    <span className={labelCls}>Variant</span>
-                    <select
-                      className={input}
-                      value={form.variant}
-                      disabled={!form.model || loadingVariants}
-                      onChange={(e) => {
-                        const v = variants.find((x) => (x.variant || x.name) === e.target.value);
-                        setForm((f) => ({
-                          ...f,
-                          variant: e.target.value,
-                          fuel: v?.fuelType || f.fuel,
-                          transmission: v?.transmission || f.transmission,
-                          bodyType: v?.bodyType || f.bodyType,
-                        }));
-                      }}
-                    >
-                      <option value="">{!form.model ? 'Select model first' : 'Variant'}</option>
-                      {variants.map((v) => {
-                        const label = v.variant || v.name;
-                        return <option key={v._id || label} value={label}>{label}</option>;
-                      })}
-                    </select>
-                  </label>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Or pick from catalogue</p>
+                  {editManual && (
+                    <button type="button" onClick={() => setEditManual(false)} className="text-xs font-bold text-slate-400 hover:text-slate-700">
+                      Hide
+                    </button>
+                  )}
                 </div>
+                <BrandModelGrid
+                  state={{ ...form, manualPhase }}
+                  patch={patchIdentity}
+                  onReady={() => go(2)}
+                  onClose={() => setEditManual(false)}
+                />
               </div>
+            )}
+
+            {!editManual && (
+              <button
+                type="button"
+                onClick={openManualPicker}
+                className="text-sm font-extrabold text-blue-600 hover:underline"
+              >
+                Or search manually by brand
+              </button>
             )}
 
             <div className="flex justify-end">
@@ -638,32 +640,60 @@ export default function AddCarWizard({
           </div>
         )}
 
-        {step === 2 && (
+        {visible(2) && (
           <div className="space-y-5">
+            <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 shadow-lg shadow-blue-500/20">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-100 inline-flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" /> Suggested market range
+              </p>
+              {valuation ? (
+                <>
+                  <p className="font-display font-black text-2xl mt-2">
+                    {formatINR(valuation.estimatedMinPrice)} – {formatINR(valuation.estimatedMaxPrice)}
+                  </p>
+                  <p className="text-sm text-blue-100 mt-1">
+                    Fair value {formatINR(valuation.fairMarketValue)}
+                    {quoting ? ' · updating…' : ''}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-blue-100 mt-2">
+                  {quoting ? 'Calculating…' : 'Enter kilometres and owners to see a range, then set your price below.'}
+                </p>
+              )}
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                 <span className={labelCls}>Kilometers driven</span>
                 <div className="flex items-center gap-2">
                   <Gauge className="w-4 h-4 text-blue-600" />
-                  <input className={input} value={form.kmDriven} onChange={(e) => set('kmDriven', e.target.value.replace(/\D/g, ''))} placeholder="45,000" />
+                  <input
+                    className={input}
+                    value={form.kmDriven === '' || form.kmDriven == null ? '' : Number(form.kmDriven).toLocaleString('en-IN')}
+                    onChange={(e) => set('kmDriven', e.target.value.replace(/\D/g, ''))}
+                    placeholder="45,000"
+                    inputMode="numeric"
+                  />
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {[10000, 25000, 50000].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => set('kmDriven', String(Number(form.kmDriven || 0) + n))}
-                      className="text-xs font-bold rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1.5 hover:border-blue-400 text-slate-600"
-                    >
-                      +{n.toLocaleString('en-IN')}
-                    </button>
-                  ))}
+                  {[10000, 25000, 50000].map((n) => {
+                    const active = Number(form.kmDriven) === n;
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => set('kmDriven', String(n))}
+                        className={`text-xs font-bold rounded-full border px-3 py-1.5 ${
+                          active
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-600'
+                        }`}
+                      >
+                        {n.toLocaleString('en-IN')}
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <span className={labelCls}>Expected selling price</span>
-                <input className={input} value={form.price} onChange={(e) => set('price', e.target.value.replace(/\D/g, ''))} placeholder="750000" />
-                <p className="mt-2 text-sm font-black text-blue-600">{formatLakh(form.price) || '₹ 0'}</p>
               </div>
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                 <span className={labelCls}>Ownership</span>
@@ -672,15 +702,34 @@ export default function AddCarWizard({
                     <Pill key={n} active={Number(form.ownership) === n} onClick={() => set('ownership', n)}>{ownerLabel(n)}</Pill>
                   ))}
                 </div>
+                <p className="text-[11px] font-semibold text-slate-500 mt-2">Range above updates as soon as you tap.</p>
               </label>
-              <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <span className={labelCls}>Colour</span>
-                <input className={input} value={form.color} onChange={(e) => set('color', e.target.value)} placeholder="White" />
-              </label>
-              <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <span className={labelCls}>Interior colour</span>
-                <input className={input} value={form.interiorColor} onChange={(e) => set('interiorColor', e.target.value)} placeholder="Beige" />
-              </label>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 md:col-span-2">
+                <span className={labelCls}>Vehicle health state</span>
+                <div className="flex flex-wrap gap-2">
+                  {HEALTH.map((h) => (
+                    <Pill
+                      key={h.label}
+                      active={form.engineState === h.label}
+                      onClick={() => setForm((f) => ({ ...f, engineState: h.label, conditionScore: h.score }))}
+                    >
+                      {h.label}
+                    </Pill>
+                  ))}
+                </div>
+                <p className="text-[11px] font-semibold text-slate-500 mt-2">Better condition usually lifts the market range.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 md:col-span-2">
+                <span className={labelCls}>Your selling price</span>
+                <input className={input} value={form.price} onChange={(e) => set('price', e.target.value.replace(/\D/g, ''))} placeholder="750000" />
+                <p className="mt-2 text-sm font-black text-blue-600">{formatLakh(form.price) || '₹ 0'}</p>
+                {valuation?.fairMarketValue ? (
+                  <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                    Guide: set this near {formatINR(valuation.fairMarketValue)}.
+                  </p>
+                ) : null}
+              </div>
+              <VehicleColorFields form={form} set={set} input={input} labelCls={labelCls} />
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                 <span className={labelCls}>Registration / RTO</span>
                 <input className={input} value={form.rto} onChange={(e) => set('rto', e.target.value)} placeholder="Hyderabad / TS09" />
@@ -716,30 +765,14 @@ export default function AddCarWizard({
               </label>
             </div>
 
-            <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 shadow-lg shadow-blue-500/20">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-100 inline-flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> Live resale range
-              </p>
-              {valuation ? (
-                <>
-                  <p className="font-display font-black text-2xl mt-2">
-                    {formatINR(valuation.estimatedMinPrice)} – {formatINR(valuation.estimatedMaxPrice)}
-                  </p>
-                  <p className="text-sm text-blue-100 mt-1">Fair market value {formatINR(valuation.fairMarketValue)}</p>
-                </>
-              ) : (
-                <p className="text-sm text-blue-100 mt-2">Add brand, model and year to load a market band.</p>
-              )}
-            </div>
-
             <div className="flex justify-between gap-3">
               <button type="button" onClick={() => setStep(1)} className={ghostBtn}>Back</button>
-              <button type="button" onClick={() => go(3)} className={primaryBtn}>Continue to health</button>
+              <button type="button" onClick={() => go(3)} className={primaryBtn}>Continue to condition</button>
             </div>
           </div>
         )}
 
-        {step === 3 && (
+        {visible(3) && (
           <div className="space-y-6">
             <div>
               <p className={labelCls}>Key features</p>
@@ -756,20 +789,6 @@ export default function AddCarWizard({
               </div>
             </div>
             <div>
-              <p className={labelCls}>Vehicle health state</p>
-              <div className="flex flex-wrap gap-2">
-                {HEALTH.map((h) => (
-                  <Pill
-                    key={h.label}
-                    active={form.engineState === h.label}
-                    onClick={() => setForm((f) => ({ ...f, engineState: h.label, conditionScore: h.score }))}
-                  >
-                    {h.label}
-                  </Pill>
-                ))}
-              </div>
-            </div>
-            <div>
               <p className={labelCls}>Number of keys</p>
               <div className="flex flex-wrap gap-2">
                 {[1, 2].map((n) => (
@@ -780,29 +799,48 @@ export default function AddCarWizard({
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
-              <div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                 <p className={labelCls}>Accidents</p>
-                <div className="flex gap-2">
-                  {['No', 'Yes'].map((v) => (
-                    <Pill key={v} active={form.accidental === v} onClick={() => set('accidental', v)}>{v === 'No' ? 'No accidents' : 'Accidental'}</Pill>
-                  ))}
+                <div className="flex flex-wrap gap-2">
+                  <Pill
+                    active={form.accidental === 'No'}
+                    onClick={() => setForm((f) => ({ ...f, accidental: 'No', accidentDetails: '' }))}
+                  >
+                    No accidents
+                  </Pill>
+                  <Pill
+                    active={form.accidental === 'Yes'}
+                    onClick={() => setForm((f) => ({ ...f, accidental: 'Yes', accidentDetails: ACCIDENT_TYPES.includes(f.accidentDetails) ? f.accidentDetails : '' }))}
+                  >
+                    Accidental
+                  </Pill>
                 </div>
+                {form.accidental === 'Yes' && (
+                  <div className="mt-4">
+                    <p className={labelCls}>Accident type</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(ACCIDENT_TYPES.includes(form.accidentDetails) || !form.accidentDetails
+                        ? ACCIDENT_TYPES
+                        : [...ACCIDENT_TYPES, form.accidentDetails]
+                      ).map((type) => (
+                        <Pill key={type} active={form.accidentDetails === type} onClick={() => set('accidentDetails', type)}>
+                          {type}
+                        </Pill>
+                      ))}
+                    </div>
+                    <p className="text-[11px] font-semibold text-slate-500 mt-2">Pick one. Typing is not allowed.</p>
+                  </div>
+                )}
               </div>
-              <div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                 <p className={labelCls}>Flood damage</p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {['No', 'Yes'].map((v) => (
                     <Pill key={v} active={form.floodDamage === v} onClick={() => set('floodDamage', v)}>{v === 'No' ? 'Clean' : 'Flooded'}</Pill>
                   ))}
                 </div>
               </div>
             </div>
-            {form.accidental === 'Yes' && (
-              <label className="block">
-                <span className={labelCls}>Accident details</span>
-                <textarea className={input} rows={2} value={form.accidentDetails} onChange={(e) => set('accidentDetails', e.target.value)} />
-              </label>
-            )}
             <div className="grid sm:grid-cols-2 gap-4">
               <label>
                 <span className={labelCls}>Insurance type</span>
@@ -835,7 +873,7 @@ export default function AddCarWizard({
           </div>
         )}
 
-        {step === 4 && (
+        {visible(4) && (
           <div className="space-y-6">
             <label className="block">
               <span className={labelCls}>Video URL (YouTube / MP4)</span>
@@ -875,6 +913,7 @@ export default function AddCarWizard({
             {existingImages.length > 0 && (
               <div>
                 <p className={labelCls}>Existing photos</p>
+                <p className="text-[11px] text-slate-500 mb-2">Car photos only. Remove any RC or insurance scans — those stay under Documents.</p>
                 <div className="flex flex-wrap gap-2">
                   {existingImages.map((src) => (
                     <div key={src} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200">
@@ -910,6 +949,7 @@ export default function AddCarWizard({
 
             <div>
               <p className={labelCls}>Documents</p>
+              <p className="text-[11px] text-slate-500 mb-2">Private to 4tyrezz staff — never shown in the public car gallery.</p>
               <div className="grid sm:grid-cols-3 gap-3">
                 {DOCS.map(({ key, label }) => (
                   <label key={key} className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 cursor-pointer hover:border-blue-400">
@@ -937,7 +977,7 @@ export default function AddCarWizard({
             <div className="flex justify-between gap-3">
               <button type="button" onClick={() => setStep(3)} className={ghostBtn}>Back</button>
               <button type="button" disabled={saving} onClick={submit} className={primaryBtn}>
-                {saving ? 'Publishing…' : editId ? 'Update listing' : 'Publish listing'}
+                {saving ? 'Saving…' : editId ? 'Save listing details' : 'Publish listing'}
               </button>
             </div>
           </div>

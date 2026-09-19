@@ -62,6 +62,16 @@ const listVariants = async (req, res) => {
   }
 };
 
+const listColors = async (req, res) => {
+  try {
+    const { colorsFor } = require('../data/modelColors');
+    const data = colorsFor(req.query.brand, req.query.model);
+    res.json({ success: true, ...data });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Could not list colours' });
+  }
+};
+
 const refresh = async (_req, res) => {
   try {
     const stats = await vehicleData.ingestCatalog({ force: true });
@@ -71,4 +81,4 @@ const refresh = async (_req, res) => {
   }
 };
 
-module.exports = { listBrands, listYears, listModels, listFuelTransmissions, listVariants, refresh };
+module.exports = { listBrands, listYears, listModels, listFuelTransmissions, listVariants, listColors, refresh };

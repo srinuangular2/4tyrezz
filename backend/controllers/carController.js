@@ -6,7 +6,7 @@ const Wishlist = require('../models/Wishlist');
 const Lead = require('../models/Lead');
 const User = require('../models/User');
 const { sendWhatsAppTemplate } = require('../utils/whatsapp');
-const { parseJsonField, parseCarNestedFields, enrichCarForDetail, getKmCondition, resolveListingRefs } = require('../utils/carInsights');
+const { parseJsonField, parseCarNestedFields, enrichCarForDetail, getKmCondition, resolveListingRefs, listingPhotos } = require('../utils/carInsights');
 const { listingFieldsForCreate, publicListingFilter, requiresListingModeration, syncFromListingStatus } = require('../utils/listingStatus');
 const { applyLocationFilters, normalizeListingLocation, recountLocations } = require('../services/locationService');
 const inventory = require('./inventoryController');
@@ -21,6 +21,23 @@ const POPULATE = [
   { path: 'owner', select: 'name mobile email dealershipName role' },
 ];
 
+const POPULATE_PUBLIC = [
+  { path: 'brand', select: 'name slug logo' },
+  { path: 'model', select: 'name slug' },
+  { path: 'city', select: 'name state' },
+];
+
+function stripDealerFromPublic(car) {
+  const obj = car?.toObject ? car.toObject() : { ...car };
+  delete obj.owner;
+  delete obj.dealerProfile;
+  delete obj.sellerType;
+  delete obj.listingDocuments;
+  delete obj.inspectionReport;
+  obj.images = listingPhotos(obj);
+  return obj;
+}
+
 function splitCarUploads(files = [], body = {}) {
   const imageSlots = parseJsonField(body.imageSlots, []);
   const documentSlots = parseJsonField(body.documentSlots, []);
@@ -30,10 +47,13 @@ function splitCarUploads(files = [], body = {}) {
   let inspectionReport = '';
   let imgIdx = 0;
   let docIdx = 0;
+  const photoCount = Array.isArray(imageSlots) ? imageSlots.length : 0;
+  const hasDocSlots = Array.isArray(documentSlots) && documentSlots.length > 0;
 
-  files.forEach((f) => {
+  files.forEach((f, idx) => {
     const url = `/uploads/cars/${f.filename}`;
-    const isDoc = f.mimetype === 'application/pdf' || /\.pdf$/i.test(f.originalname || '');
+    const isPdf = f.mimetype === 'application/pdf' || /\.pdf$/i.test(f.originalname || '');
+    const isDoc = isPdf || (hasDocSlots && idx >= photoCount);
     if (isDoc) {
       const key = documentSlots[docIdx++] || 'serviceHistory';
       listingDocuments[key] = url;
@@ -211,11 +231,16 @@ exports.getCars = async (req, res) => {
 
     const skip = (Number(page) - 1) * Number(limit);
     const [cars, total] = await Promise.all([
-      Car.find(filter).populate(POPULATE).sort(sort).skip(skip).limit(Number(limit)),
+      Car.find(filter).populate(POPULATE_PUBLIC).sort(sort).skip(skip).limit(Number(limit)),
       Car.countDocuments(filter),
     ]);
 
-    res.json({ cars, total, page: Number(page), pages: Math.ceil(total / limit) });
+    res.json({
+      cars: cars.map(stripDealerFromPublic),
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error('Error fetching cars:', error);
     res.status(500).json({ message: 'Server error fetching cars' });
@@ -238,10 +263,11 @@ exports.getCarById = async (req, res) => {
     car.views += 1;
     await car.save();
     const DealerProfile = require('../models/DealerProfile');
-    const dealerProfile = car.owner?._id
+    const staffView = Boolean(isOwner || isStaff);
+    const dealerProfile = staffView && car.owner?._id
       ? await DealerProfile.findOne({ user: car.owner._id }).select('businessName contactPhone addressLine1 city state pincode geo kycVerified onboardingStatus').lean()
       : null;
-    const enriched = await enrichCarForDetail(car, { dealerProfile });
+    const enriched = await enrichCarForDetail(car, { dealerProfile, staffView });
     res.json(enriched);
   } catch (error) {
     console.error('Error fetching car:', error);
@@ -255,8 +281,8 @@ exports.getSimilarCars = async (req, res) => {
   const similar = await Car.find({
     _id: { $ne: car._id }, ...publicListingFilter(),
     $or: [{ brand: car.brand }, { bodyType: car.bodyType }],
-  }).limit(6).populate(POPULATE);
-  res.json(similar);
+  }).limit(6).populate(POPULATE_PUBLIC);
+  res.json(similar.map(stripDealerFromPublic));
 };
 
 // GET /api/cars/:id/recommended
@@ -268,8 +294,8 @@ exports.getRecommendedCars = async (req, res) => {
     _id: { $ne: car._id },
     ...publicListingFilter(),
     price: { $gte: car.price - band, $lte: car.price + band },
-  }).limit(6).populate(POPULATE);
-  res.json(recommended);
+  }).limit(6).populate(POPULATE_PUBLIC);
+  res.json(recommended.map(stripDealerFromPublic));
 };
 
 // GET /api/cars/:id/similar-models
@@ -477,9 +503,12 @@ exports.updateCar = async (req, res) => {
       keptExistingImages = car.images;
     }
 
-    const finalImages = [...keptExistingImages, ...newImages];
-
     const payload = await resolveListingRefs(parseCarNestedFields(req.body));
+    const finalImages = listingPhotos({
+      images: [...keptExistingImages, ...newImages],
+      listingDocuments: { ...(car.listingDocuments || {}), ...(payload.listingDocuments || {}), ...listingDocuments },
+      inspectionReport: inspectionReport || car.inspectionReport,
+    });
     const cityDoc = payload.city ? await City.findById(payload.city).select('name state') : null;
     const location = await normalizeListingLocation({ ...req.body, ...payload, pickupLocation: payload.pickupLocation }, cityDoc);
     const updateData = {
@@ -538,7 +567,9 @@ exports.updateCar = async (req, res) => {
 
     if (payload.features) updateData.features = payload.features;
     if (payload.quickInsights) updateData.quickInsights = payload.quickInsights;
-    if (payload.rtoDetails) updateData.rtoDetails = payload.rtoDetails;
+    if (payload.rtoDetails) {
+      updateData.rtoDetails = { ...(car.rtoDetails || {}), ...payload.rtoDetails };
+    }
     if (payload.inspectionChecklist) updateData.inspectionChecklist = payload.inspectionChecklist;
     if (inspectionReport) updateData.inspectionReport = inspectionReport;
     if (payload.mediaSlots || Object.keys(mediaSlots).length) {
@@ -617,8 +648,8 @@ exports.toggleWishlist = async (req, res) => {
 };
 
 exports.myWishlist = async (req, res) => {
-  const items = await Wishlist.find({ user: req.user._id }).populate({ path: 'car', populate: POPULATE });
-  res.json(items.map((i) => i.car).filter(Boolean));
+  const items = await Wishlist.find({ user: req.user._id }).populate({ path: 'car', populate: POPULATE_PUBLIC });
+  res.json(items.map((i) => i.car).filter(Boolean).map(stripDealerFromPublic));
 };
 // POST /api/cars/connect-whatsapp — Send Wishlist/Car Card Details to User's WhatsApp
 exports.connectCarOnWhatsApp = async (req, res) => {
@@ -683,13 +714,16 @@ exports.createLead = async (req, res) => {
     event: EVENTS.NEW_LEAD,
     title: 'New Lead',
     message: `${name} requested ${type.replace(/_/g, ' ')} for ${vehicleLabel}`,
-    dealerId: car.owner,
     entityId: lead._id,
-    meta: { leadId: lead._id, carId: car._id, enquiryType: type, soundKey: 'lead', phone },
+    meta: { leadId: lead._id, carId: car._id, enquiryType: type, soundKey: 'lead', phone, inventoryOwner: car.owner },
+    adminOnly: true,
   });
-  res.status(201).json(lead);
+  const payload = lead.toObject ? lead.toObject() : { ...lead };
+  delete payload.seller;
+  res.status(201).json(payload);
 };
 exports.myLeads = async (req, res) => {
+  if (req.user.role === 'dealer') return res.json([]);
   const leads = await Lead.find({ seller: req.user._id }).populate('car', 'title price images').sort('-createdAt');
   res.json(leads);
 };

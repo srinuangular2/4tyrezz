@@ -2,7 +2,10 @@
   "name": "4tyrezz",
   "private": true,
   "scripts": {
-    "build": "npm run build --prefix customer"
+    "build": "npm run build --prefix customer",
+    "dev:customer": "npm run dev --prefix customer",
+    "dev:admin": "npm run dev --prefix admin",
+    "dev:dealer": "npm run dev --prefix dealer"
   },
   "dependencies": {
     "recharts": "^2.15.4"

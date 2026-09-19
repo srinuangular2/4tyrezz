@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, default: '' },
     mobile: { type: String, unique: true, sparse: true, index: true },
     email: { type: String, unique: true, sparse: true, lowercase: true, index: true },
+    dealerCode: { type: String, unique: true, sparse: true, index: true },
     password: { type: String, select: false },
     role: { type: String, enum: ['customer', 'dealer', 'admin'], default: 'customer' },
     avatar: { type: String, default: '' },

@@ -12,7 +12,7 @@ export default function AuthShell({ title, subtitle, children }) {
           {children}
         </div>
         <p className="text-center text-sm font-semibold text-slate-500 mt-6">
-          Dealer? <Link to="/dealer/login" className="text-[#3083ff] font-black hover:underline">Showroom sign in</Link>
+          Dealer? <Link to="/dealer/login" className="text-[#3083ff] font-black hover:underline">Sign in with Dealer ID</Link>
         </p>
       </div>
     </div>

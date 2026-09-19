@@ -8,9 +8,12 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const swaggerSpec = require('./config/swagger');
 const { bootstrapRoles } = require('./utils/rbacBootstrap');
+const { ensureDealerCodes } = require('./utils/dealerCredentials');
+const User = require('./models/User');
 const { ensureVehicleCatalog } = require('./services/vehicleDataService');
 const { bootstrapLocations } = require('./services/locationService');
 const { initSocket } = require('./services/socketService');
+const { republishOrphanedApprovedCars } = require('./utils/listingStatus');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -85,7 +88,15 @@ const PORT = process.env.PORT || 5000;
 const start = async () => {
   await connectDB();
   await bootstrapRoles();
+  await ensureDealerCodes(User).catch((err) => console.warn('dealer-id bootstrap:', err.message));
   await ensureVehicleCatalog();
+  const repaired = await republishOrphanedApprovedCars().catch((err) => {
+    console.warn('orphaned listing repair:', err.message);
+    return { updated: 0 };
+  });
+  if (repaired.updated) {
+    console.log(`Republished ${repaired.updated} approved listings with missing sellers`);
+  }
   initSocket(httpServer);
   httpServer.listen(PORT, () => {
     console.log(`4tyrezz API running on http://localhost:${PORT}`);

@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 const OTP_LEN = 4;
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-export default function AuthFlow({ onClose, onSuccess, variant = 'modal' }) {
+export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showClose }) {
   const dispatch = useDispatch();
   const { error, token, devOtp } = useSelector((s) => s.auth);
 
@@ -152,25 +152,31 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal' }) {
   };
 
   const titles = {
-    mobile: ['Sign in to 4TYREZZ', 'Enter your mobile number. We’ll send a 4-digit OTP over SMS and WhatsApp.'],
-    otp: ['Verify your number', `Enter the 4-digit code sent to +91 ${mobile}`],
-    profile: ['A few details', 'Optional — helps dealers and our finance desk reach you by name.'],
+    mobile: ['Sign in to continue', 'Enter your 10-digit mobile number. We will send a 4-digit OTP.'],
+    otp: ['Enter OTP', `4-digit code sent to +91 ${mobile}`],
+    profile: ['Almost done', 'Name and email help us reach you. You can skip this.'],
   };
 
-  const shellClass = variant === 'page'
-    ? 'w-full'
-    : 'relative w-full max-w-md bg-white/90 backdrop-blur-xl border border-white/70 rounded-3xl p-7 shadow-[0_20px_40px_0_rgba(48,131,255,0.16)] animate-fadeUp';
+  const shellClass = variant === 'embed' || variant === 'page'
+    ? 'relative w-full text-slate-900'
+    : 'relative w-full max-w-md rounded-3xl p-7 animate-fadeUp';
+  const shellStyle = variant === 'modal'
+    ? { backgroundColor: '#ffffff', color: '#0f172a', boxShadow: '0 24px 80px rgba(15, 23, 42, 0.22)' }
+    : undefined;
+  const canClose = showClose ?? Boolean(onClose);
 
   const content = (
-    <div className={shellClass}>
-      {onClose && (
-        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 z-10">
+    <div className={shellClass} style={shellStyle}>
+      {canClose && (
+        <button type="button" onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 flex items-center justify-center z-10" aria-label="Close">
           <Close />
         </button>
       )}
 
-      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3083ff] mb-2">Welcome</p>
-      <h2 className="font-display text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+      {variant !== 'embed' && (
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3083ff] mb-2">Welcome</p>
+      )}
+      <h2 id="customer-login-title" className="font-display text-2xl font-black text-slate-900 tracking-tight">
         {titles[view][0]}
       </h2>
       <p className="text-sm font-medium text-slate-500 mt-2 leading-relaxed">{titles[view][1]}</p>
@@ -289,11 +295,17 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal' }) {
     </div>
   );
 
-  if (variant === 'page') return content;
+  if (variant === 'page' || variant === 'embed') return content;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()}>{content}</div>
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+      <div
+        role="presentation"
+        className="absolute inset-0"
+        style={{ backgroundColor: 'rgba(15, 23, 42, 0.52)' }}
+        onClick={onClose}
+      />
+      <div className="relative z-10" onClick={(e) => e.stopPropagation()}>{content}</div>
     </div>
   );
 }

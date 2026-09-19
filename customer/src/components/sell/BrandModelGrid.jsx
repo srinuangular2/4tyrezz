@@ -11,11 +11,12 @@ import {
 } from '../../hooks/useVehicleCatalog';
 import { isAutomatic, variantMatches } from '../../lib/vehicleVariant';
 
-export default function BrandModelGrid({ state, patch, onReady }) {
+export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 'light' }) {
+  const dark = tone === 'dark';
   const [q, setQ] = useState('');
   const [variantSearch, setVariantSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const phase = state.manualPhase;
+  const phase = state.manualPhase || 'brand';
 
   const { brands, loading: loadingBrands } = useVehicleBrands();
   const { years, loading: loadingYears } = useVehicleYears(state.brand);
@@ -40,8 +41,9 @@ export default function BrandModelGrid({ state, patch, onReady }) {
 
   useEffect(() => {
     if (!fuelTypes.length) return;
-    if (state.fuel && fuelTypes.includes(state.fuel)) return;
-    patch({ fuel: fuelTypes[0] });
+    if (!state.fuel) return;
+    if (fuelTypes.includes(state.fuel)) return;
+    patch({ fuel: '' });
   }, [fuelTypes, state.fuel, patch]);
 
   useEffect(() => {
@@ -112,7 +114,8 @@ export default function BrandModelGrid({ state, patch, onReady }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap gap-2 min-w-0">
         {state.brand && (
           <Chip onClick={() => patch({ manualPhase: 'brand', model: '', year: '', variant: '', fuel: '', transmission: '' })}>
             {state.brand}
@@ -128,11 +131,22 @@ export default function BrandModelGrid({ state, patch, onReady }) {
         )}
         {state.fuel && phase === 'variant' && <Chip>{state.fuel}</Chip>}
         {state.city && <Chip>{state.city}</Chip>}
+        </div>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className={`shrink-0 w-9 h-9 rounded-full border font-black ${dark ? 'border-slate-700 bg-slate-900 text-slate-400 hover:text-white' : 'border-slate-200 bg-white text-slate-500 hover:text-slate-900 hover:border-slate-300'}`}
+          >
+            ✕
+          </button>
+        ) : null}
       </div>
 
       {phase === 'brand' && (
         <>
-          <h3 className="font-display font-black text-slate-900">Select your car brand</h3>
+          <h3 className={`font-display font-black ${dark ? 'text-white' : 'text-slate-900'}`}>Select your car brand</h3>
           <Search value={q} onChange={setQ} placeholder="Search brand" />
           {loadingBrands ? (
             <LoaderGrid />
@@ -144,12 +158,14 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                     key={b.name}
                     type="button"
                     onClick={() => pickBrand(b.name, b.logo)}
-                    className={`rounded-2xl border bg-white p-3 text-center hover:border-[#3083ff] hover:shadow-md transition ${
-                      state.brand === b.name ? 'border-[#3083ff] ring-2 ring-[#3083ff]/20' : 'border-slate-200'
+                    className={`rounded-2xl border p-3 text-center hover:border-blue-500 hover:shadow-md transition ${
+                      dark ? 'bg-slate-950/50' : 'bg-white'
+                    } ${
+                      state.brand === b.name ? 'border-blue-500 ring-2 ring-blue-500/20' : dark ? 'border-slate-800' : 'border-slate-200'
                     }`}
                   >
                     <BrandMark name={b.name} logo={b.logo} />
-                    <p className="text-[11px] font-extrabold text-slate-800 mt-2 truncate">{b.name}</p>
+                    <p className={`text-[11px] font-extrabold mt-2 truncate ${dark ? 'text-slate-200' : 'text-slate-800'}`}>{b.name}</p>
                   </button>
                 ))}
               </div>
@@ -164,8 +180,8 @@ export default function BrandModelGrid({ state, patch, onReady }) {
       {phase === 'year' && (
         <>
           <div className="flex items-center justify-between">
-            <h3 className="font-display font-black text-slate-900">Select registration year</h3>
-            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'brand' })}>
+            <h3 className={`font-display font-black ${dark ? 'text-white' : 'text-slate-900'}`}>Select registration year</h3>
+            <button type="button" className="text-xs font-bold text-blue-400" onClick={() => patch({ manualPhase: 'brand' })}>
               ← Brands
             </button>
           </div>
@@ -180,8 +196,10 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                   onClick={() => pickYear(y)}
                   className={`rounded-xl border px-3 py-3 text-sm font-extrabold ${
                     Number(state.year) === Number(y)
-                      ? 'bg-[#3083ff] text-white border-[#3083ff]'
-                      : 'bg-white border-slate-200 text-slate-800 hover:border-[#3083ff]'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : dark
+                        ? 'bg-slate-950/50 border-slate-800 text-slate-200 hover:border-blue-500'
+                        : 'bg-white border-slate-200 text-slate-800 hover:border-[#3083ff]'
                   }`}
                 >
                   {y}
@@ -200,8 +218,8 @@ export default function BrandModelGrid({ state, patch, onReady }) {
       {phase === 'model' && (
         <>
           <div className="flex items-center justify-between">
-            <h3 className="font-display font-black text-slate-900">Select your car model</h3>
-            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'year' })}>
+            <h3 className={`font-display font-black ${dark ? 'text-white' : 'text-slate-900'}`}>Select your car model</h3>
+            <button type="button" className="text-xs font-bold text-blue-400" onClick={() => patch({ manualPhase: 'year' })}>
               ← Year
             </button>
           </div>
@@ -209,15 +227,17 @@ export default function BrandModelGrid({ state, patch, onReady }) {
           {loadingModels ? (
             <LoaderList />
           ) : (
-            <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden max-h-[420px] overflow-y-auto">
+            <div className={`rounded-2xl border overflow-hidden max-h-[420px] overflow-y-auto ${dark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-white'}`}>
               {filteredModels.map((name, i) => (
                 <button
                   key={name}
                   type="button"
                   onClick={() => pickModel(name)}
-                  className={`w-full text-left px-4 py-3.5 text-sm font-bold text-slate-800 hover:bg-[#EAF2FF] hover:text-[#1853ff] ${
-                    i ? 'border-t border-slate-100' : ''
-                  } ${state.model === name ? 'bg-[#EAF2FF] text-[#1853ff]' : ''}`}
+                  className={`w-full text-left px-4 py-3.5 text-sm font-bold ${
+                    dark ? 'text-slate-200 hover:bg-blue-500/10 hover:text-blue-300' : 'text-slate-800 hover:bg-[#EAF2FF] hover:text-[#1853ff]'
+                  } ${
+                    i ? (dark ? 'border-t border-slate-800' : 'border-t border-slate-100') : ''
+                  } ${state.model === name ? (dark ? 'bg-blue-500/15 text-blue-300' : 'bg-[#EAF2FF] text-[#1853ff]') : ''}`}
                 >
                   {name}
                 </button>
@@ -235,8 +255,8 @@ export default function BrandModelGrid({ state, patch, onReady }) {
       {phase === 'variant' && (
         <>
           <div className="flex items-center justify-between">
-            <h3 className="font-display font-black text-slate-900">Select car variant</h3>
-            <button type="button" className="text-xs font-bold text-[#3083ff]" onClick={() => patch({ manualPhase: 'model' })}>
+            <h3 className={`font-display font-black ${dark ? 'text-white' : 'text-slate-900'}`}>Select car variant</h3>
+            <button type="button" className="text-xs font-bold text-blue-400" onClick={() => patch({ manualPhase: 'model' })}>
               ← Models
             </button>
           </div>
@@ -246,13 +266,30 @@ export default function BrandModelGrid({ state, patch, onReady }) {
             <>
               {fuelTypes.length > 0 && (
                 <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => patch({ fuel: '' })}
+                    className={`rounded-full border px-4 py-2 text-xs font-extrabold ${
+                      !state.fuel
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : dark
+                          ? 'bg-slate-950/50 border-slate-800 text-slate-300'
+                          : 'bg-white border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    All
+                  </button>
                   {fuelTypes.map((f) => (
                     <button
                       key={f}
                       type="button"
                       onClick={() => patch({ fuel: f })}
                       className={`rounded-full border px-4 py-2 text-xs font-extrabold ${
-                        state.fuel === f ? 'bg-[#3083ff] text-white border-[#3083ff]' : 'bg-white border-slate-200 text-slate-700'
+                        state.fuel === f
+                          ? 'bg-blue-600 text-white border-blue-500'
+                          : dark
+                            ? 'bg-slate-950/50 border-slate-800 text-slate-300'
+                            : 'bg-white border-slate-200 text-slate-700'
                       }`}
                     >
                       {f}
@@ -261,13 +298,13 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                 </div>
               )}
               <Search value={variantSearch} onChange={setVariantSearch} placeholder="Search variant" />
-              {state.fuel && (
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{state.fuel} variants</p>
-              )}
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                {state.fuel ? `${state.fuel} variants` : 'All variants'}
+              </p>
               {loadingVariants ? (
                 <LoaderList />
               ) : (
-                <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                <div className={`rounded-2xl border overflow-hidden ${dark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-white'}`}>
                   {variants.map((v, i) => {
                     const label = v.variant || v.name;
                     const auto = isAutomatic(v.transmission);
@@ -284,12 +321,14 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                           });
                           onReady?.();
                         }}
-                        className={`w-full text-left px-4 py-3.5 text-sm font-bold hover:bg-[#EAF2FF] ${
-                          i ? 'border-t border-slate-100' : ''
+                        className={`w-full text-left px-4 py-3.5 text-sm font-bold ${
+                          dark ? 'hover:bg-blue-500/10' : 'hover:bg-[#EAF2FF]'
+                        } ${
+                          i ? (dark ? 'border-t border-slate-800' : 'border-t border-slate-100') : ''
                         } ${
                           variantMatches(v, state.variant, state.transmission)
-                            ? 'bg-[#EAF2FF] text-[#1853ff]'
-                            : 'text-slate-800'
+                            ? dark ? 'bg-blue-500/15 text-blue-300' : 'bg-[#EAF2FF] text-[#1853ff]'
+                            : dark ? 'text-slate-200' : 'text-slate-800'
                         }`}
                       >
                         <span className="inline-flex flex-wrap items-center gap-2">
@@ -314,11 +353,11 @@ export default function BrandModelGrid({ state, patch, onReady }) {
                 type="button"
                 onClick={() => onReady?.()}
                 disabled={!state.year || !state.model}
-                className="w-full rounded-xl bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white py-3.5 text-xs font-black uppercase tracking-wider"
+                className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-3.5 text-xs font-black uppercase tracking-wider"
               >
                 Continue
               </button>
-              <button type="button" onClick={() => onReady?.()} className="w-full text-xs font-bold text-[#3083ff] py-2">
+              <button type="button" onClick={() => onReady?.()} className="w-full text-xs font-bold text-blue-400 py-2">
                 {state.variant ? 'Keep this variant and continue' : 'I don’t know my variant'}
               </button>
             </>
@@ -354,7 +393,7 @@ function Search({ value, onChange, placeholder }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-medium outline-none focus:border-[#3083ff] focus:ring-2 focus:ring-[#3083ff]/20 shadow-sm"
+        className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 pl-10 pr-4 py-3 text-sm font-bold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 placeholder:font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm"
       />
     </label>
   );
@@ -365,7 +404,7 @@ function Chip({ children, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-extrabold text-slate-700"
+      className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-extrabold text-slate-700 dark:text-slate-200"
     >
       {children}
     </button>

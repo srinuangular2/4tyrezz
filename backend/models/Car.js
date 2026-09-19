@@ -86,15 +86,19 @@ const carSchema = new mongoose.Schema(
     },
 
     rtoDetails: {
-      rcNumber: { type: String, default: '' }, // e.g. "KA01MG****"
-      rcStatus: { type: String, default: 'Active' }, // e.g. "Active", "NOC ISSUED"
+      rcNumber: { type: String, default: '' },
+      rcStatus: { type: String, default: '' },
       registrationDate: { type: String, default: '' },
+      registrationYear: { type: Number, default: null },
       rtoLocation: { type: String, default: '' },
       insuranceExpiryDate: { type: String, default: '' },
       insuranceCompany: { type: String, default: '' },
       engineCapacityCC: { type: Number, default: null },
       puccValidUpto: { type: String, default: '' },
       fitnessValidUpto: { type: String, default: '' },
+      color: { type: String, default: '' },
+      fuel: { type: String, default: '' },
+      bodyType: { type: String, default: '' },
     },
 
     status: { type: String, enum: ['pending', 'approved', 'rejected', 'sold'], default: 'pending' },

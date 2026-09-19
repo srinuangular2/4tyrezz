@@ -53,9 +53,15 @@ function inferredOnboardingStep(profile, user) {
   if (!user) return 1;
   if (profile?.kycStatus === 'approved' || profile?.onboardingStatus === 'APPROVED') return 4;
   if (PENDING_REVIEW.includes(profile?.kycStatus) || profile?.onboardingStatus === 'PENDING_ADMIN_APPROVAL') return 4;
-  const hasBiz = Boolean(profile?.businessName && profile?.addressLine1 && profile?.city && profile?.state);
-  if (hasBiz) return 3;
-  return 2;
+  const hasContact = Boolean(profile?.contactPerson && (profile?.contactPhone || profile?.contactEmail));
+  const hasShowroom = Boolean(
+    profile?.businessName && profile?.businessType && profile?.addressLine1 && profile?.city && profile?.state && profile?.pincode
+  );
+  const hasKyc = Boolean(profile?.panNumber && profile?.gstNumber && profile?.bankAccountNumber && profile?.bankIfsc);
+  if (!hasContact) return 1;
+  if (!hasShowroom) return 2;
+  if (!hasKyc) return 3;
+  return 3;
 }
 
 exports.getOnboarding = async (req, res) => {
@@ -64,11 +70,11 @@ exports.getOnboarding = async (req, res) => {
     success: true,
     data: {
       profile: toPublicProfile(profile),
-      step: profile.onboardingStep || inferredOnboardingStep(profile, req.user),
+      step: inferredOnboardingStep(profile, req.user),
       user: {
         id: req.user._id,
         name: req.user.name,
-        email: req.user.email,
+        email: req.user.email || profile.contactEmail || '',
         mobile: req.user.mobile,
         dealershipName: req.user.dealershipName,
         kycVerified: Boolean(profile.kycVerified || req.user.kycVerified),
@@ -159,11 +165,16 @@ exports.saveOnboarding = async (req, res) => {
   profile.onboardingStatus = 'IN_PROGRESS';
   await profile.save();
 
-  await User.findByIdAndUpdate(req.user._id, {
+  const userPatch = {
     dealershipName: profile.businessName || req.user.dealershipName,
     city: profile.city || req.user.city,
     name: profile.contactPerson || req.user.name,
-  });
+  };
+  if (profile.contactEmail) {
+    const taken = await User.findOne({ email: profile.contactEmail, _id: { $ne: req.user._id } });
+    if (!taken) userPatch.email = profile.contactEmail;
+  }
+  await User.findByIdAndUpdate(req.user._id, userPatch);
 
   res.json({ success: true, data: toPublicProfile(profile) });
 };
@@ -210,57 +221,31 @@ exports.submitOnboarding = async (req, res) => {
 
 exports.dashboardKpis = async (req, res) => {
   const owner = scopedDealerId(req);
-  const cars = await Car.find({ owner }).select('_id status listingStatus unpublished');
-  const ids = cars.map((c) => c._id);
-  const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 86400000);
-
   const [
     totalInventory,
+    pendingListings,
     activeListings,
     soldCars,
-    newLeads,
-    pendingFollowUps,
-    scheduledTestDrives,
-    tokenBookings,
-    soldBookings,
-    closedWon,
   ] = await Promise.all([
     Car.countDocuments({ owner }),
+    Car.countDocuments({
+      owner,
+      $or: [
+        { status: { $in: ['pending', 'PENDING_MODERATION', 'draft'] } },
+        { listingStatus: { $in: ['PENDING_MODERATION', 'DRAFT'] } },
+      ],
+    }),
     Car.countDocuments({ owner, ...publicListingFilter() }),
     Car.countDocuments({ owner, status: 'sold' }),
-    Lead.countDocuments({ seller: owner, createdAt: { $gte: weekAgo } }),
-    Lead.countDocuments({
-      seller: owner,
-      followUpAt: { $ne: null },
-      stage: { $nin: ['Sold', 'Lost'] },
-      status: { $nin: ['Sold', 'Lost', 'Closed', 'Closed/Won'] },
-    }),
-    TestDrive.countDocuments({
-      dealer: owner,
-      status: { $in: ['Requested', 'Confirmed', 'Rescheduled', 'Scheduled', 'In Progress'] },
-    }),
-    Booking.countDocuments({ dealer: owner, status: { $in: ['Token Received', 'Booked', 'Payment Pending', 'Confirmed'] } }),
-    Booking.find({ dealer: owner, status: { $in: ['Fully Paid', 'Completed'] } }).select('amount saleAmount tokenAmount'),
-    Lead.countDocuments({ seller: owner, $or: [{ stage: 'Sold' }, { status: { $in: ['Sold', 'Closed/Won'] } }] }),
   ]);
-
-  const totalLeads = await Lead.countDocuments({ seller: owner });
-  const totalRevenue = soldBookings.reduce((sum, b) => sum + Number(b.saleAmount || b.amount || 0), 0);
-  const conversionRate = totalLeads ? Number(((closedWon / totalLeads) * 100).toFixed(1)) : 0;
 
   res.json({
     success: true,
     data: {
       totalInventory,
+      pendingListings,
       activeListings,
       soldCars,
-      newLeads,
-      pendingFollowUps,
-      scheduledTestDrives,
-      tokenBookings,
-      totalRevenue,
-      conversionRate,
     },
   });
 };
@@ -300,266 +285,60 @@ function followUpAlert(date) {
 }
 
 exports.listLeads = async (req, res) => {
-  const owner = scopedDealerId(req);
-  const filter = { seller: owner };
-  if (req.query.status) {
-    filter.$or = [{ stage: req.query.status }, { status: req.query.status }];
-  }
-  if (req.query.source) filter.source = req.query.source;
-  if (req.query.from || req.query.to) {
-    filter.createdAt = {};
-    if (req.query.from) filter.createdAt.$gte = new Date(req.query.from);
-    if (req.query.to) filter.createdAt.$lte = new Date(`${req.query.to}T23:59:59.999Z`);
-  }
-
-  const leads = await Lead.find(filter)
-    .populate({ path: 'car', select: 'title price year model', populate: { path: 'model', select: 'name' } })
-    .sort('-createdAt')
-    .lean();
-  const modelQ = String(req.query.model || '').toLowerCase();
-  const filtered = modelQ
-    ? leads.filter((l) => `${l.car?.title || ''} ${l.car?.model?.name || ''}`.toLowerCase().includes(modelQ))
-    : leads;
-
-  const ids = filtered.map((l) => l._id);
-  const activities = await LeadFollowUp.find({ lead: { $in: ids } }).sort('-createdAt').lean();
-  const byLead = {};
-  activities.forEach((a) => {
-    const key = String(a.lead);
-    if (!byLead[key]) byLead[key] = [];
-    byLead[key].push(a);
-  });
-
-  const [drives] = await Promise.all([
-    TestDrive.find({ dealer: owner }).populate('vehicle', 'title price year').sort('-createdAt').lean(),
-  ]);
-
-  const leadRows = filtered.map((l) => {
-    const stage = crmStage(l);
-    return {
-      id: l._id,
-      kind: 'buyer',
-      leadId: `L-${String(l._id).slice(-6).toUpperCase()}`,
-      customerName: l.name,
-      mobile: l.phone,
-      email: l.email || '',
-      carTitle: l.car?.title || '',
-      carId: l.car?._id,
-      source: l.source || l.enquiryType || 'website',
-      status: l.status,
-      stage,
-      column: stage,
-      assignedRep: l.assignedRep || '',
-      callOutcome: l.callOutcome || '',
-      followUpAt: l.followUpAt,
-      alert: followUpAlert(l.followUpAt),
-      remarks: l.remarks,
-      remarksLog: l.remarksLog || [],
-      stageHistory: l.stageHistory || [],
-      activities: byLead[String(l._id)] || l.activity || [],
-      bookingId: l.booking || null,
-      createdAt: l.createdAt,
-    };
-  });
-
-  const driveRows = (req.query.source && req.query.source !== 'test_drive' ? [] : drives).map((d) => ({
-    id: d._id,
-    kind: 'test_drive',
-    leadId: `TD-${String(d._id).slice(-6).toUpperCase()}`,
-    customerName: d.customerName,
-    mobile: d.customerPhone,
-    email: '',
-    carTitle: d.vehicle?.title || '',
-    carId: d.vehicle?._id,
-    source: 'test_drive',
-    status: d.status,
-    stage: 'Test Drive Booked',
-    column: 'Test Drive Booked',
-    assignedRep: '',
-    callOutcome: '',
-    followUpAt: d.preferredDate,
-    alert: followUpAlert(d.preferredDate),
-    remarks: d.notes || '',
-    remarksLog: [],
-    stageHistory: [],
-    activities: [],
-    createdAt: d.createdAt,
-  }));
-
-  const valuationRows = [];
-
-  const data = [...leadRows, ...driveRows, ...valuationRows].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json({ success: true, columns: PIPELINE_STAGES, callOutcomes: CALL_OUTCOMES, data });
+  return res.json({ success: true, data: [] });
 };
 
 exports.updateLeadStage = async (req, res) => {
-  const owner = scopedDealerId(req);
-  const stage = req.body.stage || req.body.status || req.body.column;
-  if (!PIPELINE_STAGES.includes(stage)) {
-    return res.status(400).json({ message: 'Invalid pipeline stage', allowed: PIPELINE_STAGES });
-  }
-  const lead = await Lead.findOne({ _id: req.params.id, seller: owner });
-  if (!lead) return res.status(404).json({ message: 'Lead not found' });
-  const from = crmStage(lead);
-  lead.stageHistory = lead.stageHistory || [];
-  lead.stageHistory.push({ from, to: stage, at: new Date() });
-  lead.stage = stage;
-  lead.status = stage;
-  if (req.body.assignedRep != null) lead.assignedRep = req.body.assignedRep;
-  if (req.body.followUpAt) lead.followUpAt = new Date(req.body.followUpAt);
-  if (req.body.callOutcome) lead.callOutcome = req.body.callOutcome;
-  if (req.body.remarks) {
-    lead.remarks = req.body.remarks;
-    lead.remarksLog.push({ note: req.body.remarks, outcome: req.body.callOutcome || '', createdAt: new Date() });
-  }
-  await lead.save();
-  res.json({ success: true, data: lead });
+  return res.status(403).json({ message: 'Buyer leads are handled by 4tyrezz admin' });
 };
 
 exports.assignLead = async (req, res) => {
-  const owner = scopedDealerId(req);
-  const lead = await Lead.findOne({ _id: req.params.id, seller: owner });
-  if (!lead) return res.status(404).json({ message: 'Lead not found' });
-  lead.assignedRep = String(req.body.assignedRep || req.body.rep || '').trim();
-  if (req.body.followUpAt) lead.followUpAt = new Date(req.body.followUpAt);
-  if (req.body.remarks) {
-    lead.remarks = req.body.remarks;
-    lead.remarksLog.push({ note: req.body.remarks, outcome: req.body.callOutcome || '', createdAt: new Date() });
-  }
-  if (req.body.callOutcome) lead.callOutcome = req.body.callOutcome;
-  await lead.save();
-  res.json({ success: true, data: lead });
+  return res.status(403).json({ message: 'Buyer leads are handled by 4tyrezz admin' });
 };
 
 exports.convertLeadToBooking = async (req, res) => {
-  const owner = scopedDealerId(req);
-  const lead = await Lead.findOne({ _id: req.params.id, seller: owner }).populate('car');
-  if (!lead) return res.status(404).json({ message: 'Lead not found' });
-  if (!lead.car) return res.status(400).json({ message: 'Lead has no vehicle to convert' });
-
-  const tokenAmount = Number(req.body.tokenAmount || req.body.amount || process.env.BOOKING_TOKEN_AMOUNT || 5000);
-  let customer = await User.findOne({ mobile: lead.phone, role: 'customer' });
-  if (!customer) {
-    customer = await User.create({
-      name: lead.name,
-      mobile: lead.phone,
-      email: lead.email || undefined,
-      role: 'customer',
-    });
-  }
-
-  const booking = await Booking.create({
-    user: customer._id,
-    vehicle: lead.car._id,
-    dealer: owner,
-    amount: tokenAmount,
-    tokenAmount,
-    saleAmount: lead.car.price,
-    status: 'Token Received',
-    customerName: lead.name,
-    customerPhone: lead.phone,
-    customerEmail: lead.email || '',
-    lead: lead._id,
-    notes: req.body.notes || 'Converted from CRM lead',
-  });
-
-  const from = crmStage(lead);
-  lead.stage = 'Token Booked';
-  lead.status = 'Token Booked';
-  lead.booking = booking._id;
-  lead.stageHistory.push({ from, to: 'Token Booked', at: new Date() });
-  await lead.save();
-
-  res.status(201).json({ success: true, data: booking });
+  return res.status(403).json({ message: 'Buyer leads are handled by 4tyrezz admin' });
 };
 
 exports.analyticsReports = async (req, res) => {
   const owner = scopedDealerId(req);
   const cars = await Car.find({ owner })
-    .select('title price views enquiryCount phoneEnquiryCount whatsappEnquiryCount status listingStatus brand model createdAt updatedAt priceHistory')
+    .select('title price views status listingStatus unpublished brand model createdAt')
     .populate('brand', 'name')
     .populate('model', 'name')
     .lean();
 
-  const [leads, drives, bookings, contacted] = await Promise.all([
-    Lead.find({ seller: owner }).select('status stage createdAt car followUpAt').lean(),
-    TestDrive.find({ dealer: owner }).select('status createdAt').lean(),
-    Booking.find({ dealer: owner }).select('status amount saleAmount createdAt').lean(),
-    Lead.countDocuments({ seller: owner, $or: [{ stage: { $ne: 'New Lead' } }, { status: { $nin: ['New', 'New Lead'] } }] }),
-  ]);
-
-  const leadsReceived = leads.length;
-  const responseRate = leadsReceived ? Number(((contacted / leadsReceived) * 100).toFixed(1)) : 0;
-  const testDrivesTaken = drives.filter((d) => ['Completed', 'Feedback Recorded', 'In Progress'].includes(d.status)).length || drives.length;
-  const finalBookings = bookings.filter((b) => !['Cancelled', 'Cancelled/Refunded', 'Refunded'].includes(b.status)).length;
-  const sales = bookings.filter((b) => ['Fully Paid', 'Completed'].includes(b.status)).length;
-  const conversionRate = leadsReceived ? Number(((sales / leadsReceived) * 100).toFixed(1)) : 0;
-
-  const byModel = {};
-  cars.forEach((c) => {
-    const key = c.model?.name || c.title || 'Other';
-    if (!byModel[key]) byModel[key] = { model: key, views: 0, enquiries: 0, price: c.price };
-    byModel[key].views += Number(c.views || 0);
-    byModel[key].enquiries += Number(c.enquiryCount || 0);
-  });
-  leads.forEach((l) => {
-    const car = cars.find((c) => String(c._id) === String(l.car));
-    const key = car?.model?.name || car?.title;
-    if (key && byModel[key]) byModel[key].enquiries += 1;
-  });
-  const topInventory = Object.values(byModel)
-    .sort((a, b) => b.enquiries + b.views - (a.enquiries + a.views))
-    .slice(0, 8);
-
-  const engagement = cars
-    .map((c) => ({
-      id: c._id,
-      title: c.title,
-      views: Number(c.views || 0),
-      phone: Number(c.phoneEnquiryCount || 0),
-      whatsapp: Number(c.whatsappEnquiryCount || 0),
-      enquiries: Number(c.enquiryCount || 0),
-    }))
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 12);
-
-  const elasticity = cars
-    .filter((c) => (c.priceHistory || []).length > 0)
-    .map((c) => {
-      const drops = (c.priceHistory || []).filter((p, i, arr) => i > 0 && p.price < arr[i - 1].price);
-      const related = leads.filter((l) => String(l.car) === String(c._id));
-      const afterDrop = drops.length
-        ? related.filter((l) => new Date(l.createdAt) >= new Date(drops[0].changedAt)).length
-        : related.length;
-      return {
-        id: c._id,
-        title: c.title,
-        drops: drops.length,
-        lastPrice: c.price,
-        leadsAfterDrop: afterDrop,
-        conversionSpeedDays: related.length
-          ? Math.round(
-              related.reduce((sum, l) => sum + Math.max(1, (new Date(l.createdAt) - new Date(c.createdAt)) / 86400000), 0) /
-                related.length
-            )
-          : null,
-      };
-    });
+  const pending = cars.filter((c) => ['pending', 'PENDING_MODERATION', 'draft'].includes(c.status) || ['PENDING_MODERATION', 'DRAFT'].includes(c.listingStatus)).length;
+  const live = cars.filter((c) => c.status === 'approved' && !c.unpublished).length;
+  const sold = cars.filter((c) => c.status === 'sold').length;
 
   res.json({
     success: true,
     data: {
       funnel: {
-        leadsReceived,
-        responseRate,
-        testDrivesTaken,
-        bookings: finalBookings,
-        sales,
-        conversionRate,
+        pending,
+        live,
+        sold,
+        total: cars.length,
       },
-      topInventory,
-      engagement,
-      elasticity,
+      topInventory: cars
+        .map((c) => ({
+          model: c.model?.name || c.title,
+          views: Number(c.views || 0),
+          status: c.listingStatus || c.status,
+          price: c.price,
+        }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 8),
+      engagement: cars
+        .map((c) => ({
+          id: c._id,
+          title: c.title,
+          views: Number(c.views || 0),
+        }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 12),
+      elasticity: [],
     },
   });
 };

@@ -181,3 +181,40 @@ export function useVehicleVariants({ brand, model, fuelType, transmission, searc
 
   return { variants, loading };
 }
+
+export function useVehicleColors(brand, model) {
+  const [exterior, setExterior] = useState([]);
+  const [interior, setInterior] = useState([]);
+  const [matched, setMatched] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const params = {};
+        if (brand) params.brand = brand;
+        if (model) params.model = model;
+        const { data } = await api.get('/vehicles/colors', { params });
+        if (cancelled) return;
+        setExterior(data.exterior || []);
+        setInterior(data.interior || []);
+        setMatched(Boolean(data.matched));
+      } catch {
+        if (!cancelled) {
+          setExterior([]);
+          setInterior([]);
+          setMatched(false);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [brand, model]);
+
+  return { exterior, interior, matched, loading };
+}

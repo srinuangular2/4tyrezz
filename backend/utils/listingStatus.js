@@ -70,6 +70,40 @@ function scopedDealerId(req) {
   return req.user._id;
 }
 
+async function findPlatformOwnerId() {
+  const User = require('../models/User');
+  const admin = await User.findOne({ role: { $in: ['admin', 'super_admin'] }, isActive: { $ne: false } })
+    .sort({ createdAt: 1 })
+    .select('_id');
+  return admin?._id || null;
+}
+
+async function republishOrphanedApprovedCars() {
+  const Car = require('../models/Car');
+  const User = require('../models/User');
+  const ownerId = await findPlatformOwnerId();
+  if (!ownerId) return { updated: 0 };
+
+  const hidden = await Car.find({ status: 'approved', unpublished: true }).select('_id owner').lean();
+  if (!hidden.length) return { updated: 0 };
+
+  const ownerIds = [...new Set(hidden.map((c) => String(c.owner || '')).filter(Boolean))];
+  const existing = ownerIds.length
+    ? await User.find({ _id: { $in: ownerIds } }).select('_id').lean()
+    : [];
+  const existingSet = new Set(existing.map((u) => String(u._id)));
+  const orphanIds = hidden
+    .filter((c) => !c.owner || !existingSet.has(String(c.owner)))
+    .map((c) => c._id);
+  if (!orphanIds.length) return { updated: 0 };
+
+  const result = await Car.updateMany(
+    { _id: { $in: orphanIds } },
+    { $set: { owner: ownerId, unpublished: false, listingStatus: 'PUBLISHED' } }
+  );
+  return { updated: result.modifiedCount || result.nModified || 0 };
+}
+
 module.exports = {
   PUBLIC_STATUSES,
   PENDING_STATUSES,
@@ -79,4 +113,6 @@ module.exports = {
   syncFromListingStatus,
   displayListingStatus,
   scopedDealerId,
+  findPlatformOwnerId,
+  republishOrphanedApprovedCars,
 };

@@ -67,14 +67,11 @@ function toMatrix(c) {
       insuranceStatus: cond.insuranceStatus || c.insuranceType || '—',
       kmCondition: cond.kmCondition || '—',
     },
-    dealer: c.owner
-      ? {
-          id: c.owner._id,
-          name: c.owner.dealershipName || c.owner.name,
-          city: c.city?.name || c.location?.city || c.owner.city || '',
-          sellerType: c.sellerType || '',
-        }
-      : null,
+    dealer: {
+      name: '4tyrezz',
+      city: c.city?.name || c.location?.city || '',
+      sellerType: '',
+    },
     brand: c.brand?.name,
     model: c.model?.name,
     city: c.city?.name || c.location?.city,
@@ -97,7 +94,7 @@ exports.compare = async (req, res) => {
   }
 
   const cars = await Car.find({ _id: { $in: ids }, ...publicListingFilter() })
-    .populate('brand model city owner', 'name dealershipName city')
+    .populate('brand model city', 'name')
     .lean();
 
   const order = new Map(ids.map((id, i) => [id, i]));
@@ -112,7 +109,7 @@ exports.suggested = async (req, res) => {
   const limit = Math.min(20, Math.max(1, Number(req.query.limit) || 10));
 
   const cars = await Car.find({ ...publicListingFilter(), images: { $exists: true, $ne: [] } })
-    .populate('brand model city owner', 'name dealershipName city')
+    .populate('brand model city', 'name')
     .sort('-createdAt')
     .limit(200)
     .lean();

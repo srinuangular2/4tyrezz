@@ -50,7 +50,11 @@ exports.create = async (req, res) => {
   });
 
   res.status(201).json({
-    data: booking,
+    data: (() => {
+      const obj = booking.toObject ? booking.toObject() : { ...booking };
+      delete obj.dealer;
+      return obj;
+    })(),
     payment: {
       orderId: order.id,
       amount: order.amount,
@@ -93,9 +97,9 @@ exports.verifyPayment = async (req, res) => {
     event: EVENTS.NEW_BOOKING,
     title: 'New Booking',
     message: `Token booking ${booking.bookingRef} confirmed${bookedCar?.title ? ` for ${bookedCar.title}` : ''}`,
-    dealerId: booking.dealer,
     entityId: booking._id,
-    meta: { bookingId: booking._id, bookingRef: booking.bookingRef, carId: booking.vehicle },
+    meta: { bookingId: booking._id, bookingRef: booking.bookingRef, carId: booking.vehicle, inventoryOwner: booking.dealer },
+    adminOnly: true,
   });
 
   res.json({ data: booking, verified: true, stub: !!check.stub });
@@ -104,23 +108,36 @@ exports.verifyPayment = async (req, res) => {
 exports.list = async (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Number(req.query.limit) || 20);
+  if (req.user.role === 'dealer') {
+    return res.json({ data: [], page, limit, total: 0, totalPages: 1 });
+  }
   const filter = {};
   if (req.user.role === 'customer') filter.user = req.user._id;
-  else if (req.user.role === 'dealer') filter.dealer = req.user._id;
   if (req.query.status) filter.status = req.query.status;
+
+  const query = Booking.find(filter)
+    .populate('vehicle', 'title images price year')
+    .populate('user', 'name mobile email')
+    .sort('-createdAt')
+    .skip((page - 1) * limit)
+    .limit(limit);
+  if (req.user.role === 'admin' || req.user.role === 'super_admin') {
+    query.populate('dealer', 'name dealershipName');
+  }
 
   const [total, data] = await Promise.all([
     Booking.countDocuments(filter),
-    Booking.find(filter)
-      .populate('vehicle', 'title images price year')
-      .populate('user', 'name mobile email')
-      .populate('dealer', 'name dealershipName')
-      .sort('-createdAt')
-      .skip((page - 1) * limit)
-      .limit(limit),
+    query,
   ]);
+  const rows = (req.user.role === 'admin' || req.user.role === 'super_admin')
+    ? data
+    : data.map((row) => {
+      const obj = row.toObject ? row.toObject() : { ...row };
+      delete obj.dealer;
+      return obj;
+    });
 
-  res.json({ data, page, limit, total, totalPages: Math.ceil(total / limit) || 1 });
+  res.json({ data: rows, page, limit, total, totalPages: Math.ceil(total / limit) || 1 });
 };
 
 const BOOKING_STATUSES = [
@@ -141,9 +158,8 @@ exports.updateStatus = async (req, res) => {
   const booking = await Booking.findById(req.params.id);
   if (!booking) return res.status(404).json({ message: 'Not found' });
 
-  const isDealer = String(booking.dealer) === String(req.user._id);
   const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
-  if (!isDealer && !isAdmin) return res.status(403).json({ message: 'Forbidden' });
+  if (!isAdmin) return res.status(403).json({ message: 'Bookings are handled by 4tyrezz admin' });
 
   const { status } = req.body;
   if (!status || !BOOKING_STATUSES.includes(status)) {
@@ -186,7 +202,9 @@ exports.listPayments = async (req, res) => {
   const limit = Math.min(50, Number(req.query.limit) || 20);
   const filter = {};
   if (req.user.role === 'customer') filter.user = req.user._id;
-  else if (req.user.role === 'dealer') filter.dealer = req.user._id;
+  else if (req.user.role === 'dealer') {
+    return res.json({ data: [], page, limit, total: 0, totalPages: 1 });
+  }
   if (req.query.status) filter.status = req.query.status;
 
   const [total, data] = await Promise.all([
@@ -206,7 +224,9 @@ exports.listCommissions = async (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Number(req.query.limit) || 20);
   const filter = {};
-  if (req.user.role === 'dealer') filter.dealer = req.user._id;
+  if (req.user.role === 'dealer') {
+    return res.json({ data: [], page, limit, total: 0, totalPages: 1 });
+  }
   if (req.query.status) filter.status = req.query.status;
 
   const [total, data] = await Promise.all([

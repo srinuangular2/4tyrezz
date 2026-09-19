@@ -129,9 +129,19 @@ async function run() {
 
   console.log('Seeding users (admin, dealer, customer)...');
   const adminPass = await bcrypt.hash('admin123', 10);
-  const dealerPass = await bcrypt.hash('dealer123', 10);
+  const dealerPass = await bcrypt.hash('Prime#Motors4821', 10);
   const admin = await User.create({ name: 'Admin', email: 'admin@4tyrezz.com', password: adminPass, role: 'admin', isVerified: true });
-  const dealer = await User.create({ name: 'Prime Motors', email: 'dealer@4tyrezz.com', password: dealerPass, role: 'dealer', dealershipName: 'Prime Motors', city: 'Hyderabad', isVerified: true });
+  const dealer = await User.create({
+    name: 'Ravi',
+    email: 'dealer@4tyrezz.com',
+    password: dealerPass,
+    role: 'dealer',
+    dealershipName: 'Prime Motors',
+    dealerCode: '4tyrezzPrimeMotorsRavi4821',
+    city: 'Hyderabad',
+    isVerified: true,
+    kycVerified: true,
+  });
   await DealerProfile.create({
     user: dealer._id,
     businessName: 'Prime Motors',
@@ -260,7 +270,7 @@ async function run() {
 
   console.log('\nSeed complete.');
   console.log('Admin login   -> admin@4tyrezz.com / admin123');
-  console.log('Dealer login  -> dealer@4tyrezz.com / dealer123');
+  console.log('Dealer login  -> 4tyrezzPrimeMotorsRavi4821 / Prime#Motors4821');
   console.log('Customer OTP  -> mobile 9160415851 (4-digit OTP via Msg91 / console stub)');
   process.exit(0);
 }

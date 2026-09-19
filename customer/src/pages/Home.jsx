@@ -32,30 +32,6 @@ const BODY_TYPES = [
   { name: 'MUV', icon: '🚐' }
 ];
 
-const FEATURED_DEALERS = [
-  { name: "Metro Auto Hub", city: "Hyderabad", inventory: "42 Vehicles", rating: "4.9 ★", badge: "Premium Partner" },
-  { name: "Apex Pre-Owned Cars", city: "Bangalore", inventory: "38 Vehicles", rating: "4.8 ★", badge: "Verified Dealer" },
-  { name: "Royal Motor World", city: "Mumbai", inventory: "55 Vehicles", rating: "4.9 ★", badge: "Platinum Partner" },
-  { name: "Deccan Wheels & Co.", city: "Secunderabad", inventory: "29 Vehicles", rating: "4.7 ★", badge: "Verified Dealer" },
-  { name: "Speedway Automobiles", city: "Chennai", inventory: "34 Vehicles", rating: "4.8 ★", badge: "Verified Dealer" },
-  { name: "Elite Car Studio", city: "Pune", inventory: "23 Vehicles", rating: "4.9 ★", badge: "Premium Partner" },
-];
-
-function mapDealerCard(d) {
-  const count = Number(d.inventory);
-  return {
-    _id: d.id || d._id,
-    name: d.name,
-    city: d.city,
-    inventory: Number.isFinite(count) ? `${count} Vehicles` : (d.inventory || '25+ Vehicles'),
-    rating: d.rating != null ? String(d.rating) : '4.9',
-    badge: d.badge || 'Verified Dealer',
-    logo: d.avatar || d.logo || d.image,
-  };
-}
-
-
-
 function Section({ eyebrow, title, viewAllHref, children, bg, className = '' }) {
   const renderFormattedTitle = (content) => {
     if (!content) return null;
@@ -129,7 +105,6 @@ export default function Home() {
   const { brands } = useReferenceData();
   const [latest, setLatest] = useState([]);
   const [premium, setPremium] = useState([]);
-  const [dealers, setDealers] = useState(FEATURED_DEALERS);
   const [loading, setLoading] = useState(true);
 
   // Search Widget States
@@ -140,8 +115,6 @@ export default function Home() {
 
   const brandPrevRef = useRef(null);
   const brandNextRef = useRef(null);
-  const dealerPrevRef = useRef(null);
-  const dealerNextRef = useRef(null);
   const testPrevRef = useRef(null);
   const testNextRef = useRef(null);
   const displayedBrands = brands.slice(0, 12);
@@ -151,13 +124,10 @@ export default function Home() {
     Promise.all([
       api.get('/cars', { params: { sort: '-createdAt', limit: 10 } }).catch(() => ({ data: { cars: [] } })),
       api.get('/cars', { params: { minPrice: 1500000, limit: 10, sort: '-createdAt' } }).catch(() => ({ data: { cars: [] } })),
-      api.get('/dealers', { params: { limit: 12 } }).catch(() => ({ data: { data: [] } })),
-    ]).then(([l, p, d]) => {
+    ]).then(([l, p]) => {
       if (cancelled) return;
       setLatest(l.data?.cars || []);
       setPremium(p.data?.cars || []);
-      const liveDealers = (d.data?.data || []).map(mapDealerCard).filter((row) => row.name);
-      if (liveDealers.length) setDealers(liveDealers);
       setLoading(false);
     }).catch(() => {
       if (!cancelled) setLoading(false);

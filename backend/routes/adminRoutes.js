@@ -24,10 +24,14 @@ router.patch('/cars/:id/status', ctrl.setCarStatus);
 router.patch('/cars/:id/flag', ctrl.toggleCarFlag);
 
 router.get('/dealers', dealers.listDealers);
+router.post('/dealers', dealers.createDealer);
 router.get('/dealers/pending', dealers.listPending);
 router.get('/dealers/:id', dealers.getDealer);
 router.get('/dealers/:id/performance', dealers.performance);
+router.patch('/dealers/:id', dealers.updateDealer);
 router.patch('/dealers/:id/status', dealers.setStatus);
+router.post('/dealers/:id/credentials', dealers.resetCredentials);
+router.delete('/dealers/:id', dealers.deleteDealer);
 
 router.get('/moderation/queue', moderation.queue);
 router.get('/moderation/flagged', moderation.flagged);

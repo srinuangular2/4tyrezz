@@ -62,12 +62,14 @@ exports.create = async (req, res) => {
   if (!name || !phone) return res.status(400).json({ message: 'name and phone required' });
 
   const photos = photoPaths(req.files);
-  let assignedTo = req.body.assignedTo || null;
+  let assignedTo = null;
   let status = type === 'finance' ? 'Under Review' : type === 'insurance' ? 'Submitted' : 'New';
 
-  if (type === 'seller' && !assignedTo) {
-    assignedTo = await findEligibleDealer(req.body.city);
-    if (assignedTo) status = 'Assigned';
+  if (type === 'seller') {
+    assignedTo = null;
+    status = 'New';
+  } else if (req.user?.role === 'admin' || req.user?.role === 'super_admin') {
+    assignedTo = req.body.assignedTo || null;
   }
 
   const intent = ['sell', 'exchange', 'both'].includes(req.body.intent) ? req.body.intent : 'sell';
@@ -108,11 +110,7 @@ exports.create = async (req, res) => {
     stageHistory: type === 'seller' ? [{ from: '', to: status, at: new Date() }] : [],
   });
 
-  let dealerId = assignedTo;
-  if (!dealerId && doc.vehicle) {
-    const car = await Car.findById(doc.vehicle).select('owner title');
-    dealerId = car?.owner;
-  }
+  let dealerId = null;
   const eventName =
     type === 'insurance' ? EVENTS.NEW_INSURANCE : type === 'finance' ? EVENTS.NEW_FINANCE : EVENTS.NEW_LEAD;
   const intentLabel = type === 'seller' ? (intent === 'exchange' ? 'exchange' : intent === 'both' ? 'sell/exchange' : 'sell') : type;
@@ -143,8 +141,7 @@ exports.list = async (req, res) => {
   if (req.query.intent) filter.intent = req.query.intent;
   if (req.user.role === 'customer') filter.user = req.user._id;
   if (req.user.role === 'dealer') {
-    const cars = await Car.find({ owner: req.user._id }).select('_id');
-    filter.$or = [{ vehicle: { $in: cars.map((c) => c._id) } }, { assignedTo: req.user._id }];
+    return res.json({ data: [], total: 0, page, limit, pages: 1 });
   }
 
   const [total, data] = await Promise.all([
@@ -166,10 +163,7 @@ exports.update = async (req, res) => {
   if (!doc) return res.status(404).json({ message: 'Not found' });
 
   if (req.user.role === 'dealer') {
-    const cars = await Car.find({ owner: req.user._id }).select('_id');
-    const ownsVehicle = doc.vehicle && cars.some((c) => String(c._id) === String(doc.vehicle));
-    const assigned = String(doc.assignedTo || '') === String(req.user._id);
-    if (!ownsVehicle && !assigned) return res.status(403).json({ message: 'Not authorized' });
+    return res.status(403).json({ message: 'Enquiries are handled by 4tyrezz admin' });
   }
 
   if (req.body.status) {

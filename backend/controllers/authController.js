@@ -32,7 +32,7 @@ async function sanitize(user) {
   const permissions = await getPermissionsForUser(user);
   const {
     _id, name, mobile, email, role, avatar, city, dealershipName, isVerified, profileComplete, googleId,
-    kycVerified, mobileVerified, consents,
+    kycVerified, mobileVerified, consents, dealerCode,
   } = user;
   const out = {
     id: _id,
@@ -43,6 +43,7 @@ async function sanitize(user) {
     avatar,
     city,
     dealershipName,
+    dealerCode: dealerCode || '',
     isVerified,
     profileComplete,
     googleConnected: !!googleId,
@@ -52,11 +53,12 @@ async function sanitize(user) {
     permissions,
   };
   if (role === 'dealer') {
-    const profile = await DealerProfile.findOne({ user: _id }).select('kycStatus kycVerified panVerified gstVerified');
+    const profile = await DealerProfile.findOne({ user: _id }).select('kycStatus kycVerified panVerified gstVerified contactEmail');
     out.kycStatus = profile?.kycStatus || 'PENDING_KYC_APPROVAL';
     out.kycVerified = Boolean(profile?.kycVerified || profile?.kycStatus === 'approved' || kycVerified);
     out.panVerified = !!profile?.panVerified;
     out.gstVerified = !!profile?.gstVerified;
+    if (!out.email && profile?.contactEmail) out.email = profile.contactEmail;
   }
   if (role === 'customer') {
     out.emailVerified = Boolean(user.emailVerified);
@@ -387,14 +389,39 @@ exports.registerCustomer = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email: String(email || '').trim().toLowerCase() }).select('+password');
+  const identifier = String(req.body.dealerCode || req.body.loginId || req.body.email || '').trim();
+  const { password } = req.body;
+  if (!identifier || !password) {
+    return res.status(400).json({ message: 'Login ID and password are required' });
+  }
+
+  const { dealerCodeQuery } = require('../utils/dealerCredentials');
+  let user = null;
+  if (identifier.includes('@')) {
+    user = await User.findOne({ email: identifier.toLowerCase() }).select('+password');
+    if (user?.role === 'dealer') {
+      return res.status(401).json({ message: 'Dealers must sign in with the unique Dealer ID issued by 4tyrezz' });
+    }
+  } else {
+    const codeQuery = dealerCodeQuery(identifier);
+    user = codeQuery ? await User.findOne(codeQuery).select('+password') : null;
+  }
+
   if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ message: 'Invalid email or password' });
+    return res.status(401).json({ message: 'Invalid login ID or password' });
   }
   if (!user.isActive) return res.status(403).json({ message: 'Account is disabled' });
   if (user.role === 'customer' && !user.mobileVerified && !user.isVerified) {
     return res.status(403).json({ message: 'Verify your mobile number before signing in' });
+  }
+  if (user.role === 'dealer' && !user.dealerCode) {
+    const { generateDealerCode } = require('../utils/dealerCredentials');
+    user.dealerCode = await generateDealerCode({
+      User,
+      company: user.dealershipName || 'Dealer',
+      person: user.name || 'User',
+    });
+    await user.save();
   }
 
   const safeUser = await sanitize(user);
@@ -462,90 +489,34 @@ exports.resendVerification = async (req, res) => {
   });
 };
 
-exports.registerDealer = async (req, res) => {
-  try {
-    const { name, email, password, dealershipName, city, mobile, gstNumber, panNumber, businessType, mobileVerifiedToken } = req.body;
-    if (!name || !email || !password || !dealershipName) {
-      return res.status(400).json({ message: 'Name, email, password and dealership name are required' });
-    }
-    const emailCheck = validateEmail(email);
-    if (!emailCheck.ok) return res.status(400).json({ message: emailCheck.message });
-    const mobileCheck = validateMobile(mobile);
-    if (!mobileCheck.ok) return res.status(400).json({ message: mobileCheck.message });
-    const verifiedMobile = readMobileToken(mobileVerifiedToken);
-    if (!verifiedMobile || verifiedMobile !== mobileCheck.value) {
-      return res.status(400).json({ message: 'Verify your mobile number with OTP before registering' });
-    }
-    if (String(password).length < 8) {
-      return res.status(400).json({ message: 'Password must be at least 8 characters' });
-    }
-    let pan = '';
-    let gst = '';
-    if (panNumber) {
-      const panCheck = validatePan(panNumber);
-      if (!panCheck.ok) return res.status(400).json({ message: panCheck.message, field: 'panNumber' });
-      pan = panCheck.value;
-    }
-    if (gstNumber) {
-      const gstCheck = validateGstin(gstNumber, pan || panNumber);
-      if (!gstCheck.ok) return res.status(400).json({ message: gstCheck.message, field: 'gstNumber' });
-      gst = gstCheck.value;
-    }
-
-    const exists = await User.findOne({ $or: [{ email: emailCheck.value }, { mobile: mobileCheck.value }] });
-    if (exists) return res.status(400).json({ message: 'Email or mobile already registered' });
-
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      name: String(name).trim(),
-      email: emailCheck.value,
-      mobile: mobileCheck.value,
-      password: hashed,
-      dealershipName: String(dealershipName).trim(),
-      city: city ? String(city).trim() : '',
-      role: 'dealer',
-      profileComplete: true,
-      mobileVerified: true,
-      kycVerified: false,
-    });
-
-    await DealerProfile.create({
-      user: user._id,
-      businessName: String(dealershipName).trim(),
-      businessType: businessType || '',
-      gstNumber: gst,
-      panNumber: pan,
-      city: city ? String(city).trim() : '',
-      contactPerson: String(name).trim(),
-      contactPhone: mobileCheck.value,
-      contactEmail: emailCheck.value,
-      kycStatus: 'draft',
-      onboardingStatus: 'IN_PROGRESS',
-      onboardingStep: 2,
-      kycVerified: false,
-      mobileVerified: true,
-      panVerified: false,
-      gstVerified: false,
-    });
-
-    sendWhatsAppTemplate({
-      mobile: mobileCheck.value,
-      templateName: process.env.MSG91_WHATSAPP_TEMPLATE || 'dealer_welcome',
-      bodyValues: [dealershipName],
-    }).catch(() => {});
-
-    const safeUser = await sanitize(user);
-    res.status(201).json({
-      success: true,
-      token: generateToken(user, safeUser.permissions),
-      user: safeUser,
-      kycRequired: true,
-      kycVerified: false,
-    });
-  } catch (err) {
-    console.error('registerDealer error:', err);
-    res.status(500).json({ message: err.message || 'Could not register dealer' });
+exports.changePassword = async (req, res) => {
+  const currentPassword = String(req.body.currentPassword || req.body.oldPassword || '');
+  const newPassword = String(req.body.newPassword || req.body.password || '');
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required' });
   }
+  const { isStrongPassword } = require('../utils/dealerCredentials');
+  if (req.user.role === 'dealer' && !isStrongPassword(newPassword)) {
+    return res.status(400).json({
+      message: 'New password must be 8–12 characters',
+    });
+  }
+  if (req.user.role !== 'dealer' && newPassword.length < 8) {
+    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  }
+  const user = await User.findById(req.user._id).select('+password');
+  if (!user?.password || !(await bcrypt.compare(currentPassword, user.password))) {
+    return res.status(400).json({ message: 'Current password is incorrect' });
+  }
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+  res.json({ success: true, message: 'Password updated. Sign in with the new password next time.' });
+};
+
+exports.registerDealer = async (req, res) => {
+  return res.status(403).json({
+    message: 'Dealer accounts are created by 4tyrezz admin. Sign in with your Dealer ID.',
+  });
 };
 
 exports.me = async (req, res) => {

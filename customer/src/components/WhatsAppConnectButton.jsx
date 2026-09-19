@@ -1,10 +1,11 @@
 import React from 'react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useAuthGuard } from './AuthGuardModal';
+import { COMPANY_WHATSAPP } from '../lib/companyContact';
 
 export default function WhatsAppConnectButton({ car, onOpen }) {
   const { requireAuth } = useAuthGuard();
-  const dealerPhone = String(car?.dealer?.whatsapp || car?.dealer?.phone || car?.owner?.mobile || '916304135959').replace(/\D/g, '');
+  const dealerPhone = String(car?.dealer?.whatsapp || car?.dealer?.phone || COMPANY_WHATSAPP).replace(/\D/g, '');
 
   const handleConnect = () => {
     const title = `${car?.year || ''} ${car?.brand?.name || ''} ${car?.model?.name || car?.title || 'car'}`.trim();

@@ -4,13 +4,14 @@ import { Home, Search, PlusCircle, Heart, User } from 'lucide-react';
 
 export default function BottomNav() {
   const role = useSelector((s) => s.auth.user?.role);
-  const isDealer = role === 'dealer';
+  if (role === 'dealer') return null;
+
   const tabs = [
     { to: '/', label: 'Home', icon: Home, end: true },
     { to: '/cars', label: 'Search', icon: Search },
-    { to: isDealer ? '/dealer/dashboard/add-car' : '/sell', label: isDealer ? 'Add' : 'Sell', icon: PlusCircle },
-    { to: isDealer ? '/dealer/dashboard/leads' : '/profile/wishlist', label: isDealer ? 'Leads' : 'Saved', icon: Heart },
-    { to: isDealer ? '/dealer/dashboard' : '/profile/settings', label: 'Account', icon: User },
+    { to: '/sell', label: 'Sell', icon: PlusCircle },
+    { to: '/profile/wishlist', label: 'Saved', icon: Heart },
+    { to: '/profile/settings', label: 'Account', icon: User },
   ];
 
   return (

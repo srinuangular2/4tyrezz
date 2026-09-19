@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import api from '../../api/axios';
-import { ProfileCard } from '../profile/ProfileLayout';
+import { GlassCard, PageHeader } from '../../components/dealer/ui';
 
 export default function DealerPerformance() {
   const [data, setData] = useState(null);
@@ -22,28 +22,29 @@ export default function DealerPerformance() {
 
   const funnel = data?.funnel || {};
   const funnelRows = [
-    { name: 'Leads received', value: funnel.leadsReceived || 0 },
-    { name: 'Response rate %', value: funnel.responseRate || 0 },
-    { name: 'Test drives taken', value: funnel.testDrivesTaken || 0 },
-    { name: 'Bookings', value: funnel.bookings || 0 },
-    { name: 'Sales conversion %', value: funnel.conversionRate || 0 },
+    { name: 'Pending approval', value: funnel.pending || 0 },
+    { name: 'Live on 4tyrezz', value: funnel.live || 0 },
+    { name: 'Sold', value: funnel.sold || 0 },
+    { name: 'Total inventory', value: funnel.total || 0 },
   ];
   const top = data?.topInventory || [];
   const engagement = data?.engagement || [];
   const elasticity = data?.elasticity || [];
 
   return (
-    <ProfileCard eyebrow="Insights" title="Dealer analytics hub">
+    <div className="space-y-6">
+      <PageHeader kicker="Insights" title="Dealer analytics hub" subtitle="Funnel, engagement and price-drop performance." />
+      <GlassCard className="p-5">
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="h-72">
           <h3 className="font-black text-slate-900 mb-3">Funnel performance</h3>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={funnelRows} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Bar dataKey="value" fill="#3083ff" radius={[0, 8, 8, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis type="number" tick={{ fill: '#64748b', fontSize: 11 }} />
+              <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11, fill: '#64748b' }} />
+              <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, color: '#0f172a' }} />
+              <Bar dataKey="value" fill="#3b82f6" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -51,12 +52,11 @@ export default function DealerPerformance() {
           <h3 className="font-black text-slate-900 mb-3">Top performing inventory</h3>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={top}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="model" tick={{ fontSize: 10 }} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="views" fill="#94a3b8" name="Views" />
-              <Bar dataKey="enquiries" fill="#3083ff" name="Enquiries" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="model" tick={{ fontSize: 10, fill: '#64748b' }} />
+              <YAxis tick={{ fill: '#64748b' }} />
+              <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, color: '#0f172a' }} />
+              <Bar dataKey="views" fill="#3b82f6" name="Views" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -64,11 +64,11 @@ export default function DealerPerformance() {
           <h3 className="font-black text-slate-900 mb-3">Engagement matrix</h3>
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart>
-              <CartesianGrid />
-              <XAxis dataKey="views" name="Page views" />
-              <YAxis dataKey="enquiries" name="Enquiries" />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              <Scatter data={engagement.map((e) => ({ ...e, enquiries: (e.enquiries || 0) + (e.phone || 0) + (e.whatsapp || 0) }))} fill="#3083ff" />
+              <CartesianGrid stroke="#e2e8f0" />
+              <XAxis dataKey="views" name="Page views" tick={{ fill: '#64748b' }} />
+              <YAxis dataKey="views" name="Views" tick={{ fill: '#64748b' }} />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, color: '#0f172a' }} />
+              <Scatter data={engagement} fill="#3b82f6" />
             </ScatterChart>
           </ResponsiveContainer>
         </div>
@@ -87,7 +87,7 @@ export default function DealerPerformance() {
               <tbody>
                 {elasticity.map((row) => (
                   <tr key={row.id} className="border-t border-slate-100">
-                    <td className="py-2 font-semibold">{row.title}</td>
+                    <td className="py-2 font-semibold text-slate-900">{row.title}</td>
                     <td className="py-2">{row.drops}</td>
                     <td className="py-2">{row.leadsAfterDrop}</td>
                     <td className="py-2">{row.conversionSpeedDays ?? '—'}</td>
@@ -101,6 +101,7 @@ export default function DealerPerformance() {
           </div>
         </div>
       </div>
-    </ProfileCard>
+      </GlassCard>
+    </div>
   );
 }

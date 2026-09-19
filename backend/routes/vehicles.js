@@ -6,6 +6,7 @@ const {
   listModels,
   listFuelTransmissions,
   listVariants,
+  listColors,
   refresh,
 } = require('../controllers/vehicleController');
 
@@ -69,6 +70,7 @@ router.get('/years', listYears);
 router.get('/models', listModels);
 router.get('/fuel-transmissions', listFuelTransmissions);
 router.get('/variants', listVariants);
+router.get('/colors', listColors);
 router.post('/refresh', protect, authorize('admin'), refresh);
 
 module.exports = router;

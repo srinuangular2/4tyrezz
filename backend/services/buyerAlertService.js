@@ -7,7 +7,7 @@ const { serializeDoc } = require('./notifyService');
 const { sendWhatsAppTemplate } = require('./integrations/msg91Service');
 
 const DEDUPE_MS = 12 * 60 * 60 * 1000;
-const POPULATE = 'brand model city owner';
+const POPULATE = 'brand model city';
 
 function norm(v) {
   return String(v || '').trim().toLowerCase();

@@ -50,7 +50,6 @@ export default function ExploreByBar() {
     ['Insurance', '/insurance'],
     ['Offers', '/offers'],
     ['Compare', '/compare'],
-    ['Dealers', '/dealers'],
   ];
 
   return (

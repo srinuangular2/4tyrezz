@@ -69,10 +69,8 @@ export default function Footer() {
               <li><Link to="/compare" className="hover:text-[#3083ff] transition-colors">Compare</Link></li>
               <li><Link to="/finance" className="hover:text-[#3083ff] transition-colors">Finance</Link></li>
               <li><Link to="/insurance" className="hover:text-[#3083ff] transition-colors">Insurance</Link></li>
-              <li><Link to="/dealers" className="hover:text-[#3083ff] transition-colors">Dealers</Link></li>
               <li><Link to="/offers" className="hover:text-[#3083ff] transition-colors">Offers</Link></li>
               <li><Link to="/valuation" className="hover:text-[#3083ff] transition-colors">Car Valuation</Link></li>
-              <li><Link to="/dealer/onboarding" className="hover:text-[#3083ff] transition-colors">Dealer onboarding</Link></li>
           
             </ul>
           </div>

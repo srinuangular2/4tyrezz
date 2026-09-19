@@ -1,0 +1,4 @@
+export const COMPANY_NAME = '4tyrezz';
+export const COMPANY_PHONE_DISPLAY = '+91 79939 80559';
+export const COMPANY_PHONE_DIGITS = '7993980559';
+export const COMPANY_WHATSAPP = '917993980559';

@@ -56,20 +56,22 @@ export function KpiCard({ label, value, delta, hint }) {
   );
 }
 
-export function Drawer({ title, onClose, children, wide = false }) {
+export function Drawer({ title, onClose, children, wide = false, full = false, footer }) {
+  const width = full ? 'w-full max-w-6xl' : wide ? 'w-full max-w-2xl' : 'w-full max-w-lg';
   return (
     <div className="fixed inset-0 z-[80] flex justify-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className={`h-full ${wide ? 'w-full max-w-2xl' : 'w-full max-w-lg'} bg-slate-950/95 backdrop-blur-xl border-l border-slate-800 overflow-y-auto p-6`}
+        className={`h-full ${width} bg-slate-950/95 backdrop-blur-xl border-l border-slate-800 flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 mb-5">
-          <h3 className="font-display font-bold text-xl text-white">{title}</h3>
-          <button type="button" onClick={onClose} className="text-slate-500 hover:text-white font-bold">
+        <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-4 shrink-0">
+          <h3 className="font-display font-bold text-xl text-white pr-8">{title}</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="shrink-0 w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-slate-700 text-slate-300 hover:text-white font-black">
             ✕
           </button>
         </div>
-        {children}
+        <div className="flex-1 overflow-y-auto px-6 pb-6">{children}</div>
+        {footer ? <div className="shrink-0 border-t border-slate-800 bg-slate-950/95 px-6 py-4">{footer}</div> : null}
       </div>
     </div>
   );

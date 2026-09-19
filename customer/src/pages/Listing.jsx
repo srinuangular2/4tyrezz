@@ -9,6 +9,7 @@ import CarCard from '../components/CarCard';
 import { CarGridSkeleton } from '../components/Skeletons';
 import Pagination from '../components/Pagination';
 import FilterSidebar from '../components/listing/FilterSidebar';
+import UsedCarsBanner from '../components/listing/UsedCarsBanner';
 import { describeFilters } from './profile/hubUtils';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import {
@@ -262,12 +263,7 @@ export default function Listing() {
 
   return (
     <>
-      <div className="bg-ink py-8">
-        <div className="container-px">
-          <h1 className="font-display font-bold text-3xl text-white">Used cars near you</h1>
-          <p className="text-slate-300 text-sm mt-1">Every car below has passed 4tyrezz's manual inspection before being listed.</p>
-        </div>
-      </div>
+      <UsedCarsBanner />
 
       <div className="bg-slate-50">
       <div className="container-px py-8 pb-24 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">

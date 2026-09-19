@@ -17,7 +17,7 @@ export default function NotificationBell({ variant = 'admin' }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const dark = variant === 'admin';
+  const dark = variant !== 'customer';
 
   useEffect(() => {
     const onDoc = (e) => {

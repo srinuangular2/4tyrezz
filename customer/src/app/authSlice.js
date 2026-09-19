@@ -66,9 +66,9 @@ export const updateProfile = createAsyncThunk('auth/updateProfile', async (paylo
   }
 });
 
-export const dealerLogin = createAsyncThunk('auth/dealerLogin', async ({ email, password }, { rejectWithValue }) => {
+export const dealerLogin = createAsyncThunk('auth/dealerLogin', async ({ dealerCode, email, password }, { rejectWithValue }) => {
   try {
-    const { data } = await api.post('/auth/login', { email, password });
+    const { data } = await api.post('/auth/login', { dealerCode, email, password });
     return data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Login failed');
@@ -77,9 +77,13 @@ export const dealerLogin = createAsyncThunk('auth/dealerLogin', async ({ email, 
 
 export const customerLogin = dealerLogin;
 
-export const fetchMe = createAsyncThunk('auth/fetchMe', async () => {
-  const { data } = await api.get('/auth/me');
-  return data;
+export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithValue }) => {
+  try {
+    const { data } = await api.get('/auth/me');
+    return data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Could not load account');
+  }
 });
 
 const storedUser = (() => {
@@ -166,9 +170,16 @@ const authSlice = createSlice({
         persistAuth(state, { ...action.payload, needsProfile: false });
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.needsProfile = action.payload.needsProfile || false;
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        if (action.payload?.user) {
+          state.user = action.payload.user;
+          state.needsProfile = action.payload.needsProfile || false;
+          localStorage.setItem('user', JSON.stringify(action.payload.user));
+        }
+      })
+      .addCase(fetchMe.rejected, (state, action) => {
+        if (action.payload === 'Could not load account' && !state.token) {
+          state.user = null;
+        }
       });
   },
 });

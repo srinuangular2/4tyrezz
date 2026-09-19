@@ -10,9 +10,22 @@ const PREMIUM_MIN = 1500000;
 const STATUS_COLORS = {
   pending: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
   approved: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
+  unpublished: 'bg-slate-500/15 text-slate-300 border border-slate-500/30',
   rejected: 'bg-rose-500/15 text-rose-300 border border-rose-500/30',
   sold: 'bg-slate-800 text-slate-300',
 };
+
+function marketplaceStatus(c) {
+  const listing = String(c.listingStatus || '').toUpperCase();
+  if (c.status === 'sold' || listing === 'SOLD') return { label: 'Sold', key: 'sold' };
+  if (c.status === 'rejected' || listing === 'REJECTED') return { label: 'Rejected', key: 'rejected' };
+  if (c.status === 'pending' || listing === 'PENDING_MODERATION' || listing === 'DRAFT') {
+    return { label: 'Pending', key: 'pending' };
+  }
+  if (c.unpublished || listing === 'UNPUBLISHED') return { label: 'Hidden', key: 'unpublished' };
+  if (c.status === 'approved' || listing === 'PUBLISHED') return { label: 'Live', key: 'approved' };
+  return { label: c.status || 'Draft', key: c.status || 'pending' };
+}
 
 function carImage(c) {
   const src = c.images?.[0];
@@ -124,11 +137,14 @@ export default function CarsManager({ defaultStatus = '' }) {
     {
       key: 'status',
       label: 'Status',
-      render: (c) => (
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-md capitalize ${STATUS_COLORS[c.status] || 'bg-slate-100'}`}>
-          {c.status}
-        </span>
-      ),
+      render: (c) => {
+        const next = marketplaceStatus(c);
+        return (
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-md capitalize ${STATUS_COLORS[next.key] || 'bg-slate-100'}`}>
+            {next.label}
+          </span>
+        );
+      },
     },
     {
       key: 'flags',
@@ -150,11 +166,15 @@ export default function CarsManager({ defaultStatus = '' }) {
           <Link to={`/cars/edit/${c._id}`} className="text-[#3083ff] text-xs font-bold hover:underline">
             Edit
           </Link>
-          {c.status !== 'approved' && (
+          {(c.unpublished || c.listingStatus === 'UNPUBLISHED') && c.status === 'approved' ? (
+            <button onClick={() => setCarStatus(c._id, 'approved')} className="text-emerald-600 text-xs font-bold hover:underline">
+              Publish
+            </button>
+          ) : c.status !== 'approved' ? (
             <button onClick={() => setCarStatus(c._id, 'approved')} className="text-emerald-600 text-xs font-bold hover:underline">
               Approve
             </button>
-          )}
+          ) : null}
           {c.status !== 'rejected' && (
             <button onClick={() => setCarStatus(c._id, 'rejected')} className="text-rose-600 text-xs font-bold hover:underline">
               Reject
@@ -205,7 +225,8 @@ export default function CarsManager({ defaultStatus = '' }) {
 
       {carToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6">
+          <div className="relative bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6">
+            <button type="button" onClick={() => setCarToDelete(null)} aria-label="Close" className="absolute top-3 right-3 w-8 h-8 rounded-full border border-slate-700 text-slate-400 font-black">✕</button>
             <h3 className="text-lg font-bold text-white">Delete vehicle listing</h3>
             <p className="text-sm text-slate-400 leading-relaxed mt-2">
               Delete <span className="font-semibold text-white">"{carToDelete.title}"</span>? This cannot be undone.

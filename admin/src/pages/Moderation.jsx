@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import DataTable from '../components/DataTable';
-import Modal from '../components/Modal';
-import { Drawer, FilterPills, PageHeader, StatusBadge, btnGhost, btnPrimary, inputCls, mediaSrc } from '../components/admin/ui';
+import AddCarWizard from '../components/common/AddCarWizard';
+import { FilterPills, PageHeader, StatusBadge, btnGhost, btnPrimary, inputCls, mediaSrc } from '../components/admin/ui';
+
+function inr(n) {
+  return `₹${Number(n || 0).toLocaleString('en-IN')}`;
+}
 
 export default function Moderation() {
   const [tab, setTab] = useState('queue');
   const [rows, setRows] = useState([]);
   const [flagged, setFlagged] = useState({ reviews: [], reports: [] });
   const [item, setItem] = useState(null);
+  const [loadingItem, setLoadingItem] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [showReject, setShowReject] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
@@ -22,20 +27,71 @@ export default function Moderation() {
     loadFlagged();
   }, []);
 
-  const approve = async (id) => {
-    await api.patch(`/admin/listings/${id}/approve`);
-    toast.success('Listing published');
+  const closeInspect = () => {
     setItem(null);
-    loadQueue();
+    setShowReject(false);
+    setRemarks('');
+    setActiveImg(0);
+  };
+
+  const openInspect = async (row) => {
+    setShowReject(false);
+    setRemarks('');
+    setActiveImg(0);
+    setItem(row);
+    setLoadingItem(true);
+    try {
+      const { data } = await api.get(`/cars/${row._id}`);
+      setItem({ ...row, ...data, priceSanity: row.priceSanity || data.priceSanity });
+    } catch {
+      setItem(row);
+    } finally {
+      setLoadingItem(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!item) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') closeInspect();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [item]);
+
+  const approve = async (id) => {
+    try {
+      await api.patch(`/admin/listings/${id}/approve`);
+      toast.success('Listing published');
+      closeInspect();
+      loadQueue();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Could not approve');
+    }
   };
 
   const reject = async () => {
-    await api.patch(`/admin/listings/${item._id}/reject`, { remarks });
-    toast.success('Dealer notified');
-    setShowReject(false);
-    setItem(null);
-    loadQueue();
+    if (!item?._id) return;
+    try {
+      await api.patch(`/admin/listings/${item._id}/reject`, { remarks });
+      toast.success('Dealer notified');
+      closeInspect();
+      loadQueue();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Could not reject');
+    }
   };
+
+  const images = useMemo(() => {
+    const blocked = new Set(Object.values(item?.listingDocuments || {}).filter(Boolean));
+    if (item?.inspectionReport) blocked.add(item.inspectionReport);
+    const list = item?.photos?.length
+      ? item.photos
+      : [...(item?.images || []), ...Object.values(item?.mediaSlots || {}).filter(Boolean)];
+    return Array.from(new Set(list)).filter((url) => url && !blocked.has(url) && !/\.pdf($|\?)/i.test(String(url)));
+  }, [item]);
+
+  const docs = Object.entries(item?.listingDocuments || {}).filter(([, url]) => url);
 
   const columns = [
     {
@@ -51,14 +107,14 @@ export default function Moderation() {
         </div>
       ),
     },
-    { key: 'price', label: 'Ask', render: (c) => `₹${Number(c.price || 0).toLocaleString('en-IN')}` },
+    { key: 'price', label: 'Ask', render: (c) => inr(c.price) },
     { key: 'sanity', label: 'Price check', render: (c) => <StatusBadge value={c.priceSanity?.label} /> },
     { key: 'status', label: 'Status', render: (c) => <StatusBadge value={c.listingStatus || c.status} /> },
     {
       key: 'open',
       label: '',
       render: (c) => (
-        <button type="button" className="text-xs font-bold text-blue-400" onClick={() => { setItem(c); setActiveImg(0); }}>
+        <button type="button" className="text-xs font-bold text-blue-400" onClick={() => openInspect(c)}>
           Inspect
         </button>
       ),
@@ -67,7 +123,7 @@ export default function Moderation() {
 
   return (
     <div className="space-y-4">
-      <PageHeader kicker="Moderation" title="Listing inspection queue" subtitle="PENDING_MODERATION listings, price sanity, and reported content." />
+      <PageHeader kicker="Moderation" title="Listing inspection queue" subtitle="Open a listing to review photos, then walk identity, specs, health and media one step at a time." />
       <FilterPills
         value={tab}
         onChange={setTab}
@@ -121,51 +177,135 @@ export default function Moderation() {
       )}
 
       {item && (
-        <Drawer title={item.title} onClose={() => setItem(null)} wide>
-          <div className="space-y-4">
-            <div className="aspect-video rounded-2xl overflow-hidden bg-slate-900">
-              {item.videoUrl && activeImg === 'video' ? (
-                /youtu/.test(item.videoUrl) ? (
-                  <iframe title="walkaround" src={item.videoUrl.replace('watch?v=', 'embed/')} className="w-full h-full" />
-                ) : (
-                  <video src={mediaSrc(item.videoUrl)} controls className="w-full h-full object-cover" />
-                )
-              ) : item.images?.[activeImg] ? (
-                <img src={mediaSrc(item.images[activeImg])} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-500">No media</div>
-              )}
+        <div className="fixed inset-0 z-[90] bg-[#070b14] text-white flex flex-col">
+          <header className="shrink-0 border-b border-white/10 bg-[#0b1220]/95 backdrop-blur-xl">
+            <div className="px-4 sm:px-6 py-3.5 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={closeInspect}
+                className="h-10 px-3 rounded-xl border border-white/10 text-sm font-bold text-slate-300 hover:text-white hover:bg-white/5"
+              >
+                ← Queue
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-400">Quality inspection</p>
+                <h1 className="font-display font-black text-lg sm:text-xl truncate">{item.title || 'Listing'}</h1>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge value={item.listingStatus || item.status} />
+                <StatusBadge value={item.priceSanity?.label} />
+                <button type="button" className={`${btnGhost} h-10`} onClick={() => setShowReject((v) => !v)}>Reject</button>
+                <button type="button" className={`${btnPrimary} h-10`} onClick={() => approve(item._id)}>Approve & publish</button>
+                <button type="button" aria-label="Close" onClick={closeInspect} className="w-10 h-10 rounded-xl border border-white/10 text-slate-400 hover:text-white font-black">✕</button>
+              </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto">
-              {item.videoUrl && (
-                <button type="button" onClick={() => setActiveImg('video')} className="w-16 h-12 rounded-lg bg-slate-800 text-[10px] font-bold text-white">Video</button>
-              )}
-              {(item.images || []).map((img, i) => (
-                <button type="button" key={img + i} onClick={() => setActiveImg(i)}>
-                  <img src={mediaSrc(img)} alt="" className={`w-16 h-12 rounded-lg object-cover ${activeImg === i ? 'ring-2 ring-blue-500' : 'opacity-70'}`} />
-                </button>
-              ))}
-            </div>
-            <div className="grid sm:grid-cols-2 gap-2 text-sm">
-              <p className="text-slate-400">Registration <span className="text-white font-bold">{item.rto || item.rtoDetails?.rcNumber || '—'}</span></p>
-              <p className="text-slate-400">Price sanity <StatusBadge value={item.priceSanity?.label} /></p>
-              <p className="text-slate-400">KM <span className="text-white font-bold">{Number(item.kmDriven || 0).toLocaleString('en-IN')}</span></p>
-              <p className="text-slate-400">Owner <span className="text-white font-bold">{item.owner?.email || item.owner?.name}</span></p>
-            </div>
-            <div className="flex gap-2">
-              <button type="button" className={btnPrimary} onClick={() => approve(item._id)}>Approve listing</button>
-              <button type="button" className={btnGhost} onClick={() => setShowReject(true)}>Reject with remarks</button>
-            </div>
-          </div>
-        </Drawer>
-      )}
+            {showReject && (
+              <div className="px-4 sm:px-6 pb-4">
+                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-rose-300 mb-2">Send back to dealer</p>
+                  <textarea
+                    className={inputCls}
+                    rows={3}
+                    placeholder="What must change before this can go live?"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                  />
+                  <div className="flex gap-2 mt-3">
+                    <button type="button" className={`${btnPrimary} bg-rose-600 hover:bg-rose-500`} onClick={reject}>Send remarks</button>
+                    <button type="button" className={btnGhost} onClick={() => setShowReject(false)}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </header>
 
-      {showReject && (
-        <Modal title="Reject listing" onClose={() => setShowReject(false)}>
-          <textarea className={inputCls} rows={4} placeholder="Tell the dealer what to fix (photos, description, price)…" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-          <button type="button" className={`${btnPrimary} w-full mt-3 bg-rose-600`} onClick={reject}>Send remarks</button>
-        </Modal>
+          <div className="flex-1 min-h-0 grid lg:grid-cols-[minmax(280px,38%)_minmax(0,1fr)]">
+            <aside className="border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto p-4 sm:p-6 bg-[#0b1220]">
+              <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-slate-900 border border-white/10">
+                {images[activeImg] ? (
+                  <img src={mediaSrc(images[activeImg])} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm font-semibold">No photos yet</div>
+                )}
+              </div>
+              {images.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto mt-3 pb-1">
+                  {images.map((src, i) => (
+                    <button
+                      key={src + i}
+                      type="button"
+                      onClick={() => setActiveImg(i)}
+                      className={`shrink-0 rounded-lg overflow-hidden border ${activeImg === i ? 'border-blue-500 ring-2 ring-blue-500/30' : 'border-white/10 opacity-70 hover:opacity-100'}`}
+                    >
+                      <img src={mediaSrc(src)} alt="" className="w-16 h-12 object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 mt-5">
+                <Fact label="Ask" value={inr(item.price)} />
+                <Fact label="KM" value={Number(item.kmDriven || 0).toLocaleString('en-IN')} />
+                <Fact label="Fuel / gear" value={[item.fuel, item.transmission].filter(Boolean).join(' · ') || '—'} />
+                <Fact label="Owner" value={item.ownership ? `${item.ownership}${item.ownership === 1 ? 'st' : item.ownership === 2 ? 'nd' : 'th'}` : '—'} />
+                <Fact label="Registration" value={item.rtoDetails?.rcNumber || item.rto || '—'} />
+                <Fact label="Dealer" value={item.owner?.dealershipName || item.owner?.name || '—'} />
+              </div>
+
+              {docs.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Documents</p>
+                  <div className="flex flex-wrap gap-2">
+                    {docs.map(([key, url]) => (
+                      <a
+                        key={key}
+                        href={mediaSrc(url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-black uppercase tracking-wider rounded-lg border border-white/10 px-3 py-2 text-blue-300 hover:text-white"
+                      >
+                        {key.replace(/([A-Z])/g, ' $1')}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </aside>
+
+            <section className="overflow-y-auto p-4 sm:p-8 bg-gradient-to-b from-[#0e1628] to-[#070b14]">
+              <div className="max-w-3xl mx-auto">
+                <div className="mb-5">
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-400">Review in 4 steps</p>
+                  <h2 className="font-display font-black text-2xl mt-1">Correct details, then publish</h2>
+                  <p className="text-sm text-slate-400 mt-1">One section at a time — same flow as listing a car. Save on the last step, then approve.</p>
+                </div>
+                {loadingItem ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-slate-400 font-semibold">Loading listing file…</div>
+                ) : (
+                  <AddCarWizard
+                    variant="admin"
+                    editId={item._id}
+                    embedded
+                    afterSave={() => {
+                      toast.success('Listing details saved');
+                      loadQueue();
+                    }}
+                  />
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
       )}
+    </div>
+  );
+}
+
+function Fact({ label, value }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-sm font-bold text-white mt-1 truncate">{value}</p>
     </div>
   );
 }
