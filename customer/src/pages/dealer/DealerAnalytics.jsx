@@ -1,38 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import {
-  AlertTriangle,
-  ArrowRight,
-  Car,
-  CircleCheck,
-  Clock3,
-  IdCard,
-  ImagePlus,
-  Plus,
-  ShoppingBag,
-  Sparkles,
-  Upload,
-} from 'lucide-react';
+import { Car, CircleCheck, Clock3, Eye, Plus, ShoppingBag, Upload } from 'lucide-react';
 import api from '../../api/axios';
 import { formatPrice } from '../../utils/format';
-import { GlassCard, KpiCard, PageHeader, btnGhost, btnPrimary } from '../../components/dealer/ui';
-
-function carBucket(car) {
-  const status = String(car.status || '').toLowerCase();
-  const listing = String(car.listingStatus || '').toUpperCase();
-  if (status === 'sold') return 'sold';
-  if (['pending', 'pending_moderation', 'draft'].includes(status) || ['PENDING_MODERATION', 'DRAFT'].includes(listing)) {
-    return 'pending';
-  }
-  if ((status === 'approved' || listing === 'PUBLISHED') && !car.unpublished) return 'live';
-  return 'other';
-}
-
-function daysSince(value) {
-  if (!value) return 0;
-  return Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 86400000));
-}
+import { GlassCard, KpiCard, PageHeader, StatusBadge, btnGhost, btnPrimary } from '../../components/dealer/ui';
 
 function greeting() {
   const hour = new Date().getHours();
@@ -41,18 +13,55 @@ function greeting() {
   return 'Good evening';
 }
 
+function carBucket(car) {
+  const status = String(car.status || '').toLowerCase();
+  const listing = String(car.listingStatus || '').toUpperCase();
+  if (status === 'sold' || listing === 'SOLD') return 'sold';
+  if (['pending', 'pending_moderation', 'draft'].includes(status) || ['PENDING_MODERATION', 'DRAFT'].includes(listing)) {
+    return 'pending';
+  }
+  if ((status === 'approved' || listing === 'PUBLISHED') && !car.unpublished) return 'live';
+  return 'other';
+}
+
+function listingLabel(car) {
+  const bucket = carBucket(car);
+  if (bucket === 'sold') return 'Sold';
+  if (bucket === 'pending') return 'Pending';
+  if (car.unpublished) return 'Hidden';
+  if (bucket === 'live') return 'Published';
+  return car.listingStatus || car.status || 'Draft';
+}
+
+function settlementLabel(status) {
+  const v = String(status || '').toLowerCase();
+  if (v === 'paid') return 'With 4tyrezz';
+  if (v === 'refunded') return 'Refunded';
+  if (v === 'failed') return 'Failed';
+  if (v === 'pending' || v === 'created') return 'Pending';
+  return status || '—';
+}
+
+function paymentDate(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function DealerAnalytics() {
   const { user } = useSelector((s) => s.auth);
   const [stats, setStats] = useState(null);
   const [cars, setCars] = useState(null);
+  const [payments, setPayments] = useState(null);
 
   useEffect(() => {
     Promise.all([
       api.get('/dealer/dashboard/kpis').then((r) => r.data.data).catch(() => ({})),
       api.get('/dealer/inventory').then((r) => r.data.data || []).catch(() => []),
-    ]).then(([nextStats, nextCars]) => {
+      api.get('/payments', { params: { limit: 8 } }).then((r) => r.data.data || []).catch(() => []),
+    ]).then(([nextStats, nextCars, nextPayments]) => {
       setStats(nextStats);
       setCars(nextCars);
+      setPayments(nextPayments);
     });
   }, []);
 
@@ -61,61 +70,24 @@ export default function DealerAnalytics() {
   const pending = Number(stats?.pendingListings ?? inventory.filter((c) => carBucket(c) === 'pending').length);
   const live = Number(stats?.activeListings ?? inventory.filter((c) => carBucket(c) === 'live').length);
   const sold = Number(stats?.soldCars ?? inventory.filter((c) => carBucket(c) === 'sold').length);
-  const liveCars = inventory.filter((c) => carBucket(c) === 'live');
-  const tasks = useMemo(() => {
-    const items = [];
-    if (!user?.kycVerified) {
-      items.push({
-        key: 'kyc',
-        tone: 'amber',
-        title: 'Finish KYC so inventory can stay unlocked',
-        detail: 'Admin must approve documents before buyers see new cars.',
-        to: '/dealer/dashboard/onboarding',
-        cta: 'Open KYC',
-      });
-    }
-    if (pending > 0) {
-      items.push({
-        key: 'pending',
-        tone: 'amber',
-        title: `${pending} listing${pending === 1 ? '' : 's'} waiting for admin`,
-        detail: 'Buyers cannot see these until 4tyrezz approves them.',
-        to: '/dealer/dashboard/inventory',
-        cta: 'Check listings',
-      });
-    }
-    const aging = liveCars.filter((c) => daysSince(c.createdAt) >= 21);
-    if (aging.length) {
-      items.push({
-        key: 'aging',
-        tone: 'rose',
-        title: `${aging.length} car${aging.length === 1 ? '' : 's'} live for 21+ days`,
-        detail: 'Old stock usually needs a price drop or a promotion boost.',
-        to: '/dealer/dashboard/promotions',
-        cta: 'Boost stock',
-      });
-    }
-    if (!inventory.length) {
-      items.push({
-        key: 'empty',
-        tone: 'blue',
-        title: 'Add your first car',
-        detail: 'Live inventory is what buyers search on 4tyrezz.',
-        to: '/dealer/dashboard/inventory/add',
-        cta: 'Add a car',
-      });
-    }
-    return items.slice(0, 4);
-  }, [user?.kycVerified, pending, liveCars, inventory.length]);
-
+  const topViewed = useMemo(
+    () => [...inventory].sort((a, b) => Number(b.views || 0) - Number(a.views || 0)).slice(0, 5),
+    [inventory]
+  );
+  const maxViews = Math.max(1, ...topViewed.map((c) => Number(c.views || 0)));
+  const recent = useMemo(
+    () => [...inventory].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6),
+    [inventory]
+  );
   const showroom = user?.dealershipName || user?.name || 'Dealer';
+  const collected = (payments || []).filter((p) => p.status === 'paid').reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
   return (
     <div className="space-y-6">
       <PageHeader
         kicker="Showroom"
         title={`${greeting()}, ${showroom}`}
-        subtitle="Today’s numbers and the next action. Full stock stays in Inventory."
+        subtitle="Upload cars. 4tyrezz handles buyers, payments and payouts."
         actions={
           <div className="flex flex-wrap gap-2">
             <Link to="/dealer/dashboard/inventory/bulk" className={btnGhost}>
@@ -129,99 +101,128 @@ export default function DealerAnalytics() {
       />
 
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard icon={Car} tone="slate" label="Total cars" value={stats ? total : '—'} hint="Entire showroom stock" />
-        <KpiCard icon={Clock3} tone="amber" label="Waiting for admin" value={stats ? pending : '—'} hint="Not public yet" />
-        <KpiCard icon={CircleCheck} tone="emerald" label="Live on 4tyrezz" value={stats ? live : '—'} hint="Showing on the marketplace now" />
-        <KpiCard icon={ShoppingBag} tone="blue" label="Sold" value={stats ? sold : '—'} hint="Closed from this showroom" />
+        <KpiCard icon={Car} tone="slate" label="Total cars" value={stats || cars ? total : '—'} hint="All vehicles in this showroom" />
+        <KpiCard icon={Clock3} tone="amber" label="Waiting for admin" value={stats || cars ? pending : '—'} hint="Buyers cannot see these yet" />
+        <KpiCard icon={CircleCheck} tone="emerald" label="Live on 4tyrezz" value={stats || cars ? live : '—'} hint="Showing on the marketplace now" />
+        <KpiCard icon={ShoppingBag} tone="blue" label="Sold" value={stats || cars ? sold : '—'} hint="Closed from this showroom" />
       </div>
 
-      <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-4">
+      <div className="grid lg:grid-cols-2 gap-4">
         <GlassCard className="p-5">
-          <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">Do next</p>
-          <h3 className="font-display font-black text-lg text-slate-900 mt-1">Work that moves cars</h3>
-          <p className="text-sm text-slate-500 mt-1">Only issues that need you — not a copy of inventory.</p>
-          <div className="mt-4 space-y-3">
-            {tasks.length ? tasks.map((task) => (
-              <div key={task.key} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <span className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    task.tone === 'amber' ? 'bg-amber-50 text-amber-600' : task.tone === 'rose' ? 'bg-rose-50 text-rose-600' : 'bg-[#EAF2FF] text-[#1853ff]'
-                  }`}>
-                    <AlertTriangle size={16} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900">{task.title}</p>
-                    <p className="text-[12px] font-semibold text-slate-500 mt-0.5">{task.detail}</p>
+          <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">Settlements</p>
+          <h3 className="font-display font-black text-lg text-slate-900 mt-1">Payment history</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Buyers pay 4tyrezz. Token and sale money collected for your cars
+            {payments?.length ? ` · ${formatPrice(collected)}` : ''}
+          </p>
+          {!payments ? (
+            <p className="text-sm font-semibold text-slate-400 mt-5">Loading payments…</p>
+          ) : payments.length ? (
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    <th className="pb-2 font-black">Date</th>
+                    <th className="pb-2 font-black">Car</th>
+                    <th className="pb-2 font-black">Amount</th>
+                    <th className="pb-2 font-black">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {payments.map((row) => (
+                    <tr key={row._id}>
+                      <td className="py-3 pr-3 font-semibold text-slate-600">{paymentDate(row.createdAt)}</td>
+                      <td className="py-3 pr-3 font-bold text-slate-900">{row.vehicle?.title || '—'}</td>
+                      <td className="py-3 pr-3 font-black text-slate-900">{formatPrice(row.amount)}</td>
+                      <td className="py-3"><StatusBadge value={settlementLabel(row.status)} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm font-semibold text-slate-500 mt-5">
+              No settlements yet. When a buyer pays 4tyrezz for your car, it appears here.
+            </p>
+          )}
+        </GlassCard>
+
+        <GlassCard className="p-5">
+          <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">Buyer interest</p>
+          <h3 className="font-display font-black text-lg text-slate-900 mt-1">Which cars get the most views?</h3>
+          <p className="text-sm text-slate-500 mt-1">Longer bar = more people opened that listing.</p>
+          <div className="mt-5 space-y-3.5">
+            {topViewed.length ? topViewed.map((car, index) => {
+              const views = Number(car.views || 0);
+              return (
+                <Link key={car._id} to={`/dealer/dashboard/inventory/edit/${car._id}`} className="block group">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <p className="font-bold text-slate-900 truncate">
+                      <span className="text-slate-400 mr-1">{index + 1}.</span>
+                      {car.title}
+                    </p>
+                    <span className="shrink-0 inline-flex items-center gap-1 text-[12px] font-black text-slate-500">
+                      <Eye size={13} /> {views}
+                    </span>
                   </div>
-                </div>
-                <Link to={task.to} className="shrink-0 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[#3083ff]">
-                  {task.cta} <ArrowRight size={13} />
+                  <div className="mt-1.5 h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#3083ff] group-hover:bg-[#1853ff] transition-all"
+                      style={{ width: `${Math.max(8, (views / maxViews) * 100)}%` }}
+                    />
+                  </div>
                 </Link>
-              </div>
-            )) : (
-              <p className="text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-4">
-                Showroom looks healthy. No urgent listing work right now.
-              </p>
+              );
+            }) : (
+              <p className="text-sm font-semibold text-slate-500 py-6">Views appear after buyers open your listings.</p>
             )}
           </div>
         </GlassCard>
-
-        <GlassCard className="p-5">
-          <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">Shortcuts</p>
-          <h3 className="font-display font-black text-lg text-slate-900 mt-1">Get work done faster</h3>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {[
-              ['Add a car', 'List a vehicle', '/dealer/dashboard/inventory/add', Plus],
-              ['Inventory', 'Price and publish', '/dealer/dashboard/inventory', Car],
-              ['Promotions', 'Boost slow stock', '/dealer/dashboard/promotions', Sparkles],
-              ['Photos / edit', 'Fix a listing', liveCars[0] ? `/dealer/dashboard/inventory/edit/${liveCars[0]._id}` : '/dealer/dashboard/inventory', ImagePlus],
-              ['KYC', 'Showroom status', '/dealer/dashboard/onboarding', IdCard],
-              ['Bulk upload', 'Add many at once', '/dealer/dashboard/inventory/bulk', Upload],
-            ].map(([title, hint, to, Icon]) => (
-              <Link key={title} to={to} className="rounded-2xl border border-slate-100 bg-slate-50/70 hover:border-[#3083ff]/40 hover:bg-[#EAF2FF]/50 p-3 transition">
-                <Icon size={16} className="text-[#3083ff]" />
-                <p className="text-sm font-bold text-slate-900 mt-2">{title}</p>
-                <p className="text-[11px] font-semibold text-slate-500">{hint}</p>
-              </Link>
-            ))}
-          </div>
-        </GlassCard>
       </div>
 
-      {liveCars.filter((c) => daysSince(c.createdAt) >= 21).length > 0 && (
-        <GlassCard className="p-5">
-          <div className="flex items-end justify-between gap-3 mb-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">Fix these first</p>
-              <h3 className="font-display font-black text-lg text-slate-900 mt-1">Stock live for 21+ days</h3>
-            </div>
-            <Link to="/dealer/dashboard/inventory" className="text-[12px] font-black uppercase tracking-wider text-[#3083ff]">
-              Inventory
-            </Link>
+      <GlassCard className="p-5">
+        <div className="flex items-end justify-between gap-3 mb-4">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">Latest stock</p>
+            <h3 className="font-display font-black text-lg text-slate-900 mt-1">Recently added cars</h3>
           </div>
-          <div className="divide-y divide-slate-100">
-            {liveCars
-              .filter((c) => daysSince(c.createdAt) >= 21)
-              .sort((a, b) => daysSince(b.createdAt) - daysSince(a.createdAt))
-              .slice(0, 4)
-              .map((car) => (
-                <Link
-                  key={car._id}
-                  to={`/dealer/dashboard/inventory/edit/${car._id}`}
-                  className="flex items-center justify-between gap-3 py-3 hover:bg-slate-50 rounded-xl px-1"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 truncate">{car.title}</p>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      {formatPrice(car.price)} · {daysSince(car.createdAt)} days live
-                    </p>
-                  </div>
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#3083ff] shrink-0">Edit</span>
-                </Link>
-              ))}
+          <Link to="/dealer/dashboard/inventory" className="text-[12px] font-black uppercase tracking-wider text-[#3083ff]">
+            Open full inventory
+          </Link>
+        </div>
+        {!cars ? (
+          <p className="text-sm font-semibold text-slate-400">Loading listings…</p>
+        ) : recent.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] font-black uppercase tracking-wider text-slate-400">
+                  <th className="pb-2 font-black">Car</th>
+                  <th className="pb-2 font-black">Price</th>
+                  <th className="pb-2 font-black">Status</th>
+                  <th className="pb-2 font-black text-right">Views</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {recent.map((car) => (
+                  <tr key={car._id}>
+                    <td className="py-3 pr-3">
+                      <Link to={`/dealer/dashboard/inventory/edit/${car._id}`} className="font-bold text-slate-900 hover:text-[#3083ff]">
+                        {car.title}
+                      </Link>
+                    </td>
+                    <td className="py-3 pr-3 font-semibold text-slate-700">{formatPrice(car.price)}</td>
+                    <td className="py-3 pr-3"><StatusBadge value={listingLabel(car)} /></td>
+                    <td className="py-3 text-right font-bold text-slate-600 tabular-nums">{Number(car.views || 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </GlassCard>
-      )}
+        ) : (
+          <p className="text-sm font-semibold text-slate-500">No cars in this showroom yet. Add a listing to get started.</p>
+        )}
+      </GlassCard>
     </div>
   );
 }

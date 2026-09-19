@@ -45,14 +45,15 @@ const makeUploader = (subfolder) => {
     }
     if (subfolder === 'bulk') {
       const name = String(file.originalname || '').toLowerCase();
-      const ok = name.endsWith('.csv') || name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.txt');
-      if (!ok) return cb(new Error('Upload a CSV or Excel file'));
+      const ok = /\.(csv|tsv|txt|xlsx|xls|xlsm|xlsb|ods|xml)$/.test(name);
+      if (!ok) return cb(new Error('Upload a spreadsheet: CSV, Excel, ODS or TSV'));
       return cb(null, true);
     }
     return cb(null, true);
   };
 
-  return multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+  const maxBytes = subfolder === 'bulk' ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
+  return multer({ storage, fileFilter, limits: { fileSize: maxBytes } });
 };
 
 module.exports = {

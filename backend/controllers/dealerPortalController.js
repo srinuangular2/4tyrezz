@@ -221,11 +221,20 @@ exports.submitOnboarding = async (req, res) => {
 
 exports.dashboardKpis = async (req, res) => {
   const owner = scopedDealerId(req);
+  const weekAgo = new Date(Date.now() - 7 * 86400000);
+
   const [
     totalInventory,
     pendingListings,
     activeListings,
     soldCars,
+    newLeads,
+    pendingFollowUps,
+    scheduledTestDrives,
+    tokenBookings,
+    soldBookings,
+    closedWon,
+    totalLeads,
   ] = await Promise.all([
     Car.countDocuments({ owner }),
     Car.countDocuments({
@@ -237,7 +246,28 @@ exports.dashboardKpis = async (req, res) => {
     }),
     Car.countDocuments({ owner, ...publicListingFilter() }),
     Car.countDocuments({ owner, status: 'sold' }),
+    Lead.countDocuments({ seller: owner, createdAt: { $gte: weekAgo } }),
+    Lead.countDocuments({
+      seller: owner,
+      followUpAt: { $ne: null },
+      stage: { $nin: ['Sold', 'Lost'] },
+      status: { $nin: ['Sold', 'Lost', 'Closed', 'Closed/Won'] },
+    }),
+    TestDrive.countDocuments({
+      dealer: owner,
+      status: { $in: ['Requested', 'Confirmed', 'Rescheduled', 'Scheduled', 'In Progress'] },
+    }),
+    Booking.countDocuments({
+      dealer: owner,
+      status: { $in: ['Token Received', 'Booked', 'Payment Pending', 'Confirmed'] },
+    }),
+    Booking.find({ dealer: owner, status: { $in: ['Fully Paid', 'Completed'] } }).select('amount saleAmount'),
+    Lead.countDocuments({ seller: owner, $or: [{ stage: 'Sold' }, { status: { $in: ['Sold', 'Closed/Won'] } }] }),
+    Lead.countDocuments({ seller: owner }),
   ]);
+
+  const totalRevenue = soldBookings.reduce((sum, b) => sum + Number(b.saleAmount || b.amount || 0), 0);
+  const conversionRate = totalLeads ? Number(((closedWon / totalLeads) * 100).toFixed(1)) : 0;
 
   res.json({
     success: true,
@@ -246,6 +276,12 @@ exports.dashboardKpis = async (req, res) => {
       pendingListings,
       activeListings,
       soldCars,
+      newLeads,
+      pendingFollowUps,
+      scheduledTestDrives,
+      tokenBookings,
+      totalRevenue,
+      conversionRate,
     },
   });
 };

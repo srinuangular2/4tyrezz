@@ -1,4 +1,5 @@
 const fs = require('fs');
+const XLSX = require('xlsx');
 const Car = require('../models/Car');
 const Lead = require('../models/Lead');
 const LeadFollowUp = require('../models/LeadFollowUp');
@@ -8,6 +9,7 @@ const Booking = require('../models/Booking');
 const PromotionCampaign = require('../models/PromotionCampaign');
 const BulkUploadLog = require('../models/BulkUploadLog');
 const { listingFieldsForCreate } = require('../utils/listingStatus');
+const { resolveListingRefs } = require('../utils/carInsights');
 
 const TEMPLATE_HEADERS = [
   'registration_no',
@@ -56,21 +58,78 @@ function splitCsvLine(line) {
   return out;
 }
 
-function parseCsv(text) {
+function normalizeHeader(value) {
+  const key = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const aliases = {
+    registration: 'registration_no',
+    registration_number: 'registration_no',
+    registration_no: 'registration_no',
+    reg_no: 'registration_no',
+    regno: 'registration_no',
+    km: 'km_driven',
+    kms: 'km_driven',
+    kmdriven: 'km_driven',
+    kilometer: 'km_driven',
+    kilometres: 'km_driven',
+    fuel: 'fuel_type',
+    fueltype: 'fuel_type',
+    gearbox: 'transmission',
+  };
+  return aliases[key] || key;
+}
+
+function parseCsv(text, delimiter) {
+  const split = delimiter === '\t'
+    ? (line) => line.split('\t')
+    : splitCsvLine;
   const lines = String(text || '')
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
     .filter((l) => l.trim());
   if (!lines.length) return [];
-  const headers = splitCsvLine(lines[0]).map((h) => h.trim().toLowerCase().replace(/\s+/g, '_'));
+  const headers = split(lines[0]).map((h) => normalizeHeader(h));
   return lines.slice(1).map((line, idx) => {
-    const cols = splitCsvLine(line);
+    const cols = split(line);
     const row = { _row: idx + 2 };
     headers.forEach((h, i) => {
       row[h] = String(cols[i] || '').trim();
     });
     return row;
   });
+}
+
+function rowsFromSheet(sheet) {
+  const json = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+  return json.map((obj, idx) => {
+    const row = { _row: idx + 2 };
+    Object.entries(obj).forEach(([key, value]) => {
+      row[normalizeHeader(key)] = String(value || '').trim();
+    });
+    return row;
+  });
+}
+
+function parseBulkFile(filePath, originalName = '') {
+  const name = String(originalName || filePath).toLowerCase();
+  const buf = fs.readFileSync(filePath);
+  const isSpreadsheet = /\.(xlsx|xls|xlsm|xlsb|ods)$/.test(name)
+    || buf.slice(0, 2).toString() === 'PK'
+    || buf[0] === 0xD0;
+  if (isSpreadsheet) {
+    const workbook = XLSX.read(buf, { type: 'buffer' });
+    const first = workbook.Sheets[workbook.SheetNames[0]];
+    if (!first) return [];
+    return rowsFromSheet(first);
+  }
+  const text = buf.toString('utf8');
+  if (name.endsWith('.tsv') || (text.includes('\t') && (text.match(/\t/g) || []).length > (text.match(/,/g) || []).length)) {
+    return parseCsv(text, '\t');
+  }
+  return parseCsv(text);
 }
 
 function normalizeFuel(v) {
@@ -117,6 +176,14 @@ function validateInventoryRow(row) {
       city: row.city || 'Hyderabad',
     },
   };
+}
+
+function inferBodyType(model, variant) {
+  const s = `${model || ''} ${variant || ''}`.toLowerCase();
+  if (/suv|creta|seltos|venue|thar|scorpio|xuv|fortuner|nexon|brezza|sonet|harrier|safari|alcazar/.test(s)) return 'SUV';
+  if (/sedan|city|dzire|ciaz|verna|slavia|virtus|amaze|aura/.test(s)) return 'Sedan';
+  if (/muv|innova|ertiga|xl6|carens|eeco|triber/.test(s)) return 'MUV';
+  return 'Hatchback';
 }
 
 function crmColumn(status) {
@@ -191,17 +258,19 @@ exports.templateCsv = (_req, res) => {
 };
 
 exports.bulkUpload = async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'CSV file required' });
-  const raw = fs.readFileSync(req.file.path, 'utf8');
-  if (raw.startsWith('PK')) {
-    return res.status(400).json({ message: 'Save the Excel sheet as CSV and upload again' });
+  if (!req.file) return res.status(400).json({ message: 'Upload a CSV or Excel file' });
+  let parsed = [];
+  try {
+    parsed = parseBulkFile(req.file.path, req.file.originalname);
+  } catch (err) {
+    return res.status(400).json({ message: 'Could not read this file. Use CSV, Excel or ODS.' });
   }
-  const parsed = parseCsv(raw);
+  if (!parsed.length) return res.status(400).json({ message: 'No data rows found in the file' });
   const preview = parsed.map((row) => {
     const { errors, data } = validateInventoryRow(row);
     return { row: row._row, ...data, errors, valid: errors.length === 0 };
   });
-  const confirm = String(req.body.confirm || req.query.confirm || '') === 'true';
+  const confirm = ['true', '1', 'yes'].includes(String(req.body.confirm || req.query.confirm || '').toLowerCase());
   if (!confirm) {
     return res.json({ success: true, preview, total: preview.length, valid: preview.filter((r) => r.valid).length });
   }
@@ -210,24 +279,40 @@ exports.bulkUpload = async (req, res) => {
   const failed = [];
   for (const row of preview.filter((r) => r.valid)) {
     try {
-      const payload = await resolveListingRefs({
+      const refs = await resolveListingRefs({
         brandName: row.brand,
         modelName: row.model,
         cityName: row.city,
-        year: row.year,
-        price: row.price,
-        kmDriven: row.km_driven,
+        year: Number(row.year),
+        price: Number(row.price),
+        kmDriven: Number(row.km_driven) || 0,
         variant: row.variant,
         fuel: row.fuel_type,
         transmission: row.transmission,
-        bodyType: 'Hatchback',
+        bodyType: inferBodyType(row.model, row.variant),
         title: `${row.year} ${row.brand} ${row.model}`.trim(),
         rtoDetails: { rcNumber: row.registration_no, rcStatus: 'Active' },
       });
+      if (!refs.brand || !refs.model || !refs.city) {
+        throw new Error('Could not match brand, model or city');
+      }
       const car = await Car.create({
-        ...payload,
+        title: refs.title,
+        brand: refs.brand,
+        model: refs.model,
+        variant: refs.variant || '',
+        year: refs.year,
+        price: refs.price,
+        fuel: refs.fuel,
+        transmission: refs.transmission,
+        bodyType: refs.bodyType,
+        kmDriven: refs.kmDriven,
+        city: refs.city,
         owner: dealerId(req),
         sellerType: 'dealer',
+        location: { city: row.city || '', formattedAddress: row.city || '' },
+        rto: row.city || '',
+        rtoDetails: refs.rtoDetails,
         ...listingFieldsForCreate({ isAdmin: false }),
         description: 'Imported via bulk upload',
       });

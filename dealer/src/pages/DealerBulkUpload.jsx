@@ -4,44 +4,6 @@ import api from '../api/axios';
 import { ProfileCard } from '../components/ui';
 
 const HEADERS = ['registration_no', 'brand', 'model', 'variant', 'year', 'km_driven', 'price', 'fuel_type', 'transmission', 'city'];
-const REG_RX = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}$/;
-
-function splitLine(line) {
-  const out = [];
-  let cur = '';
-  let q = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (q && line[i + 1] === '"') { cur += '"'; i += 1; } else q = !q;
-    } else if (ch === ',' && !q) { out.push(cur); cur = ''; } else cur += ch;
-  }
-  out.push(cur);
-  return out;
-}
-
-function parseCsv(text) {
-  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((l) => l.trim());
-  if (!lines.length) return [];
-  const headers = splitLine(lines[0]).map((h) => h.trim().toLowerCase().replace(/\s+/g, '_'));
-  return lines.slice(1).map((line, idx) => {
-    const cols = splitLine(line);
-    const row = { _row: idx + 2 };
-    headers.forEach((h, i) => { row[h] = String(cols[i] || '').trim(); });
-    return row;
-  });
-}
-
-function validate(row) {
-  const errors = [];
-  const reg = String(row.registration_no || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (!REG_RX.test(reg)) errors.push('Invalid registration');
-  if (!row.brand) errors.push('Missing brand');
-  if (!row.model) errors.push('Missing model');
-  if (!row.price || Number(row.price) <= 0) errors.push('Missing price');
-  if (!row.year) errors.push('Missing year');
-  return errors;
-}
 
 export default function DealerBulkUpload() {
   const [rows, setRows] = useState([]);
@@ -52,15 +14,31 @@ export default function DealerBulkUpload() {
 
   const loadFile = async (picked) => {
     if (!picked) return;
-    const name = picked.name.toLowerCase();
-    if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-      toast.error('Save the Excel file as CSV and drop it here');
-      return;
-    }
-    const text = await picked.text();
-    const parsed = parseCsv(text).map((r) => ({ ...r, errors: validate(r) }));
     setFile(picked);
-    setRows(parsed);
+    try {
+      const data = new FormData();
+      data.append('file', picked);
+      const { data: res } = await api.post('/dealer/inventory/bulk-import', data);
+      const preview = res.preview || [];
+      setRows(preview.map((r) => ({
+        _row: r.row,
+        registration_no: r.registration_no || '',
+        brand: r.brand || '',
+        model: r.model || '',
+        variant: r.variant || '',
+        year: r.year || '',
+        km_driven: r.km_driven || '',
+        price: r.price || '',
+        fuel_type: r.fuel_type || '',
+        transmission: r.transmission || '',
+        city: r.city || '',
+        errors: r.errors || [],
+      })));
+      if (!preview.length) toast.error('No data rows found in this file');
+    } catch (e) {
+      setRows([]);
+      toast.error(e.response?.data?.message || 'Could not read this file');
+    }
   };
 
   const downloadTemplate = () => {
@@ -82,7 +60,10 @@ export default function DealerBulkUpload() {
       data.append('file', file);
       data.append('confirm', 'true');
       const { data: res } = await api.post('/dealer/inventory/bulk-import', data);
-      toast.success(`${res.imported || 0} cars imported`);
+      const imported = Number(res.imported || 0);
+      const failed = Number(res.failed || 0);
+      if (imported) toast.success(`${imported} cars imported${failed ? `, ${failed} failed` : ''}`);
+      else toast.error(res.rowErrors?.[0]?.message || '0 cars imported');
     } catch (e) {
       toast.error(e.response?.data?.message || 'Import failed');
     } finally {
@@ -101,9 +82,14 @@ export default function DealerBulkUpload() {
         onDrop={(e) => { e.preventDefault(); loadFile(e.dataTransfer.files?.[0]); }}
         className="block rounded-2xl border-2 border-dashed border-slate-200 p-10 text-center cursor-pointer hover:border-[#3083ff]"
       >
-        <p className="font-black text-slate-900">Drop CSV / Excel (CSV) here</p>
-        <p className="text-xs font-semibold text-slate-400 mt-1">Headers: {HEADERS.join(', ')}</p>
-        <input type="file" accept=".csv,.xlsx,.xls,text/csv" className="sr-only" onChange={(e) => loadFile(e.target.files?.[0])} />
+        <p className="font-black text-slate-900">Drop CSV, Excel or ODS here</p>
+        <p className="text-xs font-semibold text-slate-400 mt-1">Accepted: .csv .xlsx .xls .ods .tsv .txt · Headers: {HEADERS.join(', ')}</p>
+        <input
+          type="file"
+          accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.xlsb,.ods,.xml,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain"
+          className="sr-only"
+          onChange={(e) => loadFile(e.target.files?.[0])}
+        />
       </label>
 
       {rows.length > 0 && (

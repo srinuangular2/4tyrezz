@@ -202,16 +202,15 @@ exports.listPayments = async (req, res) => {
   const limit = Math.min(50, Number(req.query.limit) || 20);
   const filter = {};
   if (req.user.role === 'customer') filter.user = req.user._id;
-  else if (req.user.role === 'dealer') {
-    return res.json({ data: [], page, limit, total: 0, totalPages: 1 });
-  }
+  else if (req.user.role === 'dealer') filter.dealer = req.user._id;
   if (req.query.status) filter.status = req.query.status;
 
   const [total, data] = await Promise.all([
     Payment.countDocuments(filter),
     Payment.find(filter)
       .populate('vehicle', 'title')
-      .populate('user', 'name')
+      .populate('user', 'name mobile')
+      .populate('booking', 'bookingRef status')
       .sort('-createdAt')
       .skip((page - 1) * limit)
       .limit(limit),
