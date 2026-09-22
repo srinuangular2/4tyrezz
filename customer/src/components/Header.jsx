@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../app/authSlice';
 import { Menu, Close, Chevron, Heart } from './icons';
@@ -14,6 +14,7 @@ export default function Header() {
   const wishlistCount = useSelector((s) => s.wishlist?.ids?.length || 0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const [showLogin, setShowLogin] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -109,6 +110,13 @@ export default function Header() {
     { label: 'Offers', path: '/offers', badge: 'HOT' },
     { label: 'Contact', path: '/contact' },
   ];
+
+  const isNavActive = (path) => {
+    if (path === '/cars') {
+      return pathname === '/cars' || pathname === '/buy-cars' || pathname.startsWith('/cars/');
+    }
+    return pathname === path || pathname.startsWith(`${path}/`);
+  };
 
   return (
     <>
@@ -286,21 +294,29 @@ export default function Header() {
         {/* ================= BOTTOM NAVIGATION BAR ================= */}
         <div className="hidden lg:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-4 lg:px-4 h-12 flex items-center justify-between">
-            <nav className="flex items-center gap-6 text-sm font-semibold text-slate-800 uppercase tracking-wide">
-              {navLinks.map((item, idx) => (
-                <Link
-                  key={idx}
-                  to={item.path}
-                  className="hover:text-[#3083ff] transition-colors flex items-center gap-1.5 py-3 border-b-2 border-transparent hover:border-[#3083ff]"
-                >
-                  {item.label}
-                  {item.badge && (
-                    <span className="bg-[#3083ff] text-white text-[8px] font-black px-1.5 py-0.5 rounded-md leading-none">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              ))}
+            <nav className="flex items-center gap-6 text-sm font-semibold uppercase tracking-wide">
+              {navLinks.map((item) => {
+                const active = isNavActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex items-center gap-1.5 py-3 border-b-2 transition-colors ${
+                      active
+                        ? 'text-[#3083ff] border-[#3083ff]'
+                        : 'text-slate-800 border-transparent hover:text-[#3083ff] hover:border-[#3083ff]'
+                    }`}
+                  >
+                    {item.label}
+                    {item.badge && (
+                      <span className="bg-[#3083ff] text-white text-[8px] font-black px-1.5 py-0.5 rounded-md leading-none">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         </div>
@@ -345,22 +361,28 @@ export default function Header() {
             </button>
           </div>
 
-          <nav className="flex flex-col gap-4 text-base font-bold text-slate-800">
-            {navLinks.map((item, idx) => (
-              <Link
-                key={idx}
-                to={item.path}
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-between py-1 hover:text-[#3083ff]"
-              >
-                <span>{item.label}</span>
-                {item.badge && (
-                  <span className="bg-[#3083ff] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            ))}
+          <nav className="flex flex-col gap-1 text-base font-bold">
+            {navLinks.map((item) => {
+              const active = isNavActive(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex items-center justify-between py-2.5 px-3 rounded-xl ${
+                    active ? 'bg-blue-50 text-[#3083ff]' : 'text-slate-800 hover:text-[#3083ff] hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="bg-[#3083ff] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
 
             <div className="border-t border-slate-100 pt-4 mt-2">
               {user ? (

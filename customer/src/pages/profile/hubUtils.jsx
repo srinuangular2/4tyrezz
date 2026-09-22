@@ -14,6 +14,9 @@ export function describeFilters(filters = {}, fallback = 'Saved search') {
   if (filters.fuel) bits.push(filters.fuel);
   if (filters.brand) bits.push(filters.brand);
   if (filters.model) bits.push(filters.model);
+  if (filters.color) bits.push(filters.color);
+  if (filters.seats) bits.push(`${filters.seats} seater`);
+  if (filters.rto) bits.push(`RTO ${filters.rto}`);
   if (filters.city) bits.push(`in ${filters.city}`);
   if (filters.maxPrice) {
     const lakhs = Number(filters.maxPrice) / 100000;

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { BookmarkPlus, SlidersHorizontal, X } from 'lucide-react';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
 import CarCard from '../components/CarCard';
@@ -20,8 +20,13 @@ import {
   OWNER_TYPES,
   TRANSMISSIONS,
   YEAR_RANGES,
+  COLORS,
+  SEAT_OPTIONS,
+  RTO_OPTIONS,
   isBudgetActive,
   parseBudgetQuery,
+  formatPriceRangeLabel,
+  formatKmRangeLabel,
 } from '../utils/filterOptions';
 
 function sameName(a, b) {
@@ -208,12 +213,15 @@ export default function Listing() {
     if (budget) {
       push('budget', budget.label, { ...filters, minPrice: '', maxPrice: '', page: 1 });
     } else if (filters.minPrice || filters.maxPrice) {
-      push('budget', 'Custom budget', { ...filters, minPrice: '', maxPrice: '', page: 1 });
+      push('budget', formatPriceRangeLabel(filters.minPrice, filters.maxPrice) || 'Custom budget', { ...filters, minPrice: '', maxPrice: '', page: 1 });
     }
     const year = YEAR_RANGES.find(([, p]) => isBucketActive(p, 'minYear', 'maxYear', filters));
     if (year) push('year', year[0], { ...filters, minYear: '', maxYear: '', page: 1 });
     const km = KM_RANGES.find(([, p]) => isBucketActive(p, 'minKm', 'maxKm', filters));
     if (km) push('km', km[0], { ...filters, minKm: '', maxKm: '', page: 1 });
+    else if (filters.minKm || filters.maxKm) {
+      push('km', formatKmRangeLabel(filters.minKm, filters.maxKm) || 'Custom km', { ...filters, minKm: '', maxKm: '', page: 1 });
+    }
     asList(filters.fuel).forEach((fuel) => {
       const next = asList(filters.fuel).filter((v) => v !== fuel).join(',');
       push(`fuel-${fuel}`, FUEL_TYPES.find((f) => sameName(f, fuel)) || fuel, { ...filters, fuel: next, page: 1 });
@@ -230,6 +238,20 @@ export default function Listing() {
       const next = asList(filters.ownership).filter((v) => String(v) !== String(o)).join(',');
       const label = OWNER_TYPES.find(([, p]) => String(p.ownership) === String(o))?.[0] || `${o} owner`;
       push(`own-${o}`, label, { ...filters, ownership: next, page: 1 });
+    });
+    asList(filters.color).forEach((color) => {
+      const next = asList(filters.color).filter((v) => !sameName(v, color)).join(',');
+      push(`color-${color}`, COLORS.find((c) => sameName(c, color)) || color, { ...filters, color: next, page: 1 });
+    });
+    asList(filters.seats).forEach((seat) => {
+      const next = asList(filters.seats).filter((v) => String(v) !== String(seat)).join(',');
+      const label = SEAT_OPTIONS.find((s) => String(s.value) === String(seat))?.label || `${seat} seater`;
+      push(`seats-${seat}`, label, { ...filters, seats: next, page: 1 });
+    });
+    asList(filters.rto).forEach((rto) => {
+      const next = asList(filters.rto).filter((v) => !sameName(v, rto)).join(',');
+      const label = RTO_OPTIONS.find((r) => sameName(r.value, rto))?.label || rto;
+      push(`rto-${rto}`, label, { ...filters, rto: next, page: 1 });
     });
     if (filters.city) push('city', cityDoc?.name || filters.city, { ...filters, city: '', area: '', page: 1 });
     asList(filters.area).forEach((area) => {
@@ -291,16 +313,28 @@ export default function Listing() {
                 {loading ? '...' : `${meta.total} cars found`}
               </strong>
             </div>
-            <select
-              value={filters.sort || '-createdAt'}
-              onChange={(e) => set('sort', e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
-            >
-              <option value="-createdAt">Newest first</option>
-              <option value="price">Price: Low to High</option>
-              <option value="-price">Price: High to Low</option>
-              <option value="-year">Year: Newest first</option>
-            </select>
+            <div className="flex items-center gap-2">
+              {user?.role !== 'dealer' && (
+                <button
+                  type="button"
+                  onClick={saveSearch}
+                  className="inline-flex items-center gap-1.5 border border-[#3083ff]/30 bg-white text-[#1853ff] rounded-xl px-3 py-2 text-xs font-black hover:bg-blue-50 transition"
+                >
+                  <BookmarkPlus className="w-3.5 h-3.5" strokeWidth={2.4} />
+                  Save search
+                </button>
+              )}
+              <select
+                value={filters.sort || '-createdAt'}
+                onChange={(e) => set('sort', e.target.value)}
+                className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
+              >
+                <option value="-createdAt">Newest first</option>
+                <option value="price">Price: Low to High</option>
+                <option value="-price">Price: High to Low</option>
+                <option value="-year">Year: Newest first</option>
+              </select>
+            </div>
           </div>
 
           {chips.length > 0 && (
@@ -354,6 +388,12 @@ export default function Listing() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
               <strong className="text-sm font-black">Filters</strong>
               <div className="flex items-center gap-3">
+                {user?.role !== 'dealer' && (
+                  <button type="button" onClick={saveSearch} className="inline-flex items-center gap-1 text-[12px] font-bold text-[#3083ff]">
+                    <BookmarkPlus className="w-3.5 h-3.5" />
+                    Save
+                  </button>
+                )}
                 <button type="button" onClick={clearAll} className="text-[12px] font-bold text-[#3083ff]">
                   Clear all
                 </button>

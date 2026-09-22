@@ -102,6 +102,7 @@ exports.getCars = async (req, res) => {
   try {
     const {
       search, q, brand, model, city, location, state, area, areas, fuel, transmission, bodyType, color,
+      seats, rto,
       minPrice, maxPrice, minYear, maxYear, ownership, minKm, maxKm,
       status, isFeatured, isPremium, sort = '-createdAt',
       page = 1, limit = 12,
@@ -206,8 +207,39 @@ exports.getCars = async (req, res) => {
     applyInOrEq(filter, 'fuel', splitCsv(fuel));
     applyInOrEq(filter, 'transmission', splitCsv(transmission));
     applyInOrEq(filter, 'bodyType', splitCsv(bodyType));
-    applyInOrEq(filter, 'color', splitCsv(color));
+    const colorParts = splitCsv(color);
+    if (colorParts.length) {
+      filter.$and = [
+        ...(filter.$and || []),
+        {
+          $or: colorParts.map((part) => ({
+            color: new RegExp(`^${String(part).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+          })),
+        },
+      ];
+    }
     applyInOrEq(filter, 'ownership', splitCsv(ownership), (v) => Number(v));
+
+    const seatParts = splitCsv(seats);
+    const exactSeats = seatParts.filter((v) => v !== '8+' && v !== '8').map(Number).filter((n) => Number.isFinite(n));
+    const eightPlus = seatParts.some((v) => v === '8+' || v === '8');
+    if (exactSeats.length && eightPlus) {
+      filter.$and = [...(filter.$and || []), { $or: [{ seats: { $in: exactSeats } }, { seats: { $gte: 8 } }] }];
+    } else if (eightPlus) {
+      filter.seats = { $gte: 8 };
+    } else {
+      applyInOrEq(filter, 'seats', exactSeats);
+    }
+
+    const rtoParts = splitCsv(rto);
+    if (rtoParts.length) {
+      const rtoOr = rtoParts.flatMap((part) => {
+        const safe = String(part).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const rx = new RegExp(safe, 'i');
+        return [{ rto: rx }, { 'rtoDetails.rtoLocation': rx }, { 'location.city': rx }];
+      });
+      filter.$and = [...(filter.$and || []), { $or: rtoOr }];
+    }
     if (isFeatured) filter.isFeatured = true;
     if (isPremium) filter.isPremium = true;
 

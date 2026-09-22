@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { BadgeCheck, CarFront, LifeBuoy, ShieldCheck, Wrench } from 'lucide-react';
+import { BadgeCheck, CarFront, Clock, LifeBuoy, ShieldCheck, Wrench } from 'lucide-react';
 import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
+import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
+import { digitsOnly, isIndianMobile, whatsappUrl } from '../lib/companyContact';
 import {
   BRAND,
   Card,
   Field,
-  PageHero,
   PrimaryButton,
   Section,
   formatINR,
@@ -52,6 +53,8 @@ const WHY = [
   { icon: CarFront, title: 'Inspection-linked pricing', body: 'A verified 4tyrezz inspection score can improve your quote.' },
 ];
 
+const INSURERS = ['HDFC ERGO', 'ICICI Lombard', 'Bajaj Allianz', 'TATA AIG', 'New India'];
+
 const FAQS = [
   {
     q: 'What is IDV and why does it matter?',
@@ -75,6 +78,7 @@ export default function Insurance() {
   const [idv, setIdv] = useState(500000);
   const [planKey, setPlanKey] = useState('comprehensive');
   const [ncb, setNcb] = useState(0);
+  const [addons, setAddons] = useState({ rsa: true, engine: false });
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', regNumber: '', expiry: '' });
   const [submitting, setSubmitting] = useState(false);
   const { requireAuth } = useAuthGuard();
@@ -85,13 +89,24 @@ export default function Insurance() {
   const quote = useMemo(() => {
     const base = idv * plan.rateOfIdv;
     const afterNcb = base * (1 - ncb / 100);
-    const gst = afterNcb * 0.18;
-    return { base: Math.round(base), discount: Math.round(base - afterNcb), gst: Math.round(gst), total: Math.round(afterNcb + gst) };
-  }, [idv, plan, ncb]);
+    const extra = (addons.rsa ? 1499 : 0) + (addons.engine ? 2499 : 0);
+    const gst = (afterNcb + extra) * 0.18;
+    return {
+      base: Math.round(base),
+      discount: Math.round(base - afterNcb),
+      extra: Math.round(extra),
+      gst: Math.round(gst),
+      total: Math.round(afterNcb + extra + gst),
+    };
+  }, [idv, plan, ncb, addons]);
 
   const submit = () => {
-    if (!form.name || !form.phone) {
-      toast.error('Name and phone are required');
+    if (!form.name.trim()) {
+      toast.error('Please enter your name');
+      return;
+    }
+    if (!isIndianMobile(form.phone)) {
+      toast.error('Enter a valid 10-digit mobile number');
       return;
     }
     requireAuth(async () => {
@@ -102,8 +117,8 @@ export default function Insurance() {
           ...form,
           insuranceType: plan.name,
           leadSource: 'insurance_page',
-          message: `${plan.name} · IDV ${formatINR(idv)} · NCB ${ncb}% · est. premium ${formatINR(quote.total)}`,
-          meta: { plan: plan.key, idv, ncb, estimatedPremium: quote.total },
+          message: `${plan.name} · IDV ${formatINR(idv)} · NCB ${ncb}% · RSA ${addons.rsa ? 'yes' : 'no'} · Engine ${addons.engine ? 'yes' : 'no'} · est. ${formatINR(quote.total)}`,
+          meta: { plan: plan.key, idv, ncb, addons, estimatedPremium: quote.total },
         });
         toast.success('Insurance enquiry submitted. Our desk will share firm quotes shortly.');
         setForm({ name: '', phone: '', email: '', city: '', regNumber: '', expiry: '' });
@@ -117,18 +132,48 @@ export default function Insurance() {
 
   return (
     <div className="bg-slate-50">
-      <PageHero
+      <DesignedPageBanner
+        src="/car-insurance.png"
+        alt="Car insurance on 4tyrezz"
         eyebrow="Car Insurance"
-        title="Cover your car in minutes, not days"
-        subtitle="Compare third-party, comprehensive and zero-depreciation cover, get an indicative premium instantly, and let our desk fetch firm quotes from IRDAI-registered insurers."
+        title="Cover your car in minutes,"
+        accent="not days"
+        subtitle="Compare third-party, comprehensive and zero-dep cover, get an indicative premium instantly, and let our desk fetch firm quotes from IRDAI-registered insurers."
+        points={[
+          { icon: ShieldCheck, label: 'IRDAI partners' },
+          { icon: Clock, label: 'Quotes in hours' },
+          { icon: Wrench, label: 'Cashless garages' },
+          { icon: LifeBuoy, label: 'Claim desk help' },
+        ]}
       >
-        <div className="flex flex-wrap gap-3 mt-6">
+        <BannerActions>
+          <BannerButton href="#quote">Get an instant estimate</BannerButton>
+          <BannerButton href="#plans" ghost>Compare plans</BannerButton>
+        </BannerActions>
+      </DesignedPageBanner>
+
+      <Section eyebrow="How it works" title="Cover made simple">
+        <div className="grid sm:grid-cols-3 gap-5">
+          {[
+            ['01', 'Choose a plan', 'Third-party, comprehensive, or zero-dep. Pick the cover that matches how you drive.'],
+            ['02', 'See an estimate', 'Slide the IDV and No-Claim Bonus to get an indicative annual premium instantly.'],
+            ['03', 'Get firm quotes', 'Our desk fetches offers from IRDAI-registered insurers and calls you with the paperwork.'],
+          ].map(([n, title, body]) => (
+            <Card key={n} className="p-6">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#3083ff]">{n}</span>
+              <h3 className="font-black text-slate-900 text-base mt-2">{title}</h3>
+              <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{body}</p>
+            </Card>
+          ))}
+        </div>
+        <div className="mt-8">
           <a href="#quote">
             <PrimaryButton>Get an instant estimate</PrimaryButton>
           </a>
         </div>
-      </PageHero>
+      </Section>
 
+      <div id="plans" className="scroll-mt-24">
       <Section eyebrow="Choose your cover" title="Policy types explained" bg>
         <div className="grid md:grid-cols-3 gap-5">
           {PLANS.map((p) => {
@@ -194,11 +239,12 @@ export default function Insurance() {
           })}
         </div>
       </Section>
+      </div>
 
       <div id="quote" className="scroll-mt-24">
         <Section eyebrow="Instant estimate" title="Build your quote">
           <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
-            <Card className="p-6 space-y-6">
+            <Card className="p-6 space-y-6" highlighted>
               <div>
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
@@ -240,9 +286,32 @@ export default function Insurance() {
                   ))}
                 </select>
               </Field>
+
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Add-ons</p>
+                <div className="space-y-2">
+                  {[
+                    ['rsa', 'Roadside assistance', '₹1,499 / year'],
+                    ['engine', 'Engine & gearbox protect', '₹2,499 / year'],
+                  ].map(([key, label, price]) => (
+                    <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 cursor-pointer">
+                      <span className="text-sm font-bold text-slate-800">{label}</span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-xs font-black text-slate-500">{price}</span>
+                        <input
+                          type="checkbox"
+                          className="accent-[#3083ff] w-4 h-4"
+                          checked={addons[key]}
+                          onChange={(e) => setAddons((a) => ({ ...a, [key]: e.target.checked }))}
+                        />
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </Card>
 
-            <Card className="p-6 flex flex-col">
+            <Card className="p-6 flex flex-col" highlighted>
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Estimated annual premium</p>
               <p className="font-black text-slate-900 text-4xl tracking-tight mt-1">{formatINR(quote.total)}</p>
               <p className="text-xs font-semibold text-slate-400 mt-1">{plan.name} · IDV {formatINR(idv)}</p>
@@ -250,6 +319,7 @@ export default function Insurance() {
               <div className="mt-6 space-y-3">
                 <Row label="Base premium" value={formatINR(quote.base)} />
                 <Row label={`NCB discount (${ncb}%)`} value={`− ${formatINR(quote.discount)}`} />
+                {quote.extra > 0 && <Row label="Add-ons" value={formatINR(quote.extra)} />}
                 <Row label="GST @ 18%" value={formatINR(quote.gst)} />
                 <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                   <span className="text-sm font-black text-slate-900">Payable</span>
@@ -268,13 +338,20 @@ export default function Insurance() {
 
       <Section eyebrow="Firm quotes" title="Get quotes from our insurance desk" bg>
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
-          <Card className="p-6">
+          <Card className="p-6" highlighted>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Full name">
                 <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Your name" />
               </Field>
               <Field label="Mobile number">
-                <input className={inputClass} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="10-digit mobile" />
+                <input
+                  className={inputClass}
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={form.phone}
+                  onChange={(e) => set('phone', digitsOnly(e.target.value))}
+                  placeholder="10-digit mobile"
+                />
               </Field>
               <Field label="Email">
                 <input className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" />
@@ -300,6 +377,16 @@ export default function Insurance() {
             <PrimaryButton className="w-full mt-5" disabled={submitting} onClick={submit}>
               {submitting ? 'Submitting…' : 'Get insurance quote'}
             </PrimaryButton>
+            <a
+              href={whatsappUrl(
+                `Hi 4tyrezz, I need a car insurance quote. ${plan.name} · IDV ${formatINR(idv)} · NCB ${ncb}% · ~${formatINR(quote.total)}/year`
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 block text-center text-xs font-black uppercase tracking-wider text-[#3083ff]"
+            >
+              Or get a quote on WhatsApp →
+            </a>
           </Card>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-1 gap-4">
@@ -316,6 +403,22 @@ export default function Insurance() {
             ))}
           </div>
         </div>
+      </Section>
+
+      <Section eyebrow="Insurers" title="Quotes from licensed partners" bg>
+        <div className="flex flex-wrap justify-center gap-3">
+          {INSURERS.map((name) => (
+            <span
+              key={name}
+              className="px-5 py-2.5 rounded-full bg-white border border-slate-200 text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm"
+            >
+              {name}
+            </span>
+          ))}
+        </div>
+        <p className="text-center text-xs font-medium text-slate-500 mt-4">
+          4tyrezz is not an insurer. We compare IRDAI-registered partners and help you buy the policy.
+        </p>
       </Section>
 
       <Section eyebrow="Help Center" title="Insurance questions, answered">
@@ -338,6 +441,19 @@ export default function Insurance() {
           ))}
         </div>
       </Section>
+
+      <div className="lg:hidden h-16" />
+      <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-3 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-4 py-3 shadow-xl">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-white/60">Est. premium</p>
+            <p className="font-black text-lg leading-tight">{formatINR(quote.total)}<span className="text-xs font-bold text-white/60"> /yr</span></p>
+          </div>
+          <a href="#quote" className="shrink-0 px-4 py-2 rounded-xl bg-[#3083ff] text-xs font-black uppercase tracking-wider">
+            Get quote
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

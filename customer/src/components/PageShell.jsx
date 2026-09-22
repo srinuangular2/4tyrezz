@@ -97,15 +97,25 @@ export function Section({ eyebrow, title, children, bg, viewAllHref, viewAllLabe
 }
 
 /** Frosted glass card with the hover beam used across the Home sections. */
-export function Card({ children, className = '', hover = true, beam = true }) {
+export function Card({ children, className = '', hover = true, beam = true, highlighted = false }) {
   return (
     <div
-      className={`group relative rounded-3xl bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] overflow-hidden ${
-        hover ? 'hover:shadow-[0_20px_40px_0_rgba(48,131,255,0.15)] hover:border-[#3083ff]/40 transition-all duration-500' : ''
+      className={`group relative rounded-3xl bg-white/40 backdrop-blur-xl border overflow-hidden ${
+        highlighted
+          ? 'border-[#3083ff]/45 shadow-[0_16px_40px_0_rgba(48,131,255,0.14)]'
+          : 'border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.05)]'
+      } ${
+        hover && !highlighted
+          ? 'hover:shadow-[0_20px_40px_0_rgba(48,131,255,0.15)] hover:border-[#3083ff]/40 transition-all duration-500'
+          : 'transition-all duration-500'
       } ${className}`}
     >
       {beam && (
-        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-400 via-[#3083ff] to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div
+          className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-400 via-[#3083ff] to-indigo-500 ${
+            highlighted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          } transition-opacity duration-500`}
+        />
       )}
       {children}
     </div>

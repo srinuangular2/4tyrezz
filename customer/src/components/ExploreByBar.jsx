@@ -40,6 +40,8 @@ export default function ExploreByBar() {
     { key: 'transmission', label: 'Transmission', items: TRANSMISSIONS.map((t) => [t, () => go({ transmission: t })]) },
     { key: 'owner', label: 'Owner Type', items: OWNER_TYPES.map(([label, p]) => [label, () => go(p)]) },
     { key: 'color', label: 'Color', items: COLORS.map((c) => [c, () => go({ color: c })]) },
+    { key: 'seats', label: 'Seats', items: [['4 seater', () => go({ seats: '4' })], ['5 seater', () => go({ seats: '5' })], ['6 seater', () => go({ seats: '6' })], ['7 seater', () => go({ seats: '7' })], ['8+ seater', () => go({ seats: '8+' })]] },
+    { key: 'rto', label: 'RTO', items: [['Hyderabad', () => go({ rto: 'Hyderabad' })], ['Bengaluru', () => go({ rto: 'Bengaluru' })], ['Mumbai', () => go({ rto: 'Mumbai' })], ['Delhi', () => go({ rto: 'Delhi' })], ['Chennai', () => go({ rto: 'Chennai' })]] },
     { key: 'city', label: 'City', items: cities.slice(0, 12).map((c) => [c.name, () => go({ city: c._id })]) },
   ];
 

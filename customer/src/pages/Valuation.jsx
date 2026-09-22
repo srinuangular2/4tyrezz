@@ -462,7 +462,8 @@ export default function Valuation() {
             onNew={startNewValuation}
           />
         ) : gate === 'form' ? (
-          <Card id="valuation-form" className="p-6 sm:p-7 shadow-xl shadow-blue-500/5 max-w-3xl mx-auto">
+          <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6 items-start">
+          <Card id="valuation-form" className="p-6 sm:p-7" highlighted>
             <div className="flex items-start justify-between gap-3 mb-5">
               <div>
                 <h2 className="font-display font-black text-xl text-slate-900">Used car price calculator</h2>
@@ -608,6 +609,28 @@ export default function Valuation() {
             </PrimaryButton>
             <p className="text-center text-[11px] font-semibold text-emerald-600 mt-3">100% free · Instant estimate</p>
           </Card>
+            <div className="space-y-5">
+              <Card className="p-6 space-y-3" highlighted>
+                <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">How to use</p>
+                <h3 className="font-black text-slate-900 text-base">Check price in under a minute</h3>
+                <ul className="space-y-2.5 text-sm font-medium text-slate-600">
+                  <li>1. Pick brand, year, model and variant</li>
+                  <li>2. Add kilometres, owners and city</li>
+                  <li>3. Or type your RC number instead</li>
+                  <li>4. Tap Check value for a SmartPrice range</li>
+                </ul>
+              </Card>
+              <Card className="p-6 space-y-3" hover={false}>
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">What you get</p>
+                <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                  An indicative market range — not a final offer. 4tyrezz confirms the real price after inspection if you choose to sell.
+                </p>
+                <Link to="/sell" className="inline-flex font-black text-sm text-[#3083ff] pt-1">
+                  Sell this car next →
+                </Link>
+              </Card>
+            </div>
+          </div>
         ) : null}
       </Section>
 
@@ -615,7 +638,7 @@ export default function Valuation() {
         {result && (
           <Section eyebrow="SmartPrice" title="Your used car valuation">
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
-              <Card className="p-6">
+              <Card className="p-6" highlighted>
                 <p className="text-[11px] font-black uppercase tracking-wider text-amber-600">Indicative estimate — not a purchase offer</p>
                 <p className="font-black text-slate-900 text-4xl tracking-tight mt-1">{formatINR(fair)}</p>
                 <p className="text-sm font-extrabold mt-2" style={{ color: BRAND }}>
@@ -651,7 +674,7 @@ export default function Valuation() {
                   Edit car details
                 </button>
               </Card>
-              <Card className="p-6">
+              <Card className="p-6" highlighted>
                 <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Want real offers on this car?</p>
                 <div className="mt-4 space-y-3">
                   <input className={inputClass} placeholder="Your name" value={contact.name} onChange={(e) => setC('name', e.target.value)} />

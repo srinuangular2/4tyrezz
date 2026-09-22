@@ -4,12 +4,13 @@ import toast from 'react-hot-toast';
 import { Copy, Tag, TicketPercent } from 'lucide-react';
 import api from '../api/axios';
 import CarCard from '../components/CarCard';
+import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
+import { whatsappUrl } from '../lib/companyContact';
 import {
   BRAND,
   Card,
   EmptyState,
   GhostButton,
-  PageHero,
   PrimaryButton,
   Section,
   Skeleton,
@@ -62,12 +63,39 @@ export default function Offers() {
 
   return (
     <div className="bg-slate-50">
-      <PageHero
+      <DesignedPageBanner
+        src="/offers.png"
+        alt="Exclusive car offers on 4tyrezz"
         eyebrow="Offers & Deals"
-        title="Exclusive 4tyrezz offers and deals"
-        subtitle="Seasonal campaigns, dealer packages and price drops across our inspected inventory. Offers are published by our team and refresh regularly."
+        title="Exclusive 4tyrezz offers"
+        accent="and deals"
+        subtitle="Seasonal campaigns, price drops and finance packages on inspected inventory. Offers are published by our team and applied by the 4tyrezz desk."
+        imageClass="object-[82%_bottom] sm:object-[right_bottom]"
       >
-        <div className="flex flex-wrap gap-3 mt-6">
+        <BannerActions>
+          <BannerButton to="/cars">Browse all cars</BannerButton>
+          <BannerButton to="/finance" ghost>Finance options</BannerButton>
+          <BannerButton href={whatsappUrl('Hi 4tyrezz, I want to know about current car offers.')} ghost>
+            Ask on WhatsApp
+          </BannerButton>
+        </BannerActions>
+      </DesignedPageBanner>
+
+      <Section eyebrow="How to save" title="Claim your offer">
+        <div className="grid sm:grid-cols-3 gap-5">
+          {[
+            ['01', 'Pick a live deal', 'Seasonal campaigns and price drops published by 4tyrezz appear here first.'],
+            ['02', 'Copy the code', 'If a promo code is listed, copy it and share it when our team calls you.'],
+            ['03', 'Close with 4tyrezz', 'Enquire on the car as usual. Offers are applied by our desk — not by a dealer.'],
+          ].map(([n, title, body]) => (
+            <Card key={n} className="p-6">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#3083ff]">{n}</span>
+              <h3 className="font-black text-slate-900 text-base mt-2">{title}</h3>
+              <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{body}</p>
+            </Card>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3 mt-8">
           <Link to="/cars">
             <PrimaryButton>Browse all cars</PrimaryButton>
           </Link>
@@ -75,7 +103,7 @@ export default function Offers() {
             <GhostButton>Finance options</GhostButton>
           </Link>
         </div>
-      </PageHero>
+      </Section>
 
       <Section eyebrow="Live now" title="Current promotions">
         {types.length > 2 && (
@@ -145,6 +173,14 @@ export default function Offers() {
                         {left === 0 ? 'Ends today' : `${left} day${left === 1 ? '' : 's'} left`}
                       </p>
                     )}
+                    <a
+                      href={whatsappUrl(`Hi 4tyrezz, I want to use the offer "${p.title}"${p.code ? ` (code ${p.code})` : ''}.`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-center text-xs font-black uppercase tracking-wider text-[#3083ff]"
+                    >
+                      Claim with 4tyrezz →
+                    </a>
                   </div>
                 </Card>
               );

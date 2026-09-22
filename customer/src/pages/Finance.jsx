@@ -5,12 +5,13 @@ import { BadgeCheck, Banknote, Clock, FileText, ShieldCheck } from 'lucide-react
 import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import CarCard from '../components/CarCard';
+import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
+import { isIndianMobile, digitsOnly, whatsappUrl } from '../lib/companyContact';
 import {
   BRAND,
   Card,
   Field,
   GhostButton,
-  PageHero,
   PrimaryButton,
   Section,
   Skeleton,
@@ -30,6 +31,27 @@ const BENEFITS = [
   { icon: Banknote, title: 'Up to 90% funding', body: 'Finance the on-road value of any inspected 4tyrezz listing.' },
   { icon: ShieldCheck, title: 'No hidden charges', body: 'Processing fee and rate are disclosed upfront before you sign.' },
   { icon: FileText, title: 'Minimal documents', body: 'PAN, Aadhaar, 3 months bank statement and income proof.' },
+];
+
+const BANKS = ['HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank', 'Bajaj Finserv', 'IDFC First'];
+const TENURES = [12, 24, 36, 48, 60, 72, 84];
+const FINANCE_FAQS = [
+  {
+    q: 'Will this enquiry affect my CIBIL score?',
+    a: 'No. Submitting this form is a soft request to 4tyrezz. A credit bureau pull happens only if you later sign with a lending partner.',
+  },
+  {
+    q: 'How much down payment do I need?',
+    a: 'Most used-car loans start at about 10% down. A higher down payment lowers EMI and improves approval odds.',
+  },
+  {
+    q: 'How fast is approval?',
+    a: 'Complete documents typically get a decision in 24–48 hours from our partner banks. You talk only to the 4tyrezz finance desk.',
+  },
+  {
+    q: 'Can I finance any car on 4tyrezz?',
+    a: 'Yes — every live inspected listing is eligible. Open the car page or use this calculator, then apply once.',
+  },
 ];
 
 const DOCUMENTS = [
@@ -58,6 +80,7 @@ export default function Finance() {
   const { requireAuth } = useAuthGuard();
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const downPct = price ? Math.round((downPayment / price) * 100) : 0;
 
   useEffect(() => {
     api
@@ -89,8 +112,12 @@ export default function Finance() {
   }, [loanAmount, rate, months]);
 
   const submit = () => {
-    if (!form.name || !form.phone) {
-      toast.error('Name and phone are required');
+    if (!form.name.trim()) {
+      toast.error('Please enter your name');
+      return;
+    }
+    if (!isIndianMobile(form.phone)) {
+      toast.error('Enter a valid 10-digit mobile number');
       return;
     }
     requireAuth(async () => {
@@ -120,12 +147,41 @@ export default function Finance() {
 
   return (
     <div className="bg-slate-50">
-      <PageHero
+      <DesignedPageBanner
+        src="/car-finance.png"
+        alt="Car finance on 4tyrezz"
         eyebrow="Car Finance"
-        title="Easy vehicle loans on every inspected car"
-        subtitle={`Indicative rates from ${meta.defaultInterestRate}% p.a. with tenures up to 84 months. Calculate your EMI, then get a call back from our finance desk.`}
+        title="Easy vehicle loans on every"
+        accent="inspected car"
+        subtitle={`Indicative rates from ${meta.defaultInterestRate}% p.a. with tenures up to 84 months. Calculate EMI, then get a callback from our finance desk.`}
+        points={[
+          { icon: Clock, label: '24–48 hr approval' },
+          { icon: Banknote, label: 'Up to 90% funding' },
+          { icon: ShieldCheck, label: 'No hidden charges' },
+          { icon: FileText, label: 'Minimal documents' },
+        ]}
       >
-        <div className="flex flex-wrap gap-3 mt-6">
+        <BannerActions>
+          <BannerButton href="#emi-calculator">Calculate EMI</BannerButton>
+          <BannerButton href="#apply" ghost>Apply for a loan</BannerButton>
+        </BannerActions>
+      </DesignedPageBanner>
+
+      <Section eyebrow="How it works" title="Three simple steps">
+        <div className="grid sm:grid-cols-3 gap-5">
+          {[
+            ['01', 'Pick a car', 'Choose any inspected 4tyrezz listing. The asking price feeds the EMI calculator automatically.'],
+            ['02', 'Plan your EMI', `Indicative rates from ${meta.defaultInterestRate}% p.a., tenure up to 84 months. Adjust down payment until the monthly amount fits.`],
+            ['03', 'Talk to our desk', 'Submit one form. 4tyrezz matches you with a lending partner and calls you back — you never deal with a dealer for paperwork.'],
+          ].map(([n, title, body]) => (
+            <Card key={n} className="p-6">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#3083ff]">{n}</span>
+              <h3 className="font-black text-slate-900 text-base mt-2">{title}</h3>
+              <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{body}</p>
+            </Card>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3 mt-8">
           <a href="#emi-calculator">
             <PrimaryButton>Calculate EMI</PrimaryButton>
           </a>
@@ -133,7 +189,7 @@ export default function Finance() {
             <GhostButton>Apply for a loan</GhostButton>
           </a>
         </div>
-      </PageHero>
+      </Section>
 
       <Section eyebrow="Why finance with us" title="Built for used-car buyers" bg>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -152,7 +208,7 @@ export default function Finance() {
       <div id="emi-calculator" className="scroll-mt-24">
         <Section eyebrow="Plan your budget" title="Car EMI Calculator">
           <div className="grid lg:grid-cols-[1.1fr_1fr] gap-6">
-            <Card className="p-6 space-y-6">
+            <Card className="p-6 space-y-6" highlighted>
               <SliderRow
                 label="Car price"
                 value={formatINR(price)}
@@ -168,7 +224,7 @@ export default function Finance() {
                 maxLabel="₹50 L"
               />
               <SliderRow
-                label="Down payment"
+                label={`Down payment (${downPct}%)`}
                 value={formatINR(downPayment)}
                 min={0}
                 max={price}
@@ -178,17 +234,36 @@ export default function Finance() {
                 minLabel="₹0"
                 maxLabel={formatINR(price)}
               />
-              <SliderRow
-                label="Tenure"
-                value={`${months} months`}
-                min={12}
-                max={84}
-                step={6}
-                sliderValue={months}
-                onChange={setMonths}
-                minLabel="12 months"
-                maxLabel="84 months"
-              />
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Tenure</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {TENURES.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMonths(m)}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider border transition ${
+                        months === m
+                          ? 'bg-[#3083ff] text-white border-[#3083ff]'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-[#3083ff]/50'
+                      }`}
+                    >
+                      {m / 12}Y
+                    </button>
+                  ))}
+                </div>
+                <SliderRow
+                  label=""
+                  value={`${months} months`}
+                  min={12}
+                  max={84}
+                  step={6}
+                  sliderValue={months}
+                  onChange={setMonths}
+                  minLabel="12 months"
+                  maxLabel="84 months"
+                />
+              </div>
               <SliderRow
                 label="Interest rate"
                 value={`${rate}% p.a.`}
@@ -202,7 +277,7 @@ export default function Finance() {
               />
             </Card>
 
-            <Card className="p-6 flex flex-col">
+            <Card className="p-6 flex flex-col" highlighted>
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Your monthly EMI</p>
               <p className="font-black text-slate-900 text-4xl tracking-tight mt-1">
                 {formatINR(emi)}
@@ -247,13 +322,20 @@ export default function Finance() {
       <div id="apply" className="scroll-mt-24">
         <Section eyebrow="Get started" title="Apply for car finance" bg>
           <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
-            <Card className="p-6">
+            <Card className="p-6" highlighted>
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Full name">
                   <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Your name" />
                 </Field>
                 <Field label="Mobile number">
-                  <input className={inputClass} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="10-digit mobile" />
+                  <input
+                    className={inputClass}
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={form.phone}
+                    onChange={(e) => set('phone', digitsOnly(e.target.value))}
+                    placeholder="10-digit mobile"
+                  />
                 </Field>
                 <Field label="Email">
                   <input className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" />
@@ -264,12 +346,9 @@ export default function Finance() {
                 <Field label="Preferred bank">
                   <select className={inputClass} value={form.bankName} onChange={(e) => set('bankName', e.target.value)}>
                     <option value="">Any partner bank</option>
-                    <option>HDFC Bank</option>
-                    <option>ICICI Bank</option>
-                    <option>SBI</option>
-                    <option>Axis Bank</option>
-                    <option>Bajaj Finserv</option>
-                    <option>IDFC First</option>
+                    {BANKS.map((b) => (
+                      <option key={b}>{b}</option>
+                    ))}
                   </select>
                 </Field>
                 <Field label="CIBIL bracket">
@@ -304,6 +383,16 @@ export default function Finance() {
               <PrimaryButton className="w-full mt-5" disabled={submitting} onClick={submit}>
                 {submitting ? 'Submitting…' : 'Apply for finance'}
               </PrimaryButton>
+              <a
+                href={whatsappUrl(
+                  `Hi 4tyrezz, I want car finance. Loan ${formatINR(loanAmount)} over ${months} months. EMI ~${formatINR(emi)} @ ${rate}% p.a.`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block text-center text-xs font-black uppercase tracking-wider text-[#3083ff]"
+              >
+                Or apply on WhatsApp →
+              </a>
             </Card>
 
             <Card className="p-6">
@@ -351,6 +440,53 @@ export default function Finance() {
           </Card>
         )}
       </Section>
+
+      <Section eyebrow="Lending partners" title="Banks we work with" bg>
+        <div className="flex flex-wrap justify-center gap-3">
+          {BANKS.map((b) => (
+            <span
+              key={b}
+              className="px-5 py-2.5 rounded-full bg-white border border-slate-200 text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm"
+            >
+              {b}
+            </span>
+          ))}
+        </div>
+        <p className="text-center text-xs font-medium text-slate-500 mt-4">
+          Final lender depends on your profile. 4tyrezz matches you — you never negotiate with a dealer for the loan.
+        </p>
+      </Section>
+
+      <Section eyebrow="Help" title="Finance questions">
+        <div className="max-w-3xl space-y-3">
+          {FINANCE_FAQS.map((f) => (
+            <details key={f.q} className="bg-white border border-slate-200 rounded-xl p-5 group cursor-pointer shadow-xs">
+              <summary className="font-extrabold text-slate-900 flex justify-between items-center text-sm sm:text-base">
+                <span>{f.q}</span>
+                <span className="w-7 h-7 rounded-full bg-slate-100 group-open:bg-[#3083ff] group-open:text-white flex items-center justify-center text-slate-700 font-bold text-sm transition-colors shrink-0 ml-4">
+                  +
+                </span>
+              </summary>
+              <p className="text-xs sm:text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100 leading-relaxed font-medium">
+                {f.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </Section>
+
+      <div className="lg:hidden h-16" />
+      <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-3 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-4 py-3 shadow-xl">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-white/60">Indicative EMI</p>
+            <p className="font-black text-lg leading-tight">{formatINR(emi)}<span className="text-xs font-bold text-white/60"> /mo</span></p>
+          </div>
+          <a href="#apply" className="shrink-0 px-4 py-2 rounded-xl bg-[#3083ff] text-xs font-black uppercase tracking-wider">
+            Apply now
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -359,7 +495,7 @@ function SliderRow({ label, value, min, max, step, sliderValue, onChange, minLab
   return (
     <div>
       <div className="flex justify-between items-baseline mb-2">
-        <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</span>
+        {label ? <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</span> : <span />}
         <span className="font-black text-slate-900 text-sm">{value}</span>
       </div>
       <input

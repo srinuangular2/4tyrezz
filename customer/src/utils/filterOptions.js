@@ -192,9 +192,81 @@ export const KM_RANGES = [
   ['60,000 – 80,000 km', { minKm: 60000, maxKm: 80000 }],
   ['Above 80,000 km', { minKm: 80000 }],
 ];
+
+export const PRICE_SLIDER = { min: 0, max: 2500000, step: 50000 };
+export const KM_SLIDER = { min: 0, max: 150000, step: 5000 };
+
+export function formatLakh(value, { plus = false } = {}) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return '₹0';
+  if (plus && n >= PRICE_SLIDER.max) return `₹${Math.round(PRICE_SLIDER.max / 100000)} Lakh+`;
+  if (n < 100000) return `₹${Math.round(n / 1000)}K`;
+  const lakh = n / 100000;
+  return `₹${Number.isInteger(lakh) ? lakh : lakh.toFixed(1)} Lakh`;
+}
+
+export function formatKmLabel(value, { plus = false } = {}) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return '0 km';
+  if (plus && n >= KM_SLIDER.max) return `${(KM_SLIDER.max / 100000).toFixed(1)} Lakh km+`;
+  if (n >= 100000) {
+    const lakh = n / 100000;
+    return `${Number.isInteger(lakh) ? lakh : lakh.toFixed(1)} Lakh km`;
+  }
+  return `${n.toLocaleString('en-IN')} km`;
+}
+
+export function formatPriceRangeLabel(min, max) {
+  const hasMin = min !== '' && min != null;
+  const hasMax = max !== '' && max != null;
+  if (!hasMin && !hasMax) return '';
+  if (hasMin && hasMax) return `${formatLakh(min)} – ${formatLakh(max)}`;
+  if (hasMax) return `Under ${formatLakh(max)}`;
+  return `${formatLakh(min)}+`;
+}
+
+export function formatKmRangeLabel(min, max) {
+  const hasMin = min !== '' && min != null;
+  const hasMax = max !== '' && max != null;
+  if (!hasMin && !hasMax) return '';
+  if (hasMin && hasMax) return `${formatKmLabel(min)} – ${formatKmLabel(max)}`;
+  if (hasMax) return `Under ${formatKmLabel(max)}`;
+  return `${formatKmLabel(min)}+`;
+}
 export const OWNER_TYPES = [
   ['1st owner', { ownership: 1 }],
   ['2nd owner', { ownership: 2 }],
   ['3rd owner', { ownership: 3 }],
 ];
-export const COLORS = ['White', 'Silver', 'Red', 'Black', 'Grey'];
+export const COLORS = ['White', 'Silver', 'Grey', 'Black', 'Red', 'Blue', 'Brown', 'Orange', 'Green'];
+
+export const COLOR_SWATCH = {
+  White: '#f4f4f5',
+  Silver: '#c0c4c8',
+  Grey: '#6b7280',
+  Black: '#111827',
+  Red: '#dc2626',
+  Blue: '#2563eb',
+  Brown: '#92400e',
+  Orange: '#ea580c',
+  Green: '#16a34a',
+};
+
+export const SEAT_OPTIONS = [
+  { label: '4 seater', value: '4' },
+  { label: '5 seater', value: '5' },
+  { label: '6 seater', value: '6' },
+  { label: '7 seater', value: '7' },
+  { label: '8+ seater', value: '8+' },
+];
+
+export const RTO_OPTIONS = [
+  { label: 'Hyderabad (TS)', value: 'Hyderabad' },
+  { label: 'Bengaluru (KA)', value: 'Bengaluru' },
+  { label: 'Mumbai (MH)', value: 'Mumbai' },
+  { label: 'Delhi (DL)', value: 'Delhi' },
+  { label: 'Chennai (TN)', value: 'Chennai' },
+  { label: 'Pune (MH)', value: 'Pune' },
+  { label: 'Ahmedabad (GJ)', value: 'Ahmedabad' },
+  { label: 'Jaipur (RJ)', value: 'Jaipur' },
+];
