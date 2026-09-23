@@ -313,7 +313,7 @@ export default function Insurance() {
 
             <Card className="p-6 flex flex-col" highlighted>
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Estimated annual premium</p>
-              <p className="font-black text-slate-900 text-4xl tracking-tight mt-1">{formatINR(quote.total)}</p>
+              <p className="font-black text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">{formatINR(quote.total)}</p>
               <p className="text-xs font-semibold text-slate-400 mt-1">{plan.name} · IDV {formatINR(idv)}</p>
 
               <div className="mt-6 space-y-3">

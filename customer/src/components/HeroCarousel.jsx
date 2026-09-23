@@ -64,7 +64,7 @@ function ArrowButton({ dir, onClick, label }) {
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 z-30 flex w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 text-slate-900 shadow-lg items-center justify-center hover:bg-white hover:scale-105 transition-all ${
+      className={`absolute top-1/2 -translate-y-1/2 z-30 hidden md:flex w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 text-slate-900 shadow-lg items-center justify-center hover:bg-white hover:scale-105 transition-all ${
         dir === 'prev' ? 'left-3 sm:left-4 md:left-6' : 'right-3 sm:right-4 md:right-6'
       }`}
     >
@@ -194,7 +194,7 @@ export default function HeroCarousel() {
 
   if (!loaded) {
     return (
-      <div className="w-full h-[520px] md:h-[620px] bg-slate-900 animate-pulse flex items-center">
+      <div className="w-full h-[200px] md:h-[620px] bg-slate-900 animate-pulse flex items-center">
         <div className="max-w-8xl mx-auto px-6 sm:px-12 w-full space-y-4">
           <div className="h-4 w-28 bg-slate-800 rounded-md" />
           <div className="h-12 w-2/5 bg-slate-800 rounded-lg" />
@@ -217,7 +217,7 @@ export default function HeroCarousel() {
         if (Math.abs(dx) > 50) (dx > 0 ? prev() : next());
       }}
     >
-      <div className="relative h-[520px] md:h-[600px] lg:h-[690px] w-full flex flex-col justify-between pb-8 overflow-visible">
+      <div className="relative h-[200px] md:h-[600px] lg:h-[690px] w-full flex flex-col justify-end md:justify-between pb-5 md:pb-8 overflow-hidden md:overflow-visible">
         <div className="absolute inset-0 overflow-hidden">
           {slides.map((slide, i) => (
             <div
@@ -242,12 +242,15 @@ export default function HeroCarousel() {
           </>
         )}
 
+        {/* Mobile: soft bottom shade so text stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent md:hidden" />
+
         {/* Main Banner Content */}
-        <div className="relative z-40 max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 w-full my-auto">
-          <div key={active} className="max-w-4xl text-left animate-heroCopyIn space-y-3">
+        <div className="relative z-40 max-w-7xl mx-auto px-4 sm:px-8 lg:px-8 w-full md:my-auto">
+          <div key={active} className="max-w-4xl text-left animate-heroCopyIn space-y-1.5 md:space-y-3">
             
-            {/* Eyebrow Badges */}
-            <div className="flex items-center gap-5 text-[12px] font-bold text-[#0656fe] uppercase tracking-wider">
+            {/* Eyebrow Badges — desktop only */}
+            <div className="hidden md:flex items-center gap-5 text-[12px] font-bold text-[#0656fe] uppercase tracking-wider">
               <span>USED CARS</span>
               <span>•</span>
               <span>BEST PRICES</span>
@@ -255,15 +258,19 @@ export default function HeroCarousel() {
               <span>TRUSTED</span>
             </div>
 
-            <h1 className="font-extrabold tracking-tight leading-[1.05] font-display">
-              <span className="text-[#0e172a] block text-5xl md:text-6xl lg:text-6xl font-extrabold">
+            <span className="md:hidden inline-flex text-[10px] font-bold uppercase tracking-wider text-white/90 bg-[#3083ff] px-2 py-0.5 rounded">
+              Used cars
+            </span>
+
+            <h1 className="font-extrabold tracking-tight leading-[1.1] font-display">
+              <span className="block text-[22px] md:text-6xl lg:text-6xl font-extrabold text-white md:text-[#0e172a]">
                 {line1}
               </span>
               {line2 && (
-                <span className="text-[#1853ff] block text-6xl md:text-7xl lg:text-8xl font-black">
+                <span className="block text-[26px] md:text-7xl lg:text-8xl font-black text-[#7ec4ff] md:text-[#1853ff]">
                   {line2.startsWith('M') ? (
                     <>
-                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1853ff] via-[#0072ff] to-[#00bfff]">
+                      <span className="md:bg-clip-text md:text-transparent md:bg-gradient-to-r md:from-[#1853ff] md:via-[#0072ff] md:to-[#00bfff]">
                         M
                       </span>
                       {line2.slice(1)}
@@ -276,14 +283,14 @@ export default function HeroCarousel() {
             </h1>
 
             {current.subtitle && (
-              <h6 className="text-black font-semibold text-[16px] md:text-base max-w-md leading-relaxed pt-1 pb-5">
+              <h6 className="font-medium text-[12px] md:text-base max-w-[280px] md:max-w-md leading-snug md:leading-relaxed pt-0.5 md:pt-1 pb-0 md:pb-5 line-clamp-2 md:line-clamp-none text-white/85 md:text-black md:font-semibold">
                 {current.subtitle}
               </h6>
             )}
 
             <form
               onSubmit={handleSearch}
-              className="mt-12 bg-white rounded-full shadow-xl p-2 flex flex-col md:flex-row items-center gap-2 text-slate-800 border border-slate-100 max-w-xl"
+              className="hidden md:flex mt-4 md:mt-12 bg-white rounded-2xl md:rounded-full shadow-xl p-2 flex-col md:flex-row items-center gap-2 text-slate-800 border border-slate-100 max-w-xl"
             >
               <div className="flex items-center gap-2 flex-1 px-4 py-1.5 w-full border-b md:border-b-0 md:border-r border-slate-200">
                 <svg className="w-5 h-5 text-slate-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,7 +342,7 @@ export default function HeroCarousel() {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 w-full pt-4 pointer-events-none">
+        <div className="relative z-10 hidden md:block max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 w-full pt-4 pointer-events-none">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl">
             {FEATURES.map((feat, idx) => (
               <div

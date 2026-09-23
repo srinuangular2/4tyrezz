@@ -9,6 +9,7 @@ import { formatPrice, formatKm } from '../utils/format';
 import ScrollStrip from '../components/ScrollStrip';
 import ReportAdModal from '../components/ReportAdModal';
 import { Heart } from '../components/icons';
+import { Phone, Share2 } from 'lucide-react';
 import { toggleWishlist } from '../app/wishlistSlice';
 import WhatsAppConnectButton from '../components/WhatsAppConnectButton';
 import { useAuthGuard } from '../components/AuthGuardModal';
@@ -90,6 +91,7 @@ export default function CarDetails() {
   const [emiModalTab, setEmiModalTab] = useState('breakup');
   const [tab, setTab] = useState('overview');
   const [sent, setSent] = useState(false);
+  const touchStartX = useRef(null);
 
   const [tenureYears, setTenureYears] = useState(4);
   const [interestRate, setInterestRate] = useState(14.5);
@@ -362,6 +364,19 @@ export default function CarDetails() {
     });
   };
 
+  const onGalleryTouchStart = (e) => {
+    touchStartX.current = e.changedTouches?.[0]?.clientX ?? null;
+  };
+
+  const onGalleryTouchEnd = (e) => {
+    if (touchStartX.current == null || !images.length) return;
+    const dx = (e.changedTouches?.[0]?.clientX ?? 0) - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 48) return;
+    if (dx < 0) setActiveImg((i) => (i + 1) % images.length);
+    else setActiveImg((i) => (i - 1 + images.length) % images.length);
+  };
+
   if (!car) return <div className="container-px py-16 max-w-7xl mx-auto"><CarSkeleton /></div>;
   if (car === 'error') {
     return (
@@ -444,10 +459,10 @@ export default function CarDetails() {
   const highlightFeatures = (car.features || []).slice(0, 8);
 
   return (
-    <div className="bg-cream min-h-screen pb-16">
-      <div className="container-px py-6 max-w-7xl mx-auto">
-        {/* Breadcrumb */}
-        <nav className="text-sm text-slate2 mb-5 flex flex-wrap items-center gap-1">
+    <div className="bg-slate-50 lg:bg-cream min-h-screen pb-[calc(4.5rem+4.75rem+env(safe-area-inset-bottom))] lg:pb-16">
+      <div className="lg:container-px lg:py-6 lg:max-w-7xl lg:mx-auto">
+        {/* Breadcrumb — desktop only */}
+        <nav className="hidden lg:flex text-sm text-slate2 mb-5 flex-wrap items-center gap-1 px-0">
           <Link to="/" className="hover:text-ember transition">Home</Link>
           <span>/</span>
           <Link to="/cars" className="hover:text-ember transition">Used Cars</Link>
@@ -467,12 +482,16 @@ export default function CarDetails() {
           <span className="text-ink font-medium truncate">{car.title}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-[1.55fr_1fr] gap-8 items-start">
+        <div className="grid lg:grid-cols-[1.55fr_1fr] lg:gap-8 items-start">
           {/* LEFT */}
-          <div className="space-y-6">
-            {/* Gallery */}
-            <div className={`${glassCard} rounded-2xl overflow-hidden`}>
-              <div className="relative h-[380px] sm:h-[420px] bg-slate-900 group">
+          <div className="space-y-3 lg:space-y-6">
+            {/* Gallery — full-bleed on mobile */}
+            <div className={`overflow-hidden bg-white lg:bg-transparent lg:rounded-2xl ${glassCard} lg:shadow-[0_8px_24px_rgba(15,23,42,0.08)] rounded-none border-0 lg:border`}>
+              <div
+                className="relative h-[248px] sm:h-[300px] lg:h-[420px] bg-slate-900 group"
+                onTouchStart={onGalleryTouchStart}
+                onTouchEnd={onGalleryTouchEnd}
+              >
                 {showVideo && car.videoUrl ? (
                   ytId && !isMp4(car.videoUrl) ? (
                     <iframe
@@ -498,33 +517,65 @@ export default function CarDetails() {
                       onClick={() => setLightboxOpen(true)}
                       className="w-full h-full object-cover cursor-zoom-in"
                     />
-                    <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                       {(inspection.ratingScore || car.inspectionScore) && (
-                        <span className="bg-emerald-950/90 text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-800/50">
-                          ★ {inspection.ratingScore || car.inspectionScore}/100 Inspected
+                        <span className="bg-emerald-950/90 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-md border border-emerald-800/50">
+                          ★ {inspection.ratingScore || car.inspectionScore}/100
                         </span>
                       )}
                       {car.isFeatured && (
-                        <span className="bg-ink/90 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Featured</span>
+                        <span className="bg-ink/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-md">Featured</span>
                       )}
                       {car.isPremium && (
-                        <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Premium</span>
+                        <span className="bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md">Premium</span>
                       )}
+                    </div>
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 lg:hidden">
+                      <button
+                        type="button"
+                        onClick={handleShare}
+                        className="w-9 h-9 rounded-full bg-white/95 text-slate-800 shadow flex items-center justify-center"
+                        aria-label="Share"
+                      >
+                        <Share2 className="w-4 h-4" strokeWidth={2.2} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleWishlist}
+                        className="w-9 h-9 rounded-full bg-white/95 shadow flex items-center justify-center"
+                        aria-label="Wishlist"
+                      >
+                        <Heart filled={wishlisted} className={wishlisted ? 'text-[#3083ff] w-4 h-4' : 'text-slate-500 w-4 h-4'} />
+                      </button>
                     </div>
                     {car.videoUrl && (
                       <button
                         type="button"
                         onClick={() => setShowVideo(true)}
-                        className="absolute bottom-4 left-4 bg-white/80 backdrop-blur-md border border-white/20 text-ink text-xs font-bold px-3 py-2 rounded-xl shadow-md"
+                        className="absolute bottom-3 left-3 bg-white/90 text-ink text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-md"
                       >
-                        ▶ Watch walkaround
+                        ▶ Video
                       </button>
                     )}
                     {imagesCount > 1 && (
                       <>
-                        <button type="button" onClick={prevImg} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 text-ink shadow-md font-bold opacity-0 group-hover:opacity-100 transition">‹</button>
-                        <button type="button" onClick={nextImg} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 text-ink shadow-md font-bold opacity-0 group-hover:opacity-100 transition">›</button>
-                        <span className="absolute bottom-4 right-4 bg-black/70 text-white text-xs font-semibold px-3 py-1 rounded-full">{activeImg + 1} / {imagesCount}</span>
+                        <button
+                          type="button"
+                          onClick={prevImg}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/95 text-ink shadow-md font-bold opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={nextImg}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/95 text-ink shadow-md font-bold opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                        >
+                          ›
+                        </button>
+                        <span className="absolute bottom-3 right-3 bg-black/70 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                          {activeImg + 1} / {imagesCount}
+                        </span>
                       </>
                     )}
                   </>
@@ -535,7 +586,7 @@ export default function CarDetails() {
                   <button
                     type="button"
                     onClick={() => setShowVideo(false)}
-                    className="absolute top-4 right-4 bg-white/80 backdrop-blur-md border border-white/20 text-ink text-xs font-bold px-3 py-1.5 rounded-lg"
+                    className="absolute top-3 right-3 bg-white/90 text-ink text-xs font-bold px-3 py-1.5 rounded-lg"
                   >
                     Photos
                   </button>
@@ -543,7 +594,7 @@ export default function CarDetails() {
               </div>
 
               {(imagesCount > 1 || car.videoUrl) && (
-                <div className="px-4 py-3 border-t border-white/20 flex items-center gap-2">
+                <div className="hidden lg:flex px-4 py-3 border-t border-white/20 items-center gap-2">
                   {imagesCount > 5 && (
                     <button type="button" onClick={() => handleScrollThumbs('left')} className="w-8 h-8 rounded-full border border-white/30 bg-white/70 shrink-0">‹</button>
                   )}
@@ -580,31 +631,87 @@ export default function CarDetails() {
               <ImageLightbox images={images} startIndex={activeImg} onClose={() => setLightboxOpen(false)} />
             )}
 
+            {/* Mobile app-style price / specs header */}
+            <div className="lg:hidden bg-white px-4 py-4 border-b border-slate-100">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h1 className="text-[18px] font-black text-slate-900 leading-snug">
+                    {car.year} {car.brand?.name} {car.model?.name}
+                  </h1>
+                  {car.variant && <p className="text-[12px] text-slate-500 mt-0.5 truncate">{car.variant}</p>}
+                </div>
+                {priceVerdict?.label && (
+                  <span className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-md border uppercase ${PRICE_BADGE[priceVerdict.tone] || PRICE_BADGE.fair}`}>
+                    {priceVerdict.label}
+                  </span>
+                )}
+              </div>
+              <p className="text-[22px] font-black text-slate-900 mt-2.5 tracking-tight">{formatPrice(car.price)}</p>
+              <button
+                type="button"
+                onClick={() => setShowEmiModal(true)}
+                className="mt-2 text-[12px] font-bold text-[#1853ff] bg-blue-50 px-3 py-2 rounded-lg w-full text-left"
+              >
+                EMI from {formatPrice(calculatedEmi)}/mo · View breakup →
+              </button>
+              <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar pb-0.5">
+                <SpecChip>{formatKm(car.kmDriven)}</SpecChip>
+                <SpecChip>{car.fuel}</SpecChip>
+                <SpecChip>{car.transmission}</SpecChip>
+                <SpecChip>{ownerLabel(car.ownership)}</SpecChip>
+                {car.city?.name && <SpecChip>{car.city.name}</SpecChip>}
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={handleCompare}
+                  className="text-[11px] font-bold py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700"
+                >
+                  Compare
+                </button>
+                <button
+                  type="button"
+                  onClick={() => requireAuth(() => setShowFinance(true))}
+                  className="text-[11px] font-bold py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700"
+                >
+                  Finance
+                </button>
+                <button
+                  type="button"
+                  onClick={() => requireAuth(() => setShowBook(true))}
+                  className="text-[11px] font-bold py-2 rounded-xl bg-slate-900 text-white"
+                >
+                  Book
+                </button>
+              </div>
+            </div>
+
+            <div className="px-4 lg:px-0 space-y-3 lg:space-y-6">
             {/* Why this car + market price */}
-            <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-soft">
-              <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
+            <section className="bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-6 shadow-sm lg:shadow-soft">
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-4 lg:mb-5">
                 <div>
-                  <h2 className="font-display text-xl font-bold text-ink">Why consider this car?</h2>
+                  <h2 className="text-[15px] lg:font-display lg:text-xl font-black lg:font-bold text-ink">Why consider this car?</h2>
                   {insights.goodBuyReason && (
-                    <p className="text-sm text-slate2 mt-2 leading-relaxed max-w-2xl">{insights.goodBuyReason}</p>
+                    <p className="text-[13px] lg:text-sm text-slate2 mt-2 leading-relaxed max-w-2xl">{insights.goodBuyReason}</p>
                   )}
                 </div>
                 {priceVerdict?.label && (
-                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full border uppercase tracking-wide ${PRICE_BADGE[priceVerdict.tone] || PRICE_BADGE.fair}`}>
+                  <span className={`hidden lg:inline text-xs font-bold px-3 py-1.5 rounded-full border uppercase tracking-wide ${PRICE_BADGE[priceVerdict.tone] || PRICE_BADGE.fair}`}>
                     {priceVerdict.label}
                   </span>
                 )}
               </div>
 
               {marketMin != null && marketMax != null && (
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <div className="bg-slate-50 rounded-xl p-3.5 lg:p-4 border border-slate-100">
                   <div className="flex justify-between text-xs font-semibold text-slate2 mb-2">
                     <span>Market range</span>
                     <span>{formatPrice(marketMin)} – {formatPrice(marketMax)}</span>
                   </div>
                   <div className="relative h-2 rounded-full bg-gradient-to-r from-emerald-200 via-sky-200 to-amber-200">
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-ember border-2 border-white shadow-md"
+                      className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#3083ff] lg:bg-ember border-2 border-white shadow-md"
                       style={{ left: `calc(${pricePosition}% - 8px)` }}
                     />
                   </div>
@@ -621,9 +728,9 @@ export default function CarDetails() {
             </section>
 
             {/* Quick insights */}
-            <section className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft">
-                <h3 className="text-sm font-bold text-ink uppercase tracking-wide mb-3">Fit for you</h3>
+            <section className="grid md:grid-cols-2 gap-3 lg:gap-4">
+              <div className="bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-5 shadow-sm lg:shadow-soft">
+                <h3 className="text-[12px] lg:text-sm font-black lg:font-bold text-ink uppercase tracking-wide mb-2.5 lg:mb-3">Fit for you</h3>
                 {insights.fitForYou ? (
                   <p className="text-sm text-slate2 leading-relaxed mb-4">{insights.fitForYou}</p>
                 ) : (
@@ -640,8 +747,8 @@ export default function CarDetails() {
                 )}
               </div>
 
-              <div className="bg-amber-50/80 rounded-2xl border border-amber-200/70 p-5 shadow-soft">
-                <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide mb-3">Things to check</h3>
+              <div className="bg-amber-50/80 rounded-2xl border border-amber-200/70 p-4 lg:p-5 shadow-sm lg:shadow-soft">
+                <h3 className="text-[12px] lg:text-sm font-black lg:font-bold text-amber-900 uppercase tracking-wide mb-2.5 lg:mb-3">Things to check</h3>
                 {thingsToCheck.length > 0 ? (
                   <ul className="space-y-3">
                     {thingsToCheck.map((item) => (
@@ -759,11 +866,11 @@ export default function CarDetails() {
             )}
 
             {/* RTO card */}
-            <section className="bg-gradient-to-r from-orange-50 to-white rounded-2xl border border-orange-100 p-6 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <section className="bg-gradient-to-r from-blue-50 to-white lg:from-orange-50 lg:to-white rounded-2xl border border-blue-100 lg:border-orange-100 p-4 lg:p-6 shadow-sm lg:shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-5">
               <div>
-                <h3 className="font-display text-lg font-bold text-ink">RTO & document report</h3>
-                <p className="text-sm text-slate2 mt-1">Registration, insurance, and compliance details for this listing</p>
-                <div className="flex flex-wrap gap-4 mt-4 text-sm">
+                <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink">RTO & document report</h3>
+                <p className="text-[12px] lg:text-sm text-slate2 mt-1">Registration, insurance, and compliance details for this listing</p>
+                <div className="flex flex-wrap gap-3 lg:gap-4 mt-3 lg:mt-4 text-sm">
                   {rto.rcNumber && <span className="font-semibold text-ink">RC: {rto.rcNumber}</span>}
                   {rto.rcStatus && (
                     <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded uppercase">{rto.rcStatus}</span>
@@ -774,7 +881,7 @@ export default function CarDetails() {
               <button
                 type="button"
                 onClick={() => setShowRTOModal(true)}
-                className="px-5 py-3 rounded-xl border-2 border-ember text-ember hover:bg-ember/5 font-bold text-sm shrink-0 transition"
+                className="px-5 py-3 rounded-xl border-2 border-[#3083ff] text-[#1853ff] lg:border-ember lg:text-ember hover:bg-[#3083ff]/5 lg:hover:bg-ember/5 font-bold text-sm shrink-0 transition"
               >
                 View full RTO details
               </button>
@@ -782,7 +889,7 @@ export default function CarDetails() {
 
             {/* Tabs */}
             <div className={`${glassCard} rounded-2xl overflow-hidden`}>
-              <div className="flex border-b border-slate-100 px-2">
+              <div className="flex border-b border-slate-100 px-1 lg:px-2 overflow-x-auto no-scrollbar">
                 {[
                   ['overview', 'Overview'],
                   ['specs', 'Specifications'],
@@ -792,14 +899,14 @@ export default function CarDetails() {
                     key={key}
                     type="button"
                     onClick={() => setTab(key)}
-                    className={`px-5 py-4 text-sm font-bold border-b-2 -mb-px transition ${tab === key ? 'border-ember text-ember' : 'border-transparent text-slate2 hover:text-ink'}`}
+                    className={`px-4 lg:px-5 py-3.5 lg:py-4 text-[13px] lg:text-sm font-bold border-b-2 -mb-px transition shrink-0 ${tab === key ? 'border-[#3083ff] text-[#1853ff] lg:border-ember lg:text-ember' : 'border-transparent text-slate2 hover:text-ink'}`}
                   >
                     {label}
                   </button>
                 ))}
               </div>
 
-              <div className="p-6">
+              <div className="p-4 lg:p-6">
                 {tab === 'overview' && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {overviewItems.map(({ label, value }) => (
@@ -873,10 +980,11 @@ export default function CarDetails() {
               onViewBreakup={() => setShowEmiModal(true)}
               onApply={() => requireAuth(() => setShowFinance(true))}
             />
+            </div>
           </div>
 
-          {/* RIGHT STICKY CARD */}
-          <aside className="lg:sticky lg:top-24 space-y-4">
+          {/* RIGHT STICKY CARD — desktop only */}
+          <aside className="hidden lg:block lg:sticky lg:top-24 space-y-4">
             <div className={`${glassPanel} rounded-2xl p-6`}>
               <div className="flex justify-between items-start gap-3 mb-3">
                 <div>
@@ -975,42 +1083,63 @@ export default function CarDetails() {
 
         {/* Similar sections */}
         {similar.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-8 lg:mt-12 px-4 lg:px-0">
             <ScrollStrip title="Similar cars you may like">
               {similar.map((c) => (
-                <div key={c._id} className="w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
+                <div key={c._id} className="w-[210px] lg:w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
               ))}
             </ScrollStrip>
           </div>
         )}
 
         {recommended.length > 0 && (
-          <div className="mt-8">
+          <div className="mt-6 lg:mt-8 px-4 lg:px-0">
             <ScrollStrip title="Recommended in your budget">
               {recommended.map((c) => (
-                <div key={c._id} className="w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
+                <div key={c._id} className="w-[210px] lg:w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
               ))}
             </ScrollStrip>
           </div>
         )}
 
         {similarModels.length > 0 && (
-          <div className="mt-8">
+          <div className="mt-6 lg:mt-8 px-4 lg:px-0">
             <ScrollStrip title="Explore similar models">
               {similarModels.map(({ model, startingPrice, count }) => (
                 <Link
                   key={model._id}
                   to={`/cars?model=${model._id}`}
-                  className="w-[220px] shrink-0 snap-start bg-white border border-slate-200 rounded-2xl p-4 shadow-soft hover:shadow-md transition"
+                  className="w-[180px] lg:w-[220px] shrink-0 snap-start bg-white border border-slate-200 rounded-2xl p-4 shadow-soft hover:shadow-md transition"
                 >
                   <p className="font-bold text-ink">{model.name}</p>
-                  <p className="text-ember font-display font-semibold text-sm mt-1">From {formatPrice(startingPrice)}</p>
+                  <p className="text-[#3083ff] lg:text-ember font-display font-semibold text-sm mt-1">From {formatPrice(startingPrice)}</p>
                   <p className="text-xs text-slate2 mt-1">{count} {count === 1 ? 'listing' : 'listings'} available</p>
                 </Link>
               ))}
             </ScrollStrip>
           </div>
         )}
+      </div>
+
+      {/* Mobile sticky CTA — above BottomNav */}
+      <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(15,23,42,0.08)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-2 gap-2 px-3 py-2.5">
+          <button
+            type="button"
+            onClick={handleCallDealer}
+            className="inline-flex items-center justify-center gap-1.5 h-11 rounded-xl border border-[#3083ff]/30 bg-blue-50 text-[#1853ff] text-[13px] font-black"
+          >
+            <Phone className="w-4 h-4" strokeWidth={2.4} />
+            Call
+          </button>
+          <button
+            type="button"
+            onClick={() => requireAuth(() => setShowContact(true))}
+            className="inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-[#3083ff] text-white text-[13px] font-black shadow-sm"
+          >
+            Contact seller
+          </button>
+        </div>
       </div>
 
       {/* RTO Modal */}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
-    <footer className="relative bg-slate-950 text-slate-400 text-xs border-t border-[#3083ff]/30 pt-16 pb-8 overflow-hidden">
+    <footer className="hidden lg:block relative bg-slate-950 text-slate-400 text-xs border-t border-[#3083ff]/30 pt-16 pb-8 overflow-hidden">
       {/* Background Subtle Radial Glow FX */}
       <div 
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[250px] bg-[#3083ff]/10 blur-[120px] pointer-events-none rounded-full" 

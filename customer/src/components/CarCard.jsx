@@ -314,13 +314,13 @@ export default function CarCard({ car }) {
   return (
     <Link
       to={`/cars/${car._id}`}
-      className="group relative flex flex-col h-full bg-white/40 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-[0_20px_40px_0_rgba(37,99,235,0.2)] hover:border-blue-500/50 transition-all duration-500 overflow-hidden"
+      className="group relative flex flex-col h-full bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl border border-slate-200/80 lg:border-white/60 lg:bg-white/40 lg:backdrop-blur-xl shadow-[0_4px_16px_rgba(15,23,42,0.06)] lg:shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-[0_20px_40px_0_rgba(37,99,235,0.2)] hover:border-blue-500/50 transition-all duration-500 overflow-hidden"
     >
       {/* Top Radiant Blue Gradient Beam on Hover */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-30" />
 
       {/* Media Box */}
-      <div className="relative h-52 bg-slate-100 overflow-hidden shrink-0">
+      <div className="relative h-[118px] sm:h-44 lg:h-52 bg-slate-100 overflow-hidden shrink-0">
         {img ? (
           <img
             src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
@@ -337,21 +337,21 @@ export default function CarCard({ car }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-black/20 pointer-events-none" />
 
         {/* Floating Top Header Bar */}
-        <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-20 pointer-events-none">
+        <div className="absolute top-2 left-2 right-2 sm:top-3.5 sm:left-3.5 sm:right-3.5 flex items-center justify-between z-20 pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             {car.year && (
-              <span className="bg-white/70 backdrop-blur-md text-slate-900 text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-lg border border-white/80">
+              <span className="bg-white/80 backdrop-blur-md text-slate-900 text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full shadow-lg border border-white/80">
                 {car.year}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 pointer-events-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
             <button
               type="button"
               onClick={handleCompare}
               aria-label="Add to compare"
-              className="h-9 px-2.5 rounded-full bg-white/60 backdrop-blur-md border border-white/80 text-[10px] font-black uppercase tracking-wider text-slate-800 hover:bg-white hover:text-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer"
+              className="hidden sm:inline-flex h-9 px-2.5 rounded-full bg-white/60 backdrop-blur-md border border-white/80 text-[10px] font-black uppercase tracking-wider text-slate-800 hover:bg-white hover:text-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer"
             >
               VS
             </button>
@@ -359,7 +359,7 @@ export default function CarCard({ car }) {
               type="button"
               onClick={handleWishlist}
               aria-label="Add to wishlist"
-              className="w-9 h-9 rounded-full bg-white/60 backdrop-blur-md border border-white/80 flex items-center justify-center text-slate-700 hover:bg-white hover:text-blue-600 hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer"
+              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/60 backdrop-blur-md border border-white/80 flex items-center justify-center text-slate-700 hover:bg-white hover:text-blue-600 hover:scale-110 active:scale-95 transition-all shadow-lg cursor-pointer"
             >
               <Heart filled={wishlisted} className={wishlisted ? 'text-blue-600 fill-current' : 'text-slate-700'} />
             </button>
@@ -368,37 +368,37 @@ export default function CarCard({ car }) {
       </div>
 
       {/* Content Body */}
-      <div className="p-5 flex flex-col justify-between flex-1 relative bg-gradient-to-b from-white/30 to-white/80 backdrop-blur-md">
+      <div className="p-2.5 sm:p-4 lg:p-5 flex flex-col justify-between flex-1 relative bg-white lg:bg-gradient-to-b lg:from-white/30 lg:to-white/80 lg:backdrop-blur-md">
         <div>
           {/* Title */}
-          <h3 className="text-base font-semibold text-slate-900 leading-snug line-clamp-1 group-hover:text-blue-600 transition-colors duration-300">
+          <h3 className="text-[12px] sm:text-base font-bold sm:font-semibold text-slate-900 leading-snug line-clamp-2 sm:line-clamp-1 group-hover:text-blue-600 transition-colors duration-300">
             {car.title}
           </h3>
 
           {/* Spec Strip */}
-          <div className="mt-3.5 py-2.5 px-3.5 bg-white/50 backdrop-blur-sm rounded-2xl border border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-600 shadow-inner group-hover:border-blue-200 transition-colors">
+          <div className="mt-2 sm:mt-3.5 py-1.5 sm:py-2.5 px-1.5 sm:px-3.5 bg-slate-50 sm:bg-white/50 backdrop-blur-sm rounded-lg sm:rounded-2xl border border-slate-100 sm:border-slate-200/60 flex flex-wrap sm:flex-nowrap items-center gap-x-1 gap-y-0.5 sm:justify-between text-[10px] sm:text-xs font-semibold text-slate-600 sm:shadow-inner group-hover:border-blue-200 transition-colors">
             <span>{formatKm(car.kmDriven)}</span>
-            <span className="text-slate-300 font-normal">•</span>
+            <span className="text-slate-300 font-normal hidden sm:inline">•</span>
             <span>{car.fuel || 'Petrol'}</span>
-            <span className="text-slate-300 font-normal">•</span>
-            <span>{car.transmission || 'Manual'}</span>
+            <span className="text-slate-300 font-normal hidden sm:inline">•</span>
+            <span className="hidden sm:inline">{car.transmission || 'Manual'}</span>
           </div>
         </div>
 
         {/* Footer: Price & EMI CTA */}
-        <div className="mt-5 pt-3.5 border-t border-slate-200/60 flex items-center justify-between">
-          <div className="flex flex-col">
+        <div className="mt-2.5 sm:mt-5 pt-2 sm:pt-3.5 border-t border-slate-100 sm:border-slate-200/60 flex items-end sm:items-center justify-between gap-1">
+          <div className="flex flex-col min-w-0">
             {calculatedEmi > 0 && (
-              <span className="text-[11px] font-medium text-slate-500 -mb-0.5">
-                EMI from <strong className="font-bold text-blue-600">{formatPrice(calculatedEmi)}/mo</strong>
+              <span className="text-[9px] sm:text-[11px] font-medium text-slate-500 -mb-0.5 truncate">
+                EMI <strong className="font-bold text-[#3083ff] sm:text-blue-600">{formatPrice(calculatedEmi)}</strong>
               </span>
             )}
-            <span className="font-bold text-xl text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors duration-300">
+            <span className="font-black sm:font-bold text-[14px] sm:text-xl text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors duration-300">
               {formatPrice(carPrice)}
             </span>
           </div>
 
-          <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg group-hover:bg-blue-600 group-hover:shadow-blue-500/40 transition-all duration-300 group-hover:rotate-[-45deg]">
+          <div className="hidden sm:flex w-10 h-10 rounded-2xl bg-slate-900 text-white items-center justify-center shadow-lg group-hover:bg-blue-600 group-hover:shadow-blue-500/40 transition-all duration-300 group-hover:rotate-[-45deg]">
             <span className="font-black text-base">→</span>
           </div>
         </div>

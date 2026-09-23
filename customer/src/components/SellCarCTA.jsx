@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function SellCarCTA() {
   return (
-    <section className="relative my-12 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0c2e68] via-[#103e8c] to-[#0a234e] text-white shadow-[0_20px_50px_rgba(48,131,255,0.25)] border border-[#3083ff]/30">
+    <section className="relative my-6 lg:my-12 overflow-hidden rounded-2xl lg:rounded-3xl bg-gradient-to-br from-[#0c2e68] via-[#103e8c] to-[#0a234e] text-white shadow-md lg:shadow-[0_20px_50px_rgba(48,131,255,0.25)] border border-[#3083ff]/30">
       
       {/* Background Radial Glow Effects using #3083ff */}
       <div className="absolute -top-28 -left-28 h-96 w-96 rounded-full bg-[#3083ff]/30 blur-[110px] pointer-events-none" />
@@ -11,7 +11,7 @@ export default function SellCarCTA() {
       {/* Top Beam Light Bar */}
       <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-300 via-[#3083ff] to-indigo-400" />
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 p-8 md:p-12 items-center">
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 p-4 sm:p-8 lg:p-12 items-center">
         
         {/* Left Content Column */}
         <div className="lg:col-span-7 flex flex-col gap-6">
@@ -20,7 +20,7 @@ export default function SellCarCTA() {
             Car Finance
           </div>
 
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+          <h2 className="text-xl sm:text-3xl lg:text-5xl font-black tracking-tight leading-tight">
             Drive home today. Pay easy <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-100 via-[#3083ff] to-cyan-300">monthly EMIs.</span>
           </h2>
 
@@ -48,7 +48,7 @@ export default function SellCarCTA() {
 
         {/* Right Glassmorphic Cards Grid */}
         <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-          <div className="p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg hover:bg-[#3083ff]/20 hover:border-[#3083ff]/60 transition-all duration-300 flex flex-col justify-between h-36 group">
+          <div className="p-3.5 lg:p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg flex flex-col justify-between h-28 lg:h-36 group">
             <div className="w-10 h-10 rounded-xl bg-[#3083ff]/25 border border-[#3083ff]/40 flex items-center justify-center text-blue-200 font-black group-hover:scale-110 transition-transform">
               ⚡
             </div>
@@ -58,7 +58,7 @@ export default function SellCarCTA() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg hover:bg-[#3083ff]/20 hover:border-[#3083ff]/60 transition-all duration-300 flex flex-col justify-between h-36 group">
+          <div className="p-3.5 lg:p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg flex flex-col justify-between h-28 lg:h-36 group">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-black group-hover:scale-110 transition-transform">
               💳
             </div>
@@ -68,7 +68,7 @@ export default function SellCarCTA() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg hover:bg-[#3083ff]/20 hover:border-[#3083ff]/60 transition-all duration-300 flex flex-col justify-between h-36 group">
+          <div className="p-3.5 lg:p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg flex flex-col justify-between h-28 lg:h-36 group">
             <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-black group-hover:scale-110 transition-transform">
               🏠
             </div>
@@ -78,7 +78,7 @@ export default function SellCarCTA() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg hover:bg-[#3083ff]/20 hover:border-[#3083ff]/60 transition-all duration-300 flex flex-col justify-between h-36 group">
+          <div className="p-3.5 lg:p-5 rounded-2xl bg-[#3083ff]/10 backdrop-blur-xl border border-[#3083ff]/30 shadow-lg flex flex-col justify-between h-28 lg:h-36 group">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-300 font-black group-hover:scale-110 transition-transform">
               📋
             </div>

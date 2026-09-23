@@ -11,6 +11,14 @@
     @apply font-display;
   }
 
+  @media (max-width: 1023px) {
+    h1, h2, h3, h4, h5, h6 {
+      font-family: Poppins, sans-serif;
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
+  }
+
   input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='hidden']):not([type='color']):not([type='submit']):not([type='button']),
   select,
   textarea {
@@ -111,6 +119,9 @@ html { scroll-behavior: smooth; }
   0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
   50% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
 }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 .badge-pulse { animation: badge-pulse 1.6s ease-in-out infinite; }
 .bell-badge-glow { animation: badge-pulse 1.4s ease-in-out infinite; }
 

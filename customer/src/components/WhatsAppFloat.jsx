@@ -8,7 +8,7 @@ export default function WhatsAppFloat() {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${defaultMessage}`;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 group">
+    <div className="hidden lg:flex fixed bottom-6 right-6 z-40 items-center gap-3 group">
       {/* Tooltip Label (Appears on Hover) */}
       <span className="opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 pointer-events-none inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 text-white text-xs font-semibold border border-[#3083ff]/40 backdrop-blur-md shadow-lg shadow-black/30">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

@@ -16,9 +16,11 @@ import HowItWorks from '../components/HowItWorks';
 import CarBannerSection from '../components/CarBannerSection';
 import WhatsAppFloat from '../components/WhatsAppFloat';
 import LastViewedCars from '../components/LastViewedCars';
+import { Car, BadgeCheck, Scale, GitCompare, Banknote, Shield, Tag, Phone } from 'lucide-react';
 import CompareVsCard from '../components/CompareVsCard';
 import { mediaUrl } from './profile/hubUtils';
 import { BUDGETS, budgetQuery } from '../utils/filterOptions';
+import { formatKm, formatPrice } from '../utils/format';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -55,40 +57,41 @@ function Section({ eyebrow, title, viewAllHref, children, bg, className = '' }) 
   };
 
   return (
-    <section className={`${bg ? 'bg-white' : ''} py-16  ${className}`}>
+    <section className={`${bg ? 'bg-white' : ''} py-5 lg:py-16 ${className}`}>
       <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
         {(eyebrow || title || viewAllHref) && (
-          <div className="flex items-end justify-between pb-3 mb-5 border-b border-slate-100">
-            <div>
+          <div className="flex items-center justify-between gap-3 mb-3 lg:items-end lg:pb-3 lg:mb-5 lg:border-b lg:border-slate-100">
+            <div className="min-w-0">
               {eyebrow && (
-                <p className="text-[14px] font-medium text-[#909294] uppercase tracking-[5px] font-display mb-3">
+                <p className="hidden sm:block text-[14px] font-medium text-[#909294] uppercase tracking-[5px] font-display mb-3">
                   {eyebrow}
                 </p>
               )}
               {title && (
-                <h2 className="text-3xl sm:text-4xl uppercase tracking-tight font-display">
-                  {renderFormattedTitle(title)}
-                </h2>
+                <>
+                  <h2 className="lg:hidden text-[17px] font-black text-slate-900 tracking-tight normal-case">
+                    {typeof title === 'string' ? title : title}
+                  </h2>
+                  <h2 className="hidden lg:block text-4xl uppercase tracking-tight font-display">
+                    {renderFormattedTitle(title)}
+                  </h2>
+                </>
               )}
             </div>
             {viewAllHref && (
               <Link
                 to={viewAllHref}
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-black hover:text-[#3083ff] transition-all group font-display uppercase tracking-wider mb-1"
+                className="shrink-0 text-[13px] font-bold text-[#3083ff] lg:inline-flex lg:items-center lg:gap-1.5 lg:text-sm lg:font-semibold lg:text-black lg:uppercase lg:tracking-wider"
               >
-                <span>View All</span>
+                <span className="lg:hidden">View all</span>
+                <span className="hidden lg:inline">View All</span>
                 <svg
-                  className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
+                  className="hidden lg:inline w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2.5"
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </Link>
             )}
@@ -148,6 +151,17 @@ export default function Home() {
     if (selectedBody) params.set('bodyType', selectedBody);
     navigate(`/cars?${params.toString()}`);
   };
+
+  const menuCards = [
+    { label: 'Buy Used Cars', hint: 'Inspected cars near you', path: '/cars', icon: Car },
+    { label: 'Sell My Car', hint: 'Doorstep evaluation', path: '/sell', icon: BadgeCheck },
+    { label: 'Car Valuation', hint: 'Know a fair price', path: '/valuation', icon: Scale },
+    { label: 'Compare', hint: 'See cars side by side', path: '/compare', icon: GitCompare },
+    { label: 'Finance', hint: 'EMI on used cars', path: '/finance', icon: Banknote },
+    { label: 'Insurance', hint: 'Paperless cover', path: '/insurance', icon: Shield },
+    { label: 'Offers', hint: 'Deals on live stock', path: '/offers', icon: Tag, badge: 'HOT' },
+    { label: 'Contact', hint: 'Talk to 4tyrezz', path: '/contact', icon: Phone },
+  ];
 
   return (
     <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased selection:bg-[#3083ff] selection:text-white">
@@ -251,10 +265,34 @@ export default function Home() {
         </div>
       </section>
 
-
+      <section className="lg:hidden px-3 pt-4 bg-slate-50">
+        <h2 className="text-[17px] font-black text-slate-900 mb-3">Our services</h2>
+        <div className="grid grid-cols-2 gap-2.5">
+          {menuCards.map(({ label, hint, path, icon: Icon, badge }) => (
+            <Link
+              key={path}
+              to={path}
+              className="relative p-3.5 rounded-2xl bg-gradient-to-br from-[#0c2e68] to-[#1853ff] border border-[#3083ff]/30 h-[118px] flex flex-col justify-between"
+            >
+              <span className="w-9 h-9 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center text-white">
+                <Icon className="w-[18px] h-[18px]" strokeWidth={2} />
+              </span>
+              {badge && (
+                <span className="absolute top-3 right-3 text-[8px] font-black text-[#1853ff] bg-white px-1.5 py-0.5 rounded">
+                  {badge}
+                </span>
+              )}
+              <span>
+                <span className="block text-white font-extrabold text-[13px] leading-tight">{label}</span>
+                <span className="block text-blue-100/80 text-[11px] mt-0.5">{hint}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {/* ---- KEY METRICS ---- */}
-      <section className="py-16 bg-white">
+      <section className="hidden lg:block py-16 bg-white">
         <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
           <QuickServices />
         </div>
@@ -291,7 +329,23 @@ export default function Home() {
       <Section eyebrow="all brands" title="Popular Brands" bg>
   <div className="flex flex-col gap-8">
     {/* Top 12 Brands Glassmorphism Grid */}
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <div className="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      {displayedBrands.slice(0, 12).map((b) => (
+        <Link
+          key={`m-${b._id}`}
+          to={`/cars?brand=${b._id}`}
+          className="shrink-0 w-[78px] h-[78px] rounded-2xl bg-white border border-slate-200 flex flex-col items-center justify-center gap-1 px-1"
+        >
+          {b.logo ? (
+            <img src={mediaUrl(b.logo)} alt="" className="h-7 max-w-[48px] object-contain" />
+          ) : (
+            <span className="text-[11px] font-black text-[#3083ff]">{b.name.slice(0, 2).toUpperCase()}</span>
+          )}
+          <span className="text-[10px] font-semibold text-slate-700 line-clamp-1">{b.name}</span>
+        </Link>
+      ))}
+    </div>
+    <div className="hidden lg:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
       {displayedBrands.slice(0, 12).map((b) => (
         <Link
           key={b._id}
@@ -325,7 +379,7 @@ export default function Home() {
     </div>
 
     {/* View All Brands CTA Button */}
-    <div className="flex justify-center mt-2">
+    <div className="hidden lg:flex justify-center mt-2">
       <Link
         to="/brands"
         className="group relative inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-slate-900/90 text-white font-bold text-sm backdrop-blur-md border border-white/20 shadow-lg hover:bg-blue-600 hover:shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all duration-300"
@@ -534,7 +588,6 @@ export default function Home() {
      
 
       <WhatsAppFloat/>
-     
     </div>
   );
 }
@@ -577,14 +630,14 @@ function PopularComparisons() {
           <button
             ref={prevRef}
             aria-label="Previous comparisons"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md items-center justify-center font-bold text-base cursor-pointer"
           >
             ‹
           </button>
           <button
             ref={nextRef}
             aria-label="Next comparisons"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md items-center justify-center font-bold text-base cursor-pointer"
           >
             ›
           </button>
@@ -681,20 +734,43 @@ function CarSlider({ cars }) {
   const nextRef = useRef(null);
 
   if (!cars?.length) return <p className="text-slate-500 font-medium text-sm py-4">No vehicles available right now.</p>;
-  
+
+  const thumb = (car) => {
+    const img = car.images?.[0];
+    if (!img) return '';
+    return String(img).startsWith('http') ? img : mediaUrl(img);
+  };
+
   return (
-    <div className="relative px-2">
+    <>
+      <div className="lg:hidden flex gap-3 overflow-x-auto no-scrollbar -mx-1 px-1 snap-x">
+        {cars.map((car) => (
+          <Link key={car._id} to={`/cars/${car._id}`} className="snap-start shrink-0 w-[210px] bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+            <div className="h-[118px] bg-slate-100">
+              {thumb(car) ? <img src={thumb(car)} alt="" className="w-full h-full object-cover" /> : null}
+            </div>
+            <div className="p-3">
+              <p className="text-[13px] font-bold text-slate-900 line-clamp-1">{car.title}</p>
+              <p className="text-[11px] font-medium text-slate-500 mt-1 truncate">
+                {[car.kmDriven != null ? formatKm(car.kmDriven) : null, car.fuel, car.transmission].filter(Boolean).join(' · ')}
+              </p>
+              <p className="text-[15px] font-black text-[#3083ff] mt-1.5">{formatPrice(car.price)}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    <div className="relative px-2 hidden lg:block">
       <button
         ref={prevRef}
         aria-label="Previous cars"
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+        className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md items-center justify-center font-bold text-base cursor-pointer"
       >
         ‹
       </button>
       <button
         ref={nextRef}
         aria-label="Next cars"
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md flex items-center justify-center font-bold text-base cursor-pointer"
+        className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-[#3083ff] hover:text-white hover:border-[#3083ff] transition-all shadow-md items-center justify-center font-bold text-base cursor-pointer"
       >
         ›
       </button>
@@ -722,6 +798,7 @@ function CarSlider({ cars }) {
         ))}
       </Swiper>
     </div>
+    </>
   );
 }
 

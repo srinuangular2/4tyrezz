@@ -55,12 +55,12 @@ export default function VerificationProcessSection() {
   return (
     <section className="">
       {/* Header */}
-      <div className="text-center max-w-2xl mx-auto mb-14">
+      <div className="text-center max-w-2xl mx-auto mb-5 lg:mb-14">
         <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-[#3083ff]/15 text-[#3083ff] border border-[#3083ff]/40 backdrop-blur-md shadow-sm mb-3">
           <span className="w-2 h-2 rounded-full bg-[#3083ff] animate-pulse" />
           Quality First
         </span>
-        <h2 className="text-3xl sm:text-4xl uppercase tracking-tight font-display">
+        <h2 className="text-xl lg:text-4xl lg:uppercase tracking-tight font-display">
          How  <span  className='font-black text-slate-900'>  4tyrezz</span> Works
         </h2>
         <p className="text-slate-600 dark:text-slate-300 text-sm font-medium mt-2">
@@ -69,18 +69,18 @@ export default function VerificationProcessSection() {
       </div>
 
       {/* High-Contrast Blue Glassmorphism Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
         {STEPS.map(({ step, header, desc, badge, icon }) => (
           <div
             key={step}
-            className="group relative flex flex-col justify-between p-7 rounded-3xl bg-gradient-to-b from-blue-500/20 via-[#3083ff]/10 to-transparent dark:from-[#3083ff]/25 dark:via-blue-900/20 backdrop-blur-2xl border-2 border-[#3083ff]/40 hover:border-[#3083ff] shadow-[0_10px_30px_rgba(48,131,255,0.2)] hover:shadow-[0_20px_45px_rgba(48,131,255,0.4)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+            className="group relative flex flex-col justify-between p-4 lg:p-7 rounded-2xl lg:rounded-3xl bg-gradient-to-b from-blue-500/20 via-[#3083ff]/10 to-transparent dark:from-[#3083ff]/25 dark:via-blue-900/20 backdrop-blur-2xl border border-[#3083ff]/30 lg:border-2 lg:border-[#3083ff]/40 shadow-sm lg:shadow-[0_10px_30px_rgba(48,131,255,0.2)] overflow-hidden"
           >
             {/* Top Solid Blue Glow Accent Line */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-[#3083ff] to-cyan-400 opacity-80 group-hover:opacity-100 transition-opacity" />
 
             <div>
               {/* Header Row */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-3 lg:mb-6">
                 <span className="w-10 h-10 rounded-2xl bg-[#3083ff] text-white font-black text-xs flex items-center justify-center shadow-md shadow-[#3083ff]/40 group-hover:scale-110 transition-transform duration-300">
                   {step}
                 </span>
@@ -90,7 +90,7 @@ export default function VerificationProcessSection() {
               </div>
 
               {/* Glass Icon Container */}
-              <div className="my-5 w-16 h-16 rounded-2xl bg-[#3083ff]/15 border border-[#3083ff]/30 flex items-center justify-center backdrop-blur-md group-hover:bg-[#3083ff]/25 group-hover:border-[#3083ff] transition-all duration-300">
+              <div className="my-2 lg:my-5 w-11 h-11 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl bg-[#3083ff]/15 border border-[#3083ff]/30 flex items-center justify-center backdrop-blur-md [&_svg]:w-6 [&_svg]:h-6 lg:[&_svg]:w-10 lg:[&_svg]:h-10">
                 {icon}
               </div>
 

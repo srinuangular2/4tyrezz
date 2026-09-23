@@ -92,23 +92,21 @@ export default function LastViewedCars() {
   const nudge = (dir) => scrollerRef.current?.scrollBy({ left: dir * 240, behavior: 'smooth' });
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-8 lg:py-16 bg-white">
       <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between pb-3 mb-5 border-b border-slate-100">
+        <div className="flex items-center justify-between gap-3 mb-3 lg:items-end lg:pb-3 lg:mb-5 lg:border-b lg:border-slate-100">
           <div>
-            <p className="text-[14px] font-medium text-[#909294] uppercase tracking-[5px] font-display mb-3">
+            <p className="hidden sm:block text-[14px] font-medium text-[#909294] uppercase tracking-[5px] font-display mb-3">
               Your activity
             </p>
-            <h2 className="text-3xl sm:text-4xl uppercase tracking-tight font-display">
-              Last <span className="font-black text-slate-900">viewed cars</span>
+            <h2 className="text-[17px] lg:text-4xl font-black lg:font-normal lg:uppercase tracking-tight font-display">
+              <span className="lg:hidden">Last viewed</span>
+              <span className="hidden lg:inline">Last <span className="font-black text-slate-900">viewed cars</span></span>
             </h2>
           </div>
-          <Link
-            to="/cars"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-black hover:text-[#3083ff] transition-all group font-display uppercase tracking-wider mb-1"
-          >
-            <span>Explore more</span>
-            <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+          <Link to="/cars" className="shrink-0 text-[13px] font-bold text-[#3083ff] lg:text-sm lg:font-semibold lg:text-black lg:uppercase lg:tracking-wider">
+            <span className="lg:hidden">View all</span>
+            <span className="hidden lg:inline">Explore more</span>
           </Link>
         </div>
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../app/authSlice';
 import { Menu, Close, Chevron, Heart } from './icons';
+import { User } from 'lucide-react';
 import OtpLoginModal from './OtpLoginModal';
 import HeaderSearchBar, { MobileSearchButton } from './common/HeaderSearchBar';
 import api from '../api/axios';
@@ -123,12 +124,15 @@ export default function Header() {
       <header className="sticky bg-white w-full top-0 z-50 border-b border-slate-200 shadow-xs">
         
         {/* ================= TOP HEADER BAR ================= */}
-        <div className="border-b border-slate-100 p-2">
-          <div className="max-w-7xl mx-auto px-4 sm:px-4 lg:px-4 h-18 flex items-center justify-between gap-4">
-            
+        <div className="lg:border-b lg:border-slate-100 lg:p-2">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 lg:h-[4.5rem] flex items-center gap-2 lg:gap-4">
+            <button className="lg:hidden text-slate-900 p-1.5 shrink-0" aria-label="Menu" onClick={() => setMobileOpen(true)}>
+              <Menu />
+            </button>
+
             {/* Logo */}
             <Link to="/" className="shrink-0">
-              <img src="/blue-logo.png" alt="4TYREZZ" className="h-20 w-auto" />
+              <img src="/blue-logo.png" alt="4TYREZZ" className="h-9 lg:h-20 w-auto" />
             </Link>
 
             {/* Dynamic Search Bar with Custom Floating Location Dropdown */}
@@ -279,15 +283,30 @@ export default function Header() {
               )}
             </div>
 
-            <MobileSearchButton onClick={() => setMobileSearch(true)} />
-            {isUser && (
-              <div className="lg:hidden">
-                <NotificationBell variant="customer" />
-              </div>
-            )}
-            <button className="lg:hidden text-slate-900 p-2" onClick={() => setMobileOpen(true)}>
-              <Menu />
-            </button>
+            <div className="lg:hidden ml-auto flex items-center gap-0.5">
+              <MobileSearchButton onClick={() => setMobileSearch(true)} />
+              {isUser && <NotificationBell variant="customer" />}
+              {user ? (
+                <Link
+                  to={isUser ? '/profile/settings' : '/'}
+                  className="p-2 text-slate-800"
+                  aria-label="Account"
+                >
+                  <span className="w-8 h-8 rounded-full bg-[#3083ff] text-white flex items-center justify-center text-xs font-black">
+                    {(user.name || user.mobile || 'U')[0].toUpperCase()}
+                  </span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowLogin(true)}
+                  className="p-2 text-slate-800"
+                  aria-label="Login"
+                >
+                  <User className="w-5 h-5" strokeWidth={2.2} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

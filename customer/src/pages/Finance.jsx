@@ -279,7 +279,7 @@ export default function Finance() {
 
             <Card className="p-6 flex flex-col" highlighted>
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Your monthly EMI</p>
-              <p className="font-black text-slate-900 text-4xl tracking-tight mt-1">
+              <p className="font-black text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">
                 {formatINR(emi)}
                 <span className="text-sm font-extrabold text-slate-400 ml-1.5">/month</span>
               </p>

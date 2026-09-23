@@ -285,34 +285,70 @@ export default function Listing() {
 
   return (
     <>
-      <UsedCarsBanner />
+      <div className="hidden lg:block">
+        <UsedCarsBanner />
+      </div>
 
-      <div className="bg-slate-50">
-      <div className="container-px py-8 pb-24 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">
+      <div className="bg-slate-50 lg:bg-slate-50 min-h-screen">
+      <div className="lg:container-px lg:py-8 pb-6 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">
         <aside className="hidden lg:block lg:sticky lg:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1">
           {sidebar(false)}
         </aside>
 
         <div>
-          <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-            <div className="flex items-center gap-3">
+          <div className="lg:hidden sticky top-14 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+            <div className="flex items-center gap-2 px-3 py-2">
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="lg:hidden inline-flex items-center gap-2 border border-slate-200 bg-white rounded-xl px-3 py-2 text-sm font-bold text-slate-800"
+                className="inline-flex items-center gap-1.5 bg-[#3083ff] text-white rounded-full px-3 h-9 text-[12px] font-black shrink-0"
               >
-                <SlidersHorizontal className="w-4 h-4 text-[#3083ff]" />
+                <SlidersHorizontal className="w-3.5 h-3.5" />
                 Filters
                 {chips.length > 0 && (
-                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#3083ff] text-white text-[10px] leading-[18px] text-center">
+                  <span className="min-w-[16px] h-4 px-1 rounded-full bg-white text-[#3083ff] text-[10px] leading-4 text-center">
                     {chips.length}
                   </span>
                 )}
               </button>
-              <strong className="font-display font-semibold text-xl">
-                {loading ? '...' : `${meta.total} cars found`}
-              </strong>
+              <p className="flex-1 text-[13px] font-bold text-slate-800 truncate">
+                {loading ? 'Finding cars…' : `${meta.total} cars`}
+              </p>
+              <select
+                value={filters.sort || '-createdAt'}
+                onChange={(e) => set('sort', e.target.value)}
+                className="border border-slate-200 rounded-full px-2.5 h-9 text-[12px] font-bold bg-white max-w-[132px]"
+              >
+                <option value="-createdAt">Newest</option>
+                <option value="price">Price ↑</option>
+                <option value="-price">Price ↓</option>
+                <option value="-year">Year</option>
+              </select>
             </div>
+            {chips.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto px-3 pb-2 no-scrollbar">
+                {chips.map((chip) => (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    onClick={() => apply(chip.next)}
+                    className="inline-flex shrink-0 items-center gap-1 pl-2.5 pr-1.5 h-7 rounded-full bg-blue-50 text-[#1853ff] text-[11px] font-bold border border-blue-100"
+                  >
+                    {chip.label}
+                    <X className="w-3 h-3" />
+                  </button>
+                ))}
+                <button type="button" onClick={clearAll} className="shrink-0 text-[11px] font-bold text-slate-500 px-1">
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="hidden lg:flex flex-wrap justify-between items-center gap-3 mb-4">
+            <strong className="font-display font-semibold text-xl">
+              {loading ? '...' : `${meta.total} cars found`}
+            </strong>
             <div className="flex items-center gap-2">
               {user?.role !== 'dealer' && (
                 <button
@@ -338,7 +374,7 @@ export default function Listing() {
           </div>
 
           {chips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="hidden lg:flex flex-wrap items-center gap-2 mb-4">
               {chips.map((chip) => (
                 <button
                   key={chip.key}
@@ -357,16 +393,18 @@ export default function Listing() {
           )}
 
           {loading ? (
-            <CarGridSkeleton />
+            <div className="px-3 lg:px-0 pt-3 lg:pt-0">
+              <CarGridSkeleton />
+            </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-5 px-3 lg:px-0 pt-3 lg:pt-0">
                 {cars.map((c) => (
                   <CarCard key={c._id} car={c} />
                 ))}
               </div>
               {cars.length === 0 && (
-                <p className="text-slate2 text-sm mt-4">
+                <p className="text-slate2 text-sm mt-4 px-3 lg:px-0">
                   No cars match those filters yet. Try widening your budget or clearing a filter.
                 </p>
               )}
@@ -384,8 +422,11 @@ export default function Listing() {
       {mobileOpen && (
         <div className="fixed inset-0 z-[80] lg:hidden">
           <button type="button" aria-label="Close filters" className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-[min(100%,360px)] bg-slate-50 shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
+          <div className="absolute inset-x-0 bottom-0 top-8 bg-slate-50 rounded-t-3xl shadow-2xl flex flex-col">
+            <div className="pt-2 pb-1 flex justify-center bg-white rounded-t-3xl">
+              <span className="h-1.5 w-10 rounded-full bg-slate-300" />
+            </div>
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 bg-white">
               <strong className="text-sm font-black">Filters</strong>
               <div className="flex items-center gap-3">
                 {user?.role !== 'dealer' && (
