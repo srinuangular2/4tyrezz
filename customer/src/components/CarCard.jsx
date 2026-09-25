@@ -265,6 +265,7 @@ import { toggleWishlist } from '../app/wishlistSlice';
 import { addCompare } from '../lib/compareTray';
 import { useAuthGuard } from './AuthGuardModal';
 import toast from 'react-hot-toast';
+import { mediaUrl } from '../pages/profile/hubUtils';
 
 export default function CarCard({ car }) {
   // --- EMI Calculator State ---
@@ -323,7 +324,7 @@ export default function CarCard({ car }) {
       <div className="relative h-[118px] sm:h-44 lg:h-52 bg-slate-100 overflow-hidden shrink-0">
         {img ? (
           <img
-            src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
+            src={mediaUrl(img)}
             alt={car.title}
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />

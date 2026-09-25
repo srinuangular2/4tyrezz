@@ -159,7 +159,7 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
 
   const shellClass = variant === 'embed' || variant === 'page'
     ? 'relative w-full text-slate-900'
-    : 'relative w-full max-w-md rounded-3xl p-7 animate-fadeUp';
+    : 'relative w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 animate-fadeUp max-h-[90vh] overflow-y-auto';
   const shellStyle = variant === 'modal'
     ? { backgroundColor: '#ffffff', color: '#0f172a', boxShadow: '0 24px 80px rgba(15, 23, 42, 0.22)' }
     : undefined;
@@ -167,6 +167,11 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
 
   const content = (
     <div className={shellClass} style={shellStyle}>
+      {variant === 'modal' && (
+        <div className="sm:hidden flex justify-center -mt-1 mb-3">
+          <span className="h-1.5 w-10 rounded-full bg-slate-300" />
+        </div>
+      )}
       {canClose && (
         <button type="button" onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 flex items-center justify-center z-10" aria-label="Close">
           <Close />
@@ -298,14 +303,14 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
   if (variant === 'page' || variant === 'embed') return content;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
         role="presentation"
         className="absolute inset-0"
         style={{ backgroundColor: 'rgba(15, 23, 42, 0.52)' }}
         onClick={onClose}
       />
-      <div className="relative z-10" onClick={(e) => e.stopPropagation()}>{content}</div>
+      <div className="relative z-10 w-full sm:w-auto pb-[env(safe-area-inset-bottom)] sm:pb-0" onClick={(e) => e.stopPropagation()}>{content}</div>
     </div>
   );
 }

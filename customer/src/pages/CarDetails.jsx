@@ -44,8 +44,9 @@ function loadRazorpay() {
 
 const resolveImage = (src) => {
   if (!src) return '';
-  if (src.startsWith('http')) return src;
-  return src.startsWith('/') ? src : `/${src}`;
+  const rewritten = String(src).replace(/^https?:\/\/localhost(:\d+)?/i, '');
+  if (/^https?:\/\//i.test(rewritten)) return rewritten;
+  return rewritten.startsWith('/') ? rewritten : `/${rewritten}`;
 };
 
 const ownerLabel = (n) => {
@@ -459,8 +460,8 @@ export default function CarDetails() {
   const highlightFeatures = (car.features || []).slice(0, 8);
 
   return (
-    <div className="bg-slate-50 lg:bg-cream min-h-screen pb-[calc(4.5rem+4.75rem+env(safe-area-inset-bottom))] lg:pb-16">
-      <div className="lg:container-px lg:py-6 lg:max-w-7xl lg:mx-auto">
+    <div className="bg-slate-50 lg:bg-cream min-h-screen overflow-x-clip w-full pb-[calc(4.5rem+4.75rem+env(safe-area-inset-bottom))] lg:pb-16">
+      <div className="w-full overflow-x-clip lg:container-px lg:py-6 lg:max-w-7xl lg:mx-auto">
         {/* Breadcrumb — desktop only */}
         <nav className="hidden lg:flex text-sm text-slate2 mb-5 flex-wrap items-center gap-1 px-0">
           <Link to="/" className="hover:text-ember transition">Home</Link>
@@ -482,13 +483,13 @@ export default function CarDetails() {
           <span className="text-ink font-medium truncate">{car.title}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-[1.55fr_1fr] lg:gap-8 items-start">
+        <div className="grid lg:grid-cols-[1.55fr_1fr] lg:gap-8 items-start min-w-0 w-full">
           {/* LEFT */}
-          <div className="space-y-3 lg:space-y-6">
+          <div className="space-y-0 lg:space-y-6 min-w-0 w-full max-w-full">
             {/* Gallery — full-bleed on mobile */}
-            <div className={`overflow-hidden bg-white lg:bg-transparent lg:rounded-2xl ${glassCard} lg:shadow-[0_8px_24px_rgba(15,23,42,0.08)] rounded-none border-0 lg:border`}>
+            <div className="overflow-hidden bg-white lg:rounded-2xl lg:border lg:border-white/20 lg:bg-white/70 lg:backdrop-blur-md lg:shadow-[0_8px_24px_rgba(15,23,42,0.08)] w-full max-w-full">
               <div
-                className="relative h-[248px] sm:h-[300px] lg:h-[420px] bg-slate-900 group"
+                className="relative h-[220px] sm:h-[280px] lg:h-[420px] bg-slate-900 group w-full"
                 onTouchStart={onGalleryTouchStart}
                 onTouchEnd={onGalleryTouchEnd}
               >
@@ -517,42 +518,42 @@ export default function CarDetails() {
                       onClick={() => setLightboxOpen(true)}
                       className="w-full h-full object-cover cursor-zoom-in"
                     />
-                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 max-w-[70%]">
                       {(inspection.ratingScore || car.inspectionScore) && (
-                        <span className="bg-emerald-950/90 text-emerald-300 text-[10px] font-bold px-2.5 py-1 rounded-md border border-emerald-800/50">
+                        <span className="bg-emerald-950/90 text-emerald-300 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-800/50">
                           ★ {inspection.ratingScore || car.inspectionScore}/100
                         </span>
                       )}
                       {car.isFeatured && (
-                        <span className="bg-ink/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-md">Featured</span>
+                        <span className="bg-ink/90 text-white text-[10px] font-bold px-2 py-1 rounded-md">Featured</span>
                       )}
                       {car.isPremium && (
-                        <span className="bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md">Premium</span>
+                        <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-md">Premium</span>
                       )}
                     </div>
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 lg:hidden">
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 lg:hidden">
                       <button
                         type="button"
                         onClick={handleShare}
-                        className="w-9 h-9 rounded-full bg-white/95 text-slate-800 shadow flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-white/95 text-slate-800 shadow flex items-center justify-center"
                         aria-label="Share"
                       >
-                        <Share2 className="w-4 h-4" strokeWidth={2.2} />
+                        <Share2 className="w-3.5 h-3.5" strokeWidth={2.2} />
                       </button>
                       <button
                         type="button"
                         onClick={handleWishlist}
-                        className="w-9 h-9 rounded-full bg-white/95 shadow flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center"
                         aria-label="Wishlist"
                       >
-                        <Heart filled={wishlisted} className={wishlisted ? 'text-[#3083ff] w-4 h-4' : 'text-slate-500 w-4 h-4'} />
+                        <Heart filled={wishlisted} className={wishlisted ? 'text-[#3083ff] w-3.5 h-3.5' : 'text-slate-500 w-3.5 h-3.5'} />
                       </button>
                     </div>
                     {car.videoUrl && (
                       <button
                         type="button"
                         onClick={() => setShowVideo(true)}
-                        className="absolute bottom-3 left-3 bg-white/90 text-ink text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-md"
+                        className="absolute bottom-2.5 left-2.5 bg-white/90 text-ink text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-md"
                       >
                         ▶ Video
                       </button>
@@ -562,48 +563,51 @@ export default function CarDetails() {
                         <button
                           type="button"
                           onClick={prevImg}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/95 text-ink shadow-md font-bold opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 text-ink shadow font-bold opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                          aria-label="Previous photo"
                         >
                           ‹
                         </button>
                         <button
                           type="button"
                           onClick={nextImg}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/95 text-ink shadow-md font-bold opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 text-ink shadow font-bold opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition"
+                          aria-label="Next photo"
                         >
                           ›
                         </button>
-                        <span className="absolute bottom-3 right-3 bg-black/70 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
-                          {activeImg + 1} / {imagesCount}
+                        <span className="absolute bottom-2.5 right-2.5 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                          {activeImg + 1}/{imagesCount}
                         </span>
                       </>
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400">No photos uploaded</div>
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">No photos uploaded</div>
                 )}
                 {showVideo && car.videoUrl && (
                   <button
                     type="button"
                     onClick={() => setShowVideo(false)}
-                    className="absolute top-3 right-3 bg-white/90 text-ink text-xs font-bold px-3 py-1.5 rounded-lg"
+                    className="absolute top-2.5 right-2.5 bg-white/90 text-ink text-xs font-bold px-3 py-1.5 rounded-lg"
                   >
                     Photos
                   </button>
                 )}
               </div>
 
+              {/* Thumbnails — mobile + desktop */}
               {(imagesCount > 1 || car.videoUrl) && (
-                <div className="hidden lg:flex px-4 py-3 border-t border-white/20 items-center gap-2">
+                <div className="px-3 lg:px-4 py-2.5 lg:py-3 border-t border-slate-100 lg:border-white/20 flex items-center gap-2 w-full max-w-full min-w-0">
                   {imagesCount > 5 && (
-                    <button type="button" onClick={() => handleScrollThumbs('left')} className="w-8 h-8 rounded-full border border-white/30 bg-white/70 shrink-0">‹</button>
+                    <button type="button" onClick={() => handleScrollThumbs('left')} className="hidden lg:flex w-8 h-8 rounded-full border border-white/30 bg-white/70 shrink-0 items-center justify-center">‹</button>
                   )}
-                  <div ref={thumbsRef} className="flex gap-2 overflow-x-auto scroll-smooth flex-1 py-1">
+                  <div ref={thumbsRef} className="flex gap-1.5 lg:gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-0.5">
                     {car.videoUrl && (
                       <button
                         type="button"
                         onClick={() => setShowVideo(true)}
-                        className={`w-20 h-14 shrink-0 rounded-lg overflow-hidden border-2 transition flex items-center justify-center bg-slate-900 text-white text-[10px] font-bold ${showVideo ? 'border-ember ring-2 ring-ember/20' : 'border-transparent opacity-80 hover:opacity-100'}`}
+                        className={`w-14 h-11 lg:w-20 lg:h-14 shrink-0 rounded-md lg:rounded-lg overflow-hidden border-2 transition flex items-center justify-center bg-slate-900 text-white text-[9px] lg:text-[10px] font-bold ${showVideo ? 'border-[#3083ff] ring-2 ring-[#3083ff]/20' : 'border-transparent opacity-80'}`}
                       >
                         ▶ Video
                       </button>
@@ -614,14 +618,14 @@ export default function CarDetails() {
                         key={i}
                         data-thumb-index={i}
                         onClick={() => { setShowVideo(false); setActiveImg(i); }}
-                        className={`w-20 h-14 shrink-0 rounded-lg overflow-hidden border-2 transition ${!showVideo && i === activeImg ? 'border-ember ring-2 ring-ember/20' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                        className={`w-14 h-11 lg:w-20 lg:h-14 shrink-0 rounded-md lg:rounded-lg overflow-hidden border-2 transition ${!showVideo && i === activeImg ? 'border-[#3083ff] ring-2 ring-[#3083ff]/20' : 'border-transparent opacity-70'}`}
                       >
                         <img src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
                   {imagesCount > 5 && (
-                    <button type="button" onClick={() => handleScrollThumbs('right')} className="w-8 h-8 rounded-full border border-white/30 bg-white/70 shrink-0">›</button>
+                    <button type="button" onClick={() => handleScrollThumbs('right')} className="hidden lg:flex w-8 h-8 rounded-full border border-white/30 bg-white/70 shrink-0 items-center justify-center">›</button>
                   )}
                 </div>
               )}
@@ -631,69 +635,68 @@ export default function CarDetails() {
               <ImageLightbox images={images} startIndex={activeImg} onClose={() => setLightboxOpen(false)} />
             )}
 
-            {/* Mobile app-style price / specs header */}
-            <div className="lg:hidden bg-white px-4 py-4 border-b border-slate-100">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h1 className="text-[18px] font-black text-slate-900 leading-snug">
-                    {car.year} {car.brand?.name} {car.model?.name}
-                  </h1>
-                  {car.variant && <p className="text-[12px] text-slate-500 mt-0.5 truncate">{car.variant}</p>}
-                </div>
+            {/* Mobile: key info block (CarDekho-style — important data on top) */}
+            <div className="lg:hidden bg-white border-b border-slate-100 w-full max-w-full overflow-hidden">
+              <div className="px-4 pt-3.5 pb-3">
                 {priceVerdict?.label && (
-                  <span className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-md border uppercase ${PRICE_BADGE[priceVerdict.tone] || PRICE_BADGE.fair}`}>
+                  <span className={`inline-flex max-w-full truncate text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase mb-2 ${PRICE_BADGE[priceVerdict.tone] || PRICE_BADGE.fair}`}>
                     {priceVerdict.label}
                   </span>
                 )}
+                <h1 className="text-[17px] font-black text-slate-900 leading-snug break-words">
+                  {car.year} {car.brand?.name} {car.model?.name}
+                </h1>
+                {car.variant && <p className="text-[12px] text-slate-500 mt-0.5 truncate">{car.variant}</p>}
+
+                <div className="flex items-end justify-between gap-3 mt-2.5">
+                  <p className="text-[22px] font-black text-slate-900 tracking-tight leading-none">{formatPrice(car.price)}</p>
+                  <button
+                    type="button"
+                    onClick={handleCompare}
+                    className="shrink-0 text-[11px] font-bold text-[#1853ff] px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-100"
+                  >
+                    + Compare
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowEmiModal(true)}
+                  className="mt-2.5 text-[12px] font-bold text-[#1853ff] bg-blue-50 px-3 py-2 rounded-lg w-full text-left"
+                >
+                  EMI from {formatPrice(calculatedEmi)}/mo · View breakup →
+                </button>
               </div>
-              <p className="text-[22px] font-black text-slate-900 mt-2.5 tracking-tight">{formatPrice(car.price)}</p>
-              <button
-                type="button"
-                onClick={() => setShowEmiModal(true)}
-                className="mt-2 text-[12px] font-bold text-[#1853ff] bg-blue-50 px-3 py-2 rounded-lg w-full text-left"
-              >
-                EMI from {formatPrice(calculatedEmi)}/mo · View breakup →
-              </button>
-              <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar pb-0.5">
-                <SpecChip>{formatKm(car.kmDriven)}</SpecChip>
-                <SpecChip>{car.fuel}</SpecChip>
-                <SpecChip>{car.transmission}</SpecChip>
-                <SpecChip>{ownerLabel(car.ownership)}</SpecChip>
-                {car.city?.name && <SpecChip>{car.city.name}</SpecChip>}
-              </div>
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                <button
-                  type="button"
-                  onClick={handleCompare}
-                  className="text-[11px] font-bold py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700"
-                >
-                  Compare
-                </button>
-                <button
-                  type="button"
-                  onClick={() => requireAuth(() => setShowFinance(true))}
-                  className="text-[11px] font-bold py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700"
-                >
-                  Finance
-                </button>
-                <button
-                  type="button"
-                  onClick={() => requireAuth(() => setShowBook(true))}
-                  className="text-[11px] font-bold py-2 rounded-xl bg-slate-900 text-white"
-                >
-                  Book
-                </button>
+
+              {/* Key specs grid — always on top, no horizontal scroll */}
+              <div className="grid grid-cols-2 border-t border-slate-100">
+                {[
+                  { label: 'Km driven', value: formatKm(car.kmDriven) },
+                  { label: 'Fuel', value: car.fuel || '—' },
+                  { label: 'Transmission', value: car.transmission || '—' },
+                  { label: 'Owner', value: ownerLabel(car.ownership) },
+                  { label: 'Year', value: car.year || '—' },
+                  { label: 'Location', value: car.city?.name || loc.area || '—' },
+                ].map((row, idx) => (
+                  <div
+                    key={row.label}
+                    className={`px-4 py-2.5 min-w-0 ${idx % 2 === 0 ? 'border-r border-slate-100' : ''} ${idx < 4 ? 'border-b border-slate-100' : ''}`}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{row.label}</p>
+                    <p className="text-[13px] font-black text-slate-900 mt-0.5 truncate">{row.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="px-4 lg:px-0 space-y-3 lg:space-y-6">
+            <div className="px-3 sm:px-4 lg:px-0 space-y-3 lg:space-y-6 pt-3 lg:pt-0 w-full max-w-full min-w-0 overflow-x-clip">
             {/* Why this car + market price */}
-            <section className="bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-6 shadow-sm lg:shadow-soft">
-              <div className="flex flex-wrap items-start justify-between gap-4 mb-4 lg:mb-5">
-                <div>
+            <section className="bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-6 shadow-sm lg:shadow-soft w-full max-w-full overflow-hidden">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4 lg:mb-5">
+                <div className="min-w-0">
                   <h2 className="text-[15px] lg:font-display lg:text-xl font-black lg:font-bold text-ink">Why consider this car?</h2>
                   {insights.goodBuyReason && (
-                    <p className="text-[13px] lg:text-sm text-slate2 mt-2 leading-relaxed max-w-2xl">{insights.goodBuyReason}</p>
+                    <p className="text-[13px] lg:text-sm text-slate2 mt-2 leading-relaxed break-words">{insights.goodBuyReason}</p>
                   )}
                 </div>
                 {priceVerdict?.label && (
@@ -704,20 +707,20 @@ export default function CarDetails() {
               </div>
 
               {marketMin != null && marketMax != null && (
-                <div className="bg-slate-50 rounded-xl p-3.5 lg:p-4 border border-slate-100">
-                  <div className="flex justify-between text-xs font-semibold text-slate2 mb-2">
-                    <span>Market range</span>
-                    <span>{formatPrice(marketMin)} – {formatPrice(marketMax)}</span>
+                <div className="bg-slate-50 rounded-xl p-3.5 lg:p-4 border border-slate-100 overflow-hidden">
+                  <div className="flex justify-between gap-2 text-xs font-semibold text-slate2 mb-2">
+                    <span className="shrink-0">Market range</span>
+                    <span className="truncate text-right">{formatPrice(marketMin)} – {formatPrice(marketMax)}</span>
                   </div>
                   <div className="relative h-2 rounded-full bg-gradient-to-r from-emerald-200 via-sky-200 to-amber-200">
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#3083ff] lg:bg-ember border-2 border-white shadow-md"
-                      style={{ left: `calc(${pricePosition}% - 8px)` }}
+                      className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-[#3083ff] lg:bg-ember border-2 border-white shadow-md"
+                      style={{ left: `min(calc(${pricePosition}% - 7px), calc(100% - 14px))` }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs mt-2">
+                  <div className="flex justify-between text-xs mt-2 gap-2">
                     <span className="text-emerald-700 font-medium">Lower</span>
-                    <span className="text-ink font-bold">{formatPrice(carPrice)}</span>
+                    <span className="text-ink font-bold truncate">{formatPrice(carPrice)}</span>
                     <span className="text-amber-700 font-medium">Higher</span>
                   </div>
                   {insights.marketEstimated && (
@@ -888,8 +891,8 @@ export default function CarDetails() {
             </section>
 
             {/* Tabs */}
-            <div className={`${glassCard} rounded-2xl overflow-hidden`}>
-              <div className="flex border-b border-slate-100 px-1 lg:px-2 overflow-x-auto no-scrollbar">
+            <div className={`${glassCard} rounded-2xl overflow-hidden w-full max-w-full`}>
+              <div className="flex border-b border-slate-100 px-1 lg:px-2 overflow-x-auto no-scrollbar max-w-full">
                 {[
                   ['overview', 'Overview'],
                   ['specs', 'Specifications'],
@@ -899,14 +902,14 @@ export default function CarDetails() {
                     key={key}
                     type="button"
                     onClick={() => setTab(key)}
-                    className={`px-4 lg:px-5 py-3.5 lg:py-4 text-[13px] lg:text-sm font-bold border-b-2 -mb-px transition shrink-0 ${tab === key ? 'border-[#3083ff] text-[#1853ff] lg:border-ember lg:text-ember' : 'border-transparent text-slate2 hover:text-ink'}`}
+                    className={`px-3.5 lg:px-5 py-3.5 lg:py-4 text-[13px] lg:text-sm font-bold border-b-2 -mb-px transition shrink-0 ${tab === key ? 'border-[#3083ff] text-[#1853ff] lg:border-ember lg:text-ember' : 'border-transparent text-slate2 hover:text-ink'}`}
                   >
                     {label}
                   </button>
                 ))}
               </div>
 
-              <div className="p-4 lg:p-6">
+              <div className="p-4 lg:p-6 overflow-x-clip">
                 {tab === 'overview' && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {overviewItems.map(({ label, value }) => (
@@ -1083,35 +1086,35 @@ export default function CarDetails() {
 
         {/* Similar sections */}
         {similar.length > 0 && (
-          <div className="mt-8 lg:mt-12 px-4 lg:px-0">
+          <div className="mt-6 lg:mt-12 px-3 sm:px-4 lg:px-0 w-full max-w-full min-w-0 overflow-x-clip">
             <ScrollStrip title="Similar cars you may like">
               {similar.map((c) => (
-                <div key={c._id} className="w-[210px] lg:w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
+                <div key={c._id} className="w-[168px] sm:w-[210px] lg:w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
               ))}
             </ScrollStrip>
           </div>
         )}
 
         {recommended.length > 0 && (
-          <div className="mt-6 lg:mt-8 px-4 lg:px-0">
+          <div className="mt-5 lg:mt-8 px-3 sm:px-4 lg:px-0 w-full max-w-full min-w-0 overflow-x-clip">
             <ScrollStrip title="Recommended in your budget">
               {recommended.map((c) => (
-                <div key={c._id} className="w-[210px] lg:w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
+                <div key={c._id} className="w-[168px] sm:w-[210px] lg:w-[260px] shrink-0 snap-start"><CarCard car={c} /></div>
               ))}
             </ScrollStrip>
           </div>
         )}
 
         {similarModels.length > 0 && (
-          <div className="mt-6 lg:mt-8 px-4 lg:px-0">
+          <div className="mt-5 lg:mt-8 px-3 sm:px-4 lg:px-0 w-full max-w-full min-w-0 overflow-x-clip">
             <ScrollStrip title="Explore similar models">
               {similarModels.map(({ model, startingPrice, count }) => (
                 <Link
                   key={model._id}
                   to={`/cars?model=${model._id}`}
-                  className="w-[180px] lg:w-[220px] shrink-0 snap-start bg-white border border-slate-200 rounded-2xl p-4 shadow-soft hover:shadow-md transition"
+                  className="w-[150px] sm:w-[180px] lg:w-[220px] shrink-0 snap-start bg-white border border-slate-200 rounded-2xl p-3.5 lg:p-4 shadow-soft hover:shadow-md transition"
                 >
-                  <p className="font-bold text-ink">{model.name}</p>
+                  <p className="font-bold text-ink text-sm truncate">{model.name}</p>
                   <p className="text-[#3083ff] lg:text-ember font-display font-semibold text-sm mt-1">From {formatPrice(startingPrice)}</p>
                   <p className="text-xs text-slate2 mt-1">{count} {count === 1 ? 'listing' : 'listings'} available</p>
                 </Link>
@@ -1123,21 +1126,30 @@ export default function CarDetails() {
 
       {/* Mobile sticky CTA — above BottomNav */}
       <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(15,23,42,0.08)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
-        <div className="grid grid-cols-2 gap-2 px-3 py-2.5">
+        <div className="grid grid-cols-3 gap-1.5 px-2.5 py-2">
           <button
             type="button"
             onClick={handleCallDealer}
-            className="inline-flex items-center justify-center gap-1.5 h-11 rounded-xl border border-[#3083ff]/30 bg-blue-50 text-[#1853ff] text-[13px] font-black"
+            className="inline-flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl border border-[#3083ff]/25 bg-blue-50 text-[#1853ff] text-[11px] font-black"
           >
             <Phone className="w-4 h-4" strokeWidth={2.4} />
             Call
           </button>
           <button
             type="button"
-            onClick={() => requireAuth(() => setShowContact(true))}
-            className="inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-[#3083ff] text-white text-[13px] font-black shadow-sm"
+            onClick={handleWhatsApp}
+            className="inline-flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-[#25D366] text-white text-[11px] font-black"
           >
-            Contact seller
+            <span className="text-[13px] leading-none">WA</span>
+            Chat
+          </button>
+          <button
+            type="button"
+            onClick={() => requireAuth(() => setShowContact(true))}
+            className="inline-flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-[#3083ff] text-white text-[11px] font-black shadow-sm"
+          >
+            <span className="text-[13px] leading-none">✉</span>
+            Contact
           </button>
         </div>
       </div>
@@ -1145,15 +1157,15 @@ export default function CarDetails() {
       {/* RTO Modal */}
       {showRTOModal && (
         <ModalShell onClose={() => setShowRTOModal(false)}>
-          <h3 className="text-xl font-bold text-ink">RTO details</h3>
-          <p className="text-xs text-slate2 mb-5">Values from RC lookup and this listing — document scans stay private</p>
+          <h3 className="text-lg sm:text-xl font-black text-ink pr-8">RTO details</h3>
+          <p className="text-xs text-slate2 mb-4 leading-relaxed">Values from RC lookup and this listing — document scans stay private</p>
 
           {!hasRtoFacts ? (
             <p className="text-sm text-slate2 bg-slate-50 rounded-xl p-4">
               Full RC record is not on file for this listing yet. Contact 4tyrezz for verified registration details.
             </p>
           ) : (
-            <>
+            <div className="space-y-1 -mx-1">
               <RtoSection
                 title="Registration"
                 rows={[
@@ -1188,7 +1200,7 @@ export default function CarDetails() {
                   ['Fitness Valid Upto', formatDetailDate(rto.fitnessValidUpto)],
                 ]}
               />
-            </>
+            </div>
           )}
         </ModalShell>
       )}
@@ -1381,10 +1393,10 @@ function FinanceSection({
   setLoanAmount, setTenureYears, setInterestRate, onViewBreakup, onApply,
 }) {
   return (
-    <section className="bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.08)] rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="font-display text-lg font-bold text-ink">Finance this car</h3>
-        <span className="text-xs font-bold bg-sky-50 text-sky-700 px-3 py-1 rounded-full">Up to 90% funded</span>
+    <section className="bg-white lg:bg-white/70 backdrop-blur-md border border-slate-100 lg:border-white/20 shadow-sm lg:shadow-[0_8px_24px_rgba(15,23,42,0.08)] rounded-2xl p-4 lg:p-6">
+      <div className="flex items-center justify-between mb-4 lg:mb-5 gap-2">
+        <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink">Finance this car</h3>
+        <span className="text-[10px] lg:text-xs font-bold bg-sky-50 text-sky-700 px-2.5 lg:px-3 py-1 rounded-full shrink-0">Up to 90% funded</span>
       </div>
       <div className="grid md:grid-cols-2 gap-5">
         <div className="bg-ink text-white rounded-2xl p-5 space-y-4">
@@ -1465,12 +1477,18 @@ function SpecChip({ children, tone = 'neutral' }) {
 
 function ModalShell({ children, onClose, wide = true }) {
   return (
-    <div className="fixed inset-0 z-[100] bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[100] bg-ink/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={onClose}
+    >
       <div
-        className={`bg-white/80 backdrop-blur-md border border-white/20 rounded-2xl w-full ${wide ? 'max-w-lg' : 'max-w-md'} p-6 shadow-[0_12px_40px_rgba(15,23,42,0.16)] relative max-h-[90vh] overflow-y-auto`}
+        className={`bg-white sm:bg-white/95 backdrop-blur-md border-0 sm:border border-white/20 rounded-t-3xl sm:rounded-2xl w-full ${wide ? 'sm:max-w-lg' : 'sm:max-w-md'} p-5 sm:p-6 shadow-[0_12px_40px_rgba(15,23,42,0.16)] relative max-h-[88vh] overflow-y-auto overflow-x-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-6`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-ink font-bold">✕</button>
+        <div className="sm:hidden flex justify-center pt-0.5 pb-3">
+          <span className="h-1.5 w-10 rounded-full bg-slate-300" />
+        </div>
+        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-ink font-bold w-8 h-8 flex items-center justify-center" aria-label="Close">✕</button>
         {children}
       </div>
     </div>
@@ -1512,9 +1530,9 @@ function RtoSection({ title, rows }) {
 function RTORow({ label, value }) {
   if (!value && value !== 0) return null;
   return (
-    <div className="flex justify-between py-2 border-b border-slate-50 text-sm">
-      <span className="text-slate2">{label}</span>
-      <span className="font-semibold text-ink text-right max-w-[60%]">{value}</span>
+    <div className="flex justify-between gap-3 py-2.5 border-b border-slate-100 text-sm min-w-0">
+      <span className="text-slate2 shrink-0">{label}</span>
+      <span className="font-semibold text-ink text-right break-words min-w-0">{value}</span>
     </div>
   );
 }

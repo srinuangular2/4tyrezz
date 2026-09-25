@@ -130,7 +130,7 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
       )}
       {auth.error && <p className="text-sm font-semibold text-rose-600">{auth.error}</p>}
 
-      <div className="flex gap-3">
+      <div className="hidden lg:flex gap-3">
         <button type="button" onClick={onBack} className="flex-1 rounded-xl border border-slate-200 py-3.5 text-xs font-black uppercase tracking-wider">
           Back
         </button>

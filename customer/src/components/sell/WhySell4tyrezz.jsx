@@ -25,13 +25,13 @@ const STEPS = [
 
 export default function WhySell4tyrezz() {
   return (
-    <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-14 items-center">
+    <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-14 items-center">
       <div>
-        <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-[#3083ff]/10 text-[#3083ff] border border-[#3083ff]/20 mb-4">
+        <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-[#3083ff]/10 text-[#3083ff] border border-[#3083ff]/20 mb-3 lg:mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-[#3083ff] animate-pulse" />
           Why 4tyrezz
         </span>
-        <h2 className="text-3xl sm:text-4xl uppercase tracking-tight font-display text-slate-800">
+        <h2 className="text-[20px] sm:text-4xl sm:uppercase tracking-tight font-display text-slate-800">
           How selling with <span className="font-black text-slate-900">4tyrezz</span> works
         </h2>
         <p className="text-slate-500 text-sm font-medium mt-3 max-w-lg leading-relaxed">

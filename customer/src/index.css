@@ -46,7 +46,13 @@
   }
 }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+}
+body {
+  overflow-x: clip;
+}
 ::selection { background: #3083ff; color: white; }
 
 @layer utilities {

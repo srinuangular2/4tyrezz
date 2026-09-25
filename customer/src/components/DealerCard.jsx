@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { mediaUrl } from '../pages/profile/hubUtils';
 
 export default function DealerCard({ dealer }) {
   if (!dealer) return null;
@@ -32,11 +33,7 @@ export default function DealerCard({ dealer }) {
           <div className="relative w-14 h-14 rounded-2xl bg-white shadow-md border border-slate-100 p-1 shrink-0 group-hover:scale-105 transition-transform duration-300">
             {dealer.logo || dealer.image ? (
               <img
-                src={
-                  (dealer.logo || dealer.image).startsWith('http')
-                    ? dealer.logo || dealer.image
-                    : `http://localhost:5000${dealer.logo || dealer.image}`
-                }
+                src={mediaUrl(dealer.logo || dealer.image)}
                 alt={dealer.name || 'Dealer'}
                 className="w-full h-full object-cover rounded-xl"
               />

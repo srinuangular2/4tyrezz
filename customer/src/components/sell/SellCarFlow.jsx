@@ -6,7 +6,7 @@ import { useAuthGuard } from '../AuthGuardModal';
 import useReferenceData from '../../hooks/useReferenceData';
 import { clearSellDraft, loadSellDraft, saveSellDraft, sellDraftReady } from '../../lib/listingDrafts';
 import { Card, formatINR } from '../PageShell';
-import { conditionScoreFromPills, filesFromPreviews, initialSellCarState, resumeSellStep, vehicleReady } from './sellCarState';
+import { conditionScoreFromPills, filesFromPreviews, initialSellCarState, resumeSellStep, vehicleReady, conditionReady, plateError, variantError } from './sellCarState';
 import ResumeListingCard from './ResumeListingCard';
 import { Stepper } from './ui';
 import StepIdentify from './StepIdentify';
@@ -214,9 +214,31 @@ export default function SellCarFlow() {
   }
 
   return (
-    <div className="grid lg:grid-cols-[1.35fr_0.65fr] gap-6">
-      <Card className="p-5 sm:p-8 bg-white border border-slate-200" hover={false} beam={false}>
-        <Stepper step={state.step} />
+    <div className="grid lg:grid-cols-[1.35fr_0.65fr] gap-4 lg:gap-6 pb-24 lg:pb-0">
+      <div className="min-w-0">
+      {/* Mobile summary of selected car — mirrors valuation focus */}
+      {(state.brand || state.valuation) && (
+        <div className="lg:hidden mb-3 rounded-2xl border border-[#3083ff]/20 bg-blue-50/60 px-3.5 py-3">
+          <p className="text-[10px] font-black uppercase tracking-wider text-[#3083ff]">Your car</p>
+          <p className="text-[13px] font-black text-slate-900 mt-0.5">
+            {[state.year, state.brand, state.model].filter(Boolean).join(' ')}
+            {state.variant ? ` · ${state.variant}` : ''}
+          </p>
+          <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
+            {[state.plate, state.city].filter(Boolean).join(' · ') || 'Add remaining details'}
+          </p>
+          {state.valuation && (
+            <p className="text-[12px] font-black text-[#1853ff] mt-1.5">
+              Estimate {formatINR(state.valuation.minPrice)} – {formatINR(state.valuation.maxPrice)}
+            </p>
+          )}
+        </div>
+      )}
+
+      <Card className="p-4 sm:p-8 bg-white border border-slate-200 rounded-2xl lg:rounded-3xl overflow-x-clip" hover={false} beam={false}>
+        <div className="lg:static sticky top-14 z-20 -mx-4 px-4 pt-2 pb-3 mb-2 bg-white/95 backdrop-blur border-b border-slate-100 lg:border-0 lg:mx-0 lg:px-0 lg:pt-0 lg:pb-0 lg:mb-0 lg:bg-transparent lg:backdrop-blur-none">
+          <Stepper step={state.step} />
+        </div>
 
         {state.step === 1 && (
           <StepIdentify
@@ -275,8 +297,9 @@ export default function SellCarFlow() {
           />
         )}
       </Card>
+      </div>
 
-      <aside className="space-y-4">
+      <aside className="hidden lg:block space-y-4">
         {(state.brand || state.valuation) && (
           <Card className="p-5 bg-white border border-slate-200" hover={false}>
             <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Your car</p>
@@ -319,6 +342,70 @@ export default function SellCarFlow() {
           </Card>
         ))}
       </aside>
+
+      {/* Mobile sticky CTA above BottomNav */}
+      <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(15,23,42,0.08)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
+        <div className="flex gap-2 px-3 py-2.5">
+          {state.step > 1 && (
+            <button
+              type="button"
+              onClick={() => patch({ step: state.step - 1 })}
+              className="h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 text-[12px] font-black shrink-0"
+            >
+              Back
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={
+              (state.step === 2 && valuating) ||
+              (state.step === 3 && (!state.inspectionDate || !state.inspectionSlot || !(Number(state.expectedPrice) > 0))) ||
+              (state.step === 4 && submitting)
+            }
+            onClick={() => {
+              if (state.step === 1) {
+                if (!vehicleReady(state)) {
+                  toast.error('Select or look up your car first');
+                  return;
+                }
+                patch({ step: 2 });
+                return;
+              }
+              if (state.step === 2) {
+                const plateMsg = plateError(state.plate);
+                const variantMsg = variantError(state.variant);
+                if (plateMsg) return toast.error(plateMsg);
+                if (variantMsg) return toast.error(variantMsg);
+                if (!conditionReady(state)) {
+                  toast.error('Add city, photos and a valid RC number and variant');
+                  return;
+                }
+                requireAuth(goValuation);
+                return;
+              }
+              if (state.step === 3) {
+                if (!state.inspectionDate || !state.inspectionSlot) {
+                  toast.error('Pick a date and time slot');
+                  return;
+                }
+                if (!(Number(state.expectedPrice) > 0)) {
+                  toast.error('Enter your expected price');
+                  return;
+                }
+                patch({ step: 4 });
+                return;
+              }
+              requireAuth(confirm);
+            }}
+            className="flex-1 h-11 rounded-xl bg-[#3083ff] text-white text-[13px] font-black disabled:opacity-50"
+          >
+            {state.step === 1 && 'Continue'}
+            {state.step === 2 && (valuating ? 'Estimating…' : 'Get valuation')}
+            {state.step === 3 && 'Continue'}
+            {state.step === 4 && (submitting ? 'Booking…' : 'Confirm evaluation')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

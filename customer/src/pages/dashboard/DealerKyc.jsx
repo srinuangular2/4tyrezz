@@ -12,6 +12,7 @@ import {
   panError,
   PINCODE_REGEX,
 } from '../../lib/kycValidation';
+import { mediaUrl } from '../profile/hubUtils';
 
 const DOC_LABELS = {
   gst_certificate: 'GST certificate',
@@ -175,7 +176,6 @@ export default function DealerKyc() {
   if (!profile) return <p className="text-sm font-semibold text-rose-600">Could not load KYC profile.</p>;
 
   const [statusLabel, statusBody] = STATUS_COPY[profile.kycStatus] || STATUS_COPY.draft;
-  const fileOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
 
   return (
     <div className="space-y-6">
@@ -260,7 +260,7 @@ export default function DealerKyc() {
                       {label} {required && <span className="text-[#3083ff]">*</span>}
                     </p>
                     {doc && (
-                      <a href={`${fileOrigin}${doc.url}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#3083ff]">
+                      <a href={mediaUrl(doc.url)} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#3083ff]">
                         {doc.originalName || 'View file'}
                       </a>
                     )}

@@ -36,18 +36,18 @@ export default function VerifiedDetailsCard({ state, onEdit, onContinue }) {
         ))}
       </dl>
 
-      <div className="mt-5 flex flex-col sm:flex-row gap-2">
+      <div className="mt-4 lg:mt-5 flex flex-col sm:flex-row gap-2">
         <button
           type="button"
           onClick={onContinue}
-          className="flex-1 bg-[#3083ff] hover:bg-[#1853ff] text-white font-black text-xs uppercase tracking-wider rounded-xl px-5 py-3.5"
+          className="hidden lg:inline-flex flex-1 bg-[#3083ff] hover:bg-[#1853ff] text-white font-black text-xs uppercase tracking-wider rounded-xl px-5 py-3.5 items-center justify-center"
         >
           Looks right — continue
         </button>
         <button
           type="button"
           onClick={onEdit}
-          className="flex-1 border border-slate-200 bg-white text-slate-800 font-black text-xs uppercase tracking-wider rounded-xl px-5 py-3.5 hover:border-[#3083ff]/40"
+          className="flex-1 border border-slate-200 bg-white text-slate-800 font-black text-xs uppercase tracking-wider rounded-xl px-5 py-3 lg:py-3.5 hover:border-[#3083ff]/40"
         >
           Edit / change manually
         </button>

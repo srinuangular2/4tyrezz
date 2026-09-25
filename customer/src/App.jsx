@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import CompareTray from './components/CompareTray';
+import PwaInstallBanner from './components/PwaInstallBanner';
 import ProtectedRoute from './components/ProtectedRoute';
 import DealerChrome from './components/dealer/DealerChrome';
 import { fetchWishlist } from './app/wishlistSlice';
@@ -137,7 +138,7 @@ export default function App() {
 
   return (
     <RealtimeAlertsProvider token={token} enabled={alertsEnabled} variant={alertsVariant}>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col overflow-x-clip">
         <div className="w-full flex flex-col flex-1">
           <KickDealerFromMarketplace />
           {!dealerWindow && <Header />}
@@ -253,9 +254,10 @@ export default function App() {
           {!dealerWindow && <Footer />}
           {!dealerWindow && <BottomNav />}
           {!dealerWindow && <CompareTray />}
+          {!dealerWindow && <PwaInstallBanner />}
         </div>
       </div>
-      <Toaster position="top-right" reverseOrder={false} />
+      <Toaster position="top-center" containerClassName="!top-16 lg:!top-4" reverseOrder={false} />
     </RealtimeAlertsProvider>
   );
 }

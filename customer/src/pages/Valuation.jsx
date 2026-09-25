@@ -441,10 +441,10 @@ export default function Valuation() {
   const modelOptions = ensureOption(modelNames, form.model);
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-slate-50 overflow-x-clip pb-24 lg:pb-0">
       <ValuationBanner />
 
-      <Section eyebrow="SmartPrice" title="Used car price calculator">
+      <Section eyebrow="SmartPrice" title="Used car price calculator" className="!py-4 lg:!py-12">
         {gate === 'resume' && valuationDraftReady(draft) ? (
           <ResumeListingCard
             subtitle="Thanks for sharing the details"
@@ -462,12 +462,12 @@ export default function Valuation() {
             onNew={startNewValuation}
           />
         ) : gate === 'form' ? (
-          <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6 items-start">
-          <Card id="valuation-form" className="p-6 sm:p-7" highlighted>
-            <div className="flex items-start justify-between gap-3 mb-5">
-              <div>
-                <h2 className="font-display font-black text-xl text-slate-900">Used car price calculator</h2>
-                <p className="text-xs font-semibold text-slate-400 mt-1">Get your estimate</p>
+          <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-4 lg:gap-6 items-start">
+          <Card id="valuation-form" className="p-4 sm:p-7 rounded-2xl lg:rounded-3xl" highlighted>
+            <div className="flex items-start justify-between gap-3 mb-4 lg:mb-5">
+              <div className="min-w-0">
+                <h2 className="text-[16px] lg:font-display lg:font-black lg:text-xl font-black text-slate-900">Used car price calculator</h2>
+                <p className="text-[12px] lg:text-xs font-semibold text-slate-400 mt-1">Get your estimate in under a minute</p>
               </div>
               {form.brand && (
                 <button
@@ -480,7 +480,7 @@ export default function Valuation() {
               )}
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Brand">
                 <SearchableSelect
                   value={form.brand}
@@ -604,12 +604,12 @@ export default function Valuation() {
               />
             </Field>
 
-            <PrimaryButton className="w-full mt-5" disabled={estimating || lookingUp} onClick={checkValue}>
+            <PrimaryButton className="w-full mt-5 hidden lg:inline-flex" disabled={estimating || lookingUp} onClick={checkValue}>
               {lookingUp ? 'Looking up RC…' : estimating ? 'Calculating…' : 'Check value'}
             </PrimaryButton>
-            <p className="text-center text-[11px] font-semibold text-emerald-600 mt-3">100% free · Instant estimate</p>
+            <p className="hidden lg:block text-center text-[11px] font-semibold text-emerald-600 mt-3">100% free · Instant estimate</p>
           </Card>
-            <div className="space-y-5">
+            <div className="hidden lg:block space-y-5">
               <Card className="p-6 space-y-3" highlighted>
                 <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">How to use</p>
                 <h3 className="font-black text-slate-900 text-base">Check price in under a minute</h3>
@@ -634,13 +634,30 @@ export default function Valuation() {
         ) : null}
       </Section>
 
+      {/* Mobile sticky Check value */}
+      {gate === 'form' && (
+        <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(15,23,42,0.08)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
+          <div className="px-3 py-2.5">
+            <button
+              type="button"
+              disabled={estimating || lookingUp}
+              onClick={checkValue}
+              className="w-full h-11 rounded-xl bg-[#3083ff] text-white text-[13px] font-black disabled:opacity-50"
+            >
+              {lookingUp ? 'Looking up RC…' : estimating ? 'Calculating…' : 'Check value'}
+            </button>
+            <p className="text-center text-[10px] font-semibold text-emerald-600 mt-1.5">100% free · Instant estimate</p>
+          </div>
+        </div>
+      )}
+
       <div id="result" className="scroll-mt-24">
         {result && (
-          <Section eyebrow="SmartPrice" title="Your used car valuation">
-            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
-              <Card className="p-6" highlighted>
+          <Section eyebrow="SmartPrice" title="Your used car valuation" className="!py-5 lg:!py-12">
+            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-4 lg:gap-6">
+              <Card className="p-4 sm:p-6 rounded-2xl lg:rounded-3xl" highlighted>
                 <p className="text-[11px] font-black uppercase tracking-wider text-amber-600">Indicative estimate — not a purchase offer</p>
-                <p className="font-black text-slate-900 text-4xl tracking-tight mt-1">{formatINR(fair)}</p>
+                <p className="font-black text-slate-900 text-3xl sm:text-4xl tracking-tight mt-1">{formatINR(fair)}</p>
                 <p className="text-sm font-extrabold mt-2" style={{ color: BRAND }}>
                   Market range {formatINR(minP)} – {formatINR(maxP)}
                 </p>

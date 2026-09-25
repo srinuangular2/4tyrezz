@@ -3,6 +3,7 @@ import FaqsSection from '../components/FaqsSection';
 import SellCarFlow from '../components/sell/SellCarFlow';
 import SellBanner from '../components/sell/SellBanner';
 import WhySell4tyrezz from '../components/sell/WhySell4tyrezz';
+import SellBenefits from '../components/sell/SellBenefits';
 
 const SELL_FAQS = [
   {
@@ -41,18 +42,26 @@ const SELL_FAQS = [
 
 export default function SellCar() {
   return (
-    <div className="bg-slate-50">
+    <div className="bg-slate-50 overflow-x-clip pb-24 lg:pb-0">
       <SellBanner />
-      <Section eyebrow="Assured selling" title="Start with your registration number">
+
+      <Section eyebrow="Assured selling" title="Start with your registration number" className="!py-4 lg:!py-12">
         <SellCarFlow />
       </Section>
-      <Section bg>
+
+      <Section bg className="!py-6 lg:!py-12">
         <WhySell4tyrezz />
       </Section>
-      <Section className="bg-gradient-to-b from-blue-50/70">
+
+      <Section className="!py-6 lg:!py-12">
+        <SellBenefits />
+      </Section>
+
+      <Section className="bg-gradient-to-b from-blue-50/70 !py-6 lg:!py-12">
         <FaqsSection
           faqs={SELL_FAQS}
           subtitle="Everything you need to know about selling your car with 4tyrezz."
+          layout="stack"
         />
       </Section>
     </div>

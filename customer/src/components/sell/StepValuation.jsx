@@ -169,7 +169,7 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
         ))}
       </section>
 
-      <div className="flex gap-3">
+      <div className="hidden lg:flex gap-3">
         <button type="button" onClick={onBack} className="flex-1 rounded-xl border border-slate-200 bg-white py-3.5 text-xs font-black uppercase tracking-wider text-slate-700">
           Back
         </button>

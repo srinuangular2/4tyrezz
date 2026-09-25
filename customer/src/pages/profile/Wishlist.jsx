@@ -8,11 +8,10 @@ import { formatINR } from '../../components/PageShell';
 import { addCompare } from '../../lib/compareTray';
 import { COMPANY_WHATSAPP } from '../../lib/companyContact';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
+import { mediaUrl } from './hubUtils';
 
 function imgSrc(car) {
-  const img = car?.images?.[0];
-  if (!img) return '';
-  return img.startsWith('http') ? img : `http://localhost:5000${img}`;
+  return mediaUrl(car?.images?.[0]);
 }
 
 export default function ProfileWishlist() {

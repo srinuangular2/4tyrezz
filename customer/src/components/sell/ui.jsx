@@ -6,21 +6,30 @@ export const sellChipIdle =
 
 export function Stepper({ step }) {
   const labels = ['Identify', 'Condition', 'Estimate', 'Confirm'];
+  const current = labels[Math.max(0, Math.min(labels.length, step) - 1)] || labels[0];
   return (
-    <div className="flex items-center gap-2 mb-8">
-      {labels.map((label, i) => {
-        const n = i + 1;
-        const active = n === step;
-        const done = n < step;
-        return (
-          <div key={label} className="flex-1 min-w-0">
-            <div className={`h-1.5 rounded-full ${done || active ? 'bg-[#3083ff]' : 'bg-slate-200'}`} />
-            <p className={`mt-2 text-[10px] font-black uppercase tracking-wider ${active ? 'text-[#3083ff]' : 'text-slate-400'}`}>
-              {n}. {label}
-            </p>
-          </div>
-        );
-      })}
+    <div className="mb-5 lg:mb-8">
+      <div className="flex items-center justify-between gap-2 mb-2 lg:hidden">
+        <p className="text-[12px] font-black text-slate-900">
+          Step {step} of 4 · <span className="text-[#3083ff]">{current}</span>
+        </p>
+        <p className="text-[11px] font-bold text-slate-400">{Math.round((step / 4) * 100)}%</p>
+      </div>
+      <div className="flex items-center gap-1.5 lg:gap-2">
+        {labels.map((label, i) => {
+          const n = i + 1;
+          const active = n === step;
+          const done = n < step;
+          return (
+            <div key={label} className="flex-1 min-w-0">
+              <div className={`h-1.5 rounded-full ${done || active ? 'bg-[#3083ff]' : 'bg-slate-200'}`} />
+              <p className={`mt-2 hidden lg:block text-[10px] font-black uppercase tracking-wider ${active ? 'text-[#3083ff]' : 'text-slate-400'}`}>
+                {n}. {label}
+              </p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
