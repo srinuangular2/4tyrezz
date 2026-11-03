@@ -17,6 +17,7 @@ import { addCompare } from '../lib/compareTray';
 import { rememberRecentlyViewed } from '../lib/recentlyViewed';
 import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 import { mediaUrl } from './profile/hubUtils';
+import PdiCta from '../components/pdi/PdiCta';
 import { COMPANY_NAME, COMPANY_PHONE_DIGITS, COMPANY_WHATSAPP } from '../lib/companyContact';
 
 const glassCard = 'bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.08)]';
@@ -983,6 +984,9 @@ export default function CarDetails() {
               onViewBreakup={() => setShowEmiModal(true)}
               onApply={() => requireAuth(() => setShowFinance(true))}
             />
+            <div className="mt-4">
+              <PdiCta car={car} compact />
+            </div>
             </div>
           </div>
 
@@ -1038,6 +1042,9 @@ export default function CarDetails() {
               >
                 Contact 4tyrezz
               </button>
+              <div className="mt-3">
+                <PdiCta car={car} compact />
+              </div>
               {SHOW_TEST_DRIVE && (
                 <button
                   type="button"

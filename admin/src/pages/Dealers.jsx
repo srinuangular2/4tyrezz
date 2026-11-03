@@ -107,7 +107,7 @@ export default function Dealers() {
     }
   };
 
-  const emptyForm = { name: '', dealershipName: '', city: '', email: '', mobile: '' };
+  const emptyForm = { name: '', dealershipName: '', city: '', email: '', mobile: '', razorpayAccountId: '' };
 
   const openAdd = () => {
     setAddForm({ name: '', password: makeStrongPassword() });
@@ -129,6 +129,7 @@ export default function Dealers() {
         city: d.city || d.user?.city || '',
         email: d.contactEmail || d.user?.email || '',
         mobile: d.contactPhone || d.user?.mobile || '',
+        razorpayAccountId: d.user?.razorpayAccountId || '',
       });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not load dealer');
@@ -351,6 +352,7 @@ export default function Dealers() {
             <input placeholder="City (optional)" className={inputCls} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
             <input type="email" autoComplete="off" placeholder="Email (optional)" className={inputCls} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <input autoComplete="off" placeholder="Mobile (optional)" className={inputCls} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
+            <input placeholder="Razorpay linked account id (acc_...)" className={inputCls} value={form.razorpayAccountId || ''} onChange={(e) => setForm({ ...form, razorpayAccountId: e.target.value })} />
             <button type="submit" disabled={savingEdit} className={`${btnPrimary} w-full`}>{savingEdit ? 'Saving…' : 'Save changes'}</button>
           </form>
         </Modal>

@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
+const User = require('../models/User');
 const Commission = require('../models/Commission');
 const Car = require('../models/Car');
 const paymentService = require('../services/integrations/paymentService');
@@ -29,10 +30,16 @@ exports.create = async (req, res) => {
     notes: notes || '',
   });
 
+  const dealerUser = await User.findById(car.owner).select('razorpayAccountId role dealershipName');
+  const routeToDealer = car.paymentRoute === 'dealer' && Boolean(dealerUser?.razorpayAccountId);
+  const transfers = routeToDealer
+    ? [{ account: dealerUser.razorpayAccountId, amount: Math.round(amount * 100), currency: 'INR', notes: { carId: String(car._id) } }]
+    : undefined;
   const order = await paymentService.createOrder({
     amount,
     receipt: booking.bookingRef,
-    notes: { bookingId: String(booking._id), vehicleId: String(car._id) },
+    notes: { bookingId: String(booking._id), vehicleId: String(car._id), payee: routeToDealer ? 'dealer' : 'platform' },
+    transfers,
   });
 
   booking.razorpayOrderId = order.id;
@@ -47,6 +54,11 @@ exports.create = async (req, res) => {
     status: 'pending',
     providerOrderId: order.id,
     method: 'razorpay',
+    meta: {
+      payee: routeToDealer ? 'dealer' : 'platform',
+      dealerAccount: routeToDealer ? dealerUser.razorpayAccountId : '',
+      carId: String(car._id),
+    },
   });
 
   res.status(201).json({

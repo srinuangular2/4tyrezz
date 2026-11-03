@@ -3,7 +3,7 @@ import api from '../api/axios';
 
 export const adminLogin = createAsyncThunk('auth/adminLogin', async ({ email, password }) => {
   const { data } = await api.post('/auth/login', { email, password });
-  if (data.user.role !== 'admin') throw new Error('This login is for admins only.');
+  if (!['admin', 'field_agent', 'executive_agent'].includes(data.user.role)) throw new Error('This login is for admins only.');
   return data;
 });
 

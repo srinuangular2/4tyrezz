@@ -8,10 +8,10 @@ export default function Cars() {
       <PageHeader
         kicker="Marketplace inventory"
         title="Vehicle listings"
-        subtitle="Newest listings first. Premium means ask price of ₹15 Lakh or more."
+        subtitle="Inspected and published cars only. Dealer bulk uploads stay in Listing moderation until you approve them."
         actions={<Link to="/cars/add" className={btnPrimary}>+ Add car</Link>}
       />
-      <CarsManager />
+      <CarsManager liveOnly />
     </div>
   );
 }

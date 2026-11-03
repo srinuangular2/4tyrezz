@@ -21,6 +21,8 @@ const TEMPLATE_HEADERS = [
   'price',
   'fuel_type',
   'transmission',
+  'ownership',
+  'color',
   'city',
 ];
 
@@ -78,6 +80,22 @@ function normalizeHeader(value) {
     fuel: 'fuel_type',
     fueltype: 'fuel_type',
     gearbox: 'transmission',
+    gear_box: 'transmission',
+    owners: 'ownership',
+    owner: 'ownership',
+    owner_count: 'ownership',
+    no_of_owners: 'ownership',
+    number_of_owners: 'ownership',
+    colour: 'color',
+    exterior_color: 'color',
+    exterior_colour: 'color',
+    desc: 'description',
+    key_features: 'features',
+    feature: 'features',
+    photo: 'images',
+    photos: 'images',
+    image: 'images',
+    image_urls: 'images',
   };
   return aliases[key] || key;
 }
@@ -143,8 +161,72 @@ function normalizeFuel(v) {
 
 function normalizeTrans(v) {
   const s = String(v || '').toLowerCase();
-  if (s.includes('auto') || s.includes('amt') || s.includes('cvt')) return 'Automatic';
+  if (!s) return '';
+  if (s.includes('auto') || s.includes('amt') || s.includes('cvt') || s.includes('dct') || s.includes('ivt')) return 'Automatic';
   return 'Manual';
+}
+
+function normalizeOwnership(v) {
+  const s = String(v || '').toLowerCase();
+  const n = Number(String(v || '').replace(/[^\d]/g, ''));
+  if (n >= 1 && n <= 5) return n;
+  if (s.includes('second') || s.includes('2nd')) return 2;
+  if (s.includes('third') || s.includes('3rd')) return 3;
+  if (s.includes('fourth') || s.includes('4th')) return 4;
+  if (s.includes('first') || s.includes('1st')) return 1;
+  return 1;
+}
+
+function parseStringList(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map((item) => String(item).trim()).filter(Boolean);
+    } catch {
+      /* plain text fallback */
+    }
+  }
+  return raw.split(/[|;]/).map((item) => item.trim()).filter(Boolean);
+}
+
+const FEATURE_ALIASES = {
+  'power windows': 'Power Windows',
+  abs: 'ABS',
+  'dual airbags': 'Dual Airbags',
+  'alloy wheels': 'Alloy Wheels',
+  'touchscreen display': 'Touchscreen',
+  touchscreen: 'Touchscreen',
+  'leather seats': 'Leather Seats',
+  sunroof: 'Sunroof',
+  'apple carplay': 'Apple CarPlay',
+  '6 airbags': '6 Airbags',
+  '360 camera': '360 Camera',
+};
+
+function normalizeFeatures(value) {
+  const out = [];
+  parseStringList(value).forEach((item) => {
+    const mapped = FEATURE_ALIASES[item.toLowerCase()] || item;
+    if (mapped && !out.includes(mapped)) out.push(mapped);
+  });
+  return out;
+}
+
+function normalizeImages(value) {
+  return parseStringList(value).filter((url) => /^https?:\/\//i.test(url));
+}
+
+function normalizeColor(v) {
+  const raw = String(v || '').trim();
+  if (!raw) return '';
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 function validateInventoryRow(row) {
@@ -172,7 +254,12 @@ function validateInventoryRow(row) {
       km_driven: Number.isNaN(km_driven) ? 0 : km_driven,
       price,
       fuel_type: normalizeFuel(row.fuel_type || row.fuel),
-      transmission: normalizeTrans(row.transmission),
+      transmission: normalizeTrans(row.transmission || row.gearbox),
+      ownership: normalizeOwnership(row.ownership || row.owners || row.owner),
+      color: normalizeColor(row.color || row.colour),
+      description: String(row.description || '').trim(),
+      images: normalizeImages(row.images || row.image || row.photos),
+      features: normalizeFeatures(row.features || row.key_features),
       city: row.city || 'Hyderabad',
     },
   };
@@ -250,7 +337,7 @@ function driveStatus(status) {
 exports.templateCsv = (_req, res) => {
   const sample = [
     TEMPLATE_HEADERS.join(','),
-    'TS09AB1234,Maruti,Swift,VXI,2021,32000,575000,Petrol,Manual,Hyderabad',
+    'TS09AB1234,Maruti,Swift,VXI,2021,32000,575000,Petrol,Manual,1,White,Hyderabad',
   ].join('\n');
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="4tyrezz_bulk_inventory_template.csv"');
@@ -288,7 +375,9 @@ exports.bulkUpload = async (req, res) => {
         kmDriven: Number(row.km_driven) || 0,
         variant: row.variant,
         fuel: row.fuel_type,
-        transmission: row.transmission,
+        transmission: row.transmission || 'Manual',
+        ownership: row.ownership,
+        color: row.color,
         bodyType: inferBodyType(row.model, row.variant),
         title: `${row.year} ${row.brand} ${row.model}`.trim(),
         rtoDetails: { rcNumber: row.registration_no, rcStatus: 'Active' },
@@ -304,7 +393,9 @@ exports.bulkUpload = async (req, res) => {
         year: refs.year,
         price: refs.price,
         fuel: refs.fuel,
-        transmission: refs.transmission,
+        transmission: refs.transmission || 'Manual',
+        ownership: Number(refs.ownership) || 1,
+        color: refs.color || '',
         bodyType: refs.bodyType,
         kmDriven: refs.kmDriven,
         city: refs.city,
@@ -313,8 +404,17 @@ exports.bulkUpload = async (req, res) => {
         location: { city: row.city || '', formattedAddress: row.city || '' },
         rto: row.city || '',
         rtoDetails: refs.rtoDetails,
+        images: row.images || [],
+        features: row.features || [],
+        mediaSlots: {
+          front: row.images?.[0] || '',
+          rear: row.images?.[1] || '',
+          dashboard: row.images?.[2] || '',
+          odometer: row.images?.[3] || '',
+          tyres: row.images?.[4] || '',
+        },
         ...listingFieldsForCreate({ isAdmin: false }),
-        description: 'Imported via bulk upload',
+        description: row.description || 'Imported via bulk upload',
       });
       imported.push(car._id);
     } catch (e) {

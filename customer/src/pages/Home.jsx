@@ -16,6 +16,7 @@ import HowItWorks from '../components/HowItWorks';
 import CarBannerSection from '../components/CarBannerSection';
 import WhatsAppFloat from '../components/WhatsAppFloat';
 import LastViewedCars from '../components/LastViewedCars';
+import PdiCta from '../components/pdi/PdiCta';
 import { Car, BadgeCheck, Scale, GitCompare, Banknote, Shield, Tag, Phone } from 'lucide-react';
 import CompareVsCard from '../components/CompareVsCard';
 import { mediaUrl } from './profile/hubUtils';
@@ -289,6 +290,10 @@ export default function Home() {
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="px-3 lg:px-0 pt-4 lg:pt-0 lg:container-px lg:mx-auto lg:max-w-3xl">
+        <PdiCta />
       </section>
 
       {/* ---- KEY METRICS ---- */}

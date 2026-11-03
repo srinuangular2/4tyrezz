@@ -17,6 +17,9 @@ const carSchema = new mongoose.Schema(
     interiorColor: { type: String, default: '' },
     videoUrl: { type: String, default: '' },
     pickupLocation: { type: String, default: '' },
+    car_location: { type: String, default: '' },
+    upload_address: { type: String, default: '' },
+    paymentRoute: { type: String, enum: ['platform', 'dealer'], default: 'platform' },
     location: {
       state: { type: String, default: '', index: true },
       city: { type: String, default: '', index: true },
@@ -34,6 +37,8 @@ const carSchema = new mongoose.Schema(
       default: 'available',
     },
     unpublished: { type: Boolean, default: false, index: true },
+    // Public buy listing only. Set when an admin finishes inspection and approves.
+    listingCleared: { type: Boolean, default: false, index: true },
     listingStatus: {
       type: String,
       enum: ['DRAFT', 'PENDING_MODERATION', 'PUBLISHED', 'REJECTED', 'SOLD', 'UNPUBLISHED'],

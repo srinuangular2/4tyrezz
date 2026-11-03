@@ -9,14 +9,15 @@ function publicListingFilter() {
   return {
     unpublished: { $ne: true },
     status: { $in: PUBLIC_STATUSES },
+    listingCleared: true,
   };
 }
 
-function listingFieldsForCreate({ isAdmin = false } = {}) {
-  if (isAdmin || !requiresListingModeration()) {
-    return { status: 'approved', listingStatus: 'PUBLISHED', unpublished: false };
+function listingFieldsForCreate() {
+  if (!requiresListingModeration()) {
+    return { status: 'approved', listingStatus: 'PUBLISHED', unpublished: false, listingCleared: true };
   }
-  return { status: 'pending', listingStatus: 'PENDING_MODERATION', unpublished: false };
+  return { status: 'pending', listingStatus: 'PENDING_MODERATION', unpublished: false, listingCleared: false };
 }
 
 function syncFromListingStatus(listingStatus, current = {}) {
@@ -99,7 +100,20 @@ async function republishOrphanedApprovedCars() {
 
   const result = await Car.updateMany(
     { _id: { $in: orphanIds } },
-    { $set: { owner: ownerId, unpublished: false, listingStatus: 'PUBLISHED' } }
+    { $set: { owner: ownerId, unpublished: false, listingStatus: 'PUBLISHED', listingCleared: true } }
+  );
+  return { updated: result.modifiedCount || result.nModified || 0 };
+}
+
+async function backfillListingCleared() {
+  const Car = require('../models/Car');
+  const result = await Car.updateMany(
+    {
+      listingCleared: { $exists: false },
+      status: 'approved',
+      unpublished: { $ne: true },
+    },
+    { $set: { listingCleared: true } }
   );
   return { updated: result.modifiedCount || result.nModified || 0 };
 }
@@ -115,4 +129,5 @@ module.exports = {
   scopedDealerId,
   findPlatformOwnerId,
   republishOrphanedApprovedCars,
+  backfillListingCleared,
 };

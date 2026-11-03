@@ -25,6 +25,8 @@ const FEATURES = [
   ['Alloy Wheels', '⚙️'],
   ['ABS', '🛑'],
   ['Touchscreen', '🖥️'],
+  ['Power Windows', '🪟'],
+  ['Dual Airbags', '💨'],
 ];
 
 const HEALTH = [
@@ -173,6 +175,8 @@ export default function AddCarWizard({
     locationArea: '',
     pincode: '',
     formattedAddress: '',
+    car_location: '',
+    upload_address: '',
     lat: '',
     lng: '',
     insuranceType: 'Comprehensive',
@@ -244,6 +248,8 @@ export default function AddCarWizard({
         locationArea: c.location?.area || '',
         pincode: c.location?.pincode || '',
         formattedAddress: c.location?.formattedAddress || '',
+        car_location: c.car_location || '',
+        upload_address: c.upload_address || '',
         lat: c.location?.coordinates?.coordinates?.[1] || '',
         lng: c.location?.coordinates?.coordinates?.[0] || '',
         insuranceType: c.insuranceType || 'Comprehensive',
@@ -375,6 +381,8 @@ export default function AddCarWizard({
     data.append('locationArea', form.locationArea);
     data.append('pincode', form.pincode);
     data.append('formattedAddress', form.formattedAddress || form.pickupLocation);
+    data.append('car_location', form.car_location || '');
+    data.append('upload_address', form.upload_address || '');
     data.append('lat', form.lat);
     data.append('lng', form.lng);
     data.append('location', JSON.stringify({
@@ -616,6 +624,11 @@ export default function AddCarWizard({
 
         {step === 2 && (
           <div className="space-y-5">
+            {String(form.description || '').toLowerCase().includes('bulk upload') && (
+              <p className="text-sm font-semibold text-slate-600">
+                All vehicle information supplied in your bulk upload file will auto-populate automatically. You can review and complete any remaining details as needed.
+              </p>
+            )}
             <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 shadow-lg shadow-blue-500/20">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-100 inline-flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" /> Live resale range
@@ -669,6 +682,14 @@ export default function AddCarWizard({
                 <input className={input} value={form.price} onChange={(e) => set('price', e.target.value.replace(/\D/g, ''))} placeholder="750000" />
                 <p className="mt-2 text-sm font-black text-blue-600">{formatLakh(form.price) || '₹ 0'}</p>
               </div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
+                <span className={labelCls}>Transmission</span>
+                <div className="flex flex-wrap gap-2">
+                  {['Manual', 'Automatic'].map((t) => (
+                    <Pill key={t} active={form.transmission === t} onClick={() => set('transmission', t)}>{t}</Pill>
+                  ))}
+                </div>
+              </div>
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
                 <span className={labelCls}>Ownership</span>
                 <div className="flex flex-wrap gap-2">
@@ -710,6 +731,14 @@ export default function AddCarWizard({
                     {[form.locationArea, form.locationCity, form.locationState, form.pincode].filter(Boolean).join(' · ')}
                   </p>
                 )}
+              </label>
+              <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
+                <span className={labelCls}>Car location</span>
+                <input className={input} value={form.car_location || ''} onChange={(e) => set('car_location', e.target.value)} placeholder="Hyderabad" />
+              </label>
+              <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
+                <span className={labelCls}>Upload address</span>
+                <input className={input} value={form.upload_address || ''} onChange={(e) => set('upload_address', e.target.value)} placeholder="Yard or street address where the car was uploaded" />
               </label>
             </div>
 

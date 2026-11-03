@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Car = require('../models/Car');
 const Valuation = require('../models/Valuation');
@@ -59,6 +60,35 @@ exports.listUsers = async (req, res) => {
   res.json({ users, total, page: Number(page), pages: Math.ceil(total / limit) });
 };
 
+exports.createStaff = async (req, res) => {
+  if (!['admin', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({ message: 'Only the main admin can create child admins' });
+  }
+  const role = req.body.role === 'executive_agent' ? 'executive_agent' : req.body.role === 'field_agent' ? 'field_agent' : '';
+  const name = String(req.body.name || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
+  const assignedRegion = String(req.body.assignedRegion || '').trim();
+  if (!role || !name || !email.includes('@') || password.length < 8) {
+    return res.status(400).json({ message: 'Name, email, a role, and a password of at least 8 characters are required' });
+  }
+  const existing = await User.findOne({ email });
+  if (existing) return res.status(400).json({ message: 'Email already registered' });
+  const user = await User.create({
+    name,
+    email,
+    password: await bcrypt.hash(password, 10),
+    role,
+    assignedRegion: role === 'executive_agent' ? assignedRegion : '',
+    isVerified: true,
+    isActive: true,
+    profileComplete: true,
+  });
+  res.status(201).json({
+    data: { _id: user._id, name: user.name, email: user.email, role: user.role, assignedRegion: user.assignedRegion },
+  });
+};
+
 exports.toggleUserActive = async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
@@ -83,6 +113,11 @@ exports.setCarStatus = async (req, res) => {
   if (!listingStatus) return res.status(400).json({ message: 'Invalid status' });
   const car = await Car.findById(req.params.id);
   if (!car) return res.status(404).json({ message: 'Car not found' });
+  if (listingStatus === 'PUBLISHED' && !car.listingCleared) {
+    return res.status(400).json({
+      message: 'Inspect and approve this listing before it can appear in the vehicle listing',
+    });
+  }
   Object.assign(car, syncFromListingStatus(listingStatus, car));
   await car.save();
   res.json(car);

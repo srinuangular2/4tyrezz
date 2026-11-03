@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, LineChart, Users, Store, CarFront, Library,
-  Target, Gauge, CreditCard, Wallet, Percent,   Landmark, Shield, Repeat,
+  Target, Gauge, CreditCard, ClipboardCheck, Wallet, Percent,   Landmark, Shield, Repeat,
   Megaphone, Star, LifeBuoy, FileText, Settings, LogOut,
 } from 'lucide-react';
 import { SidebarCountBadge } from '../NotificationBell';
@@ -31,6 +31,7 @@ const GROUPS = [
       { to: '/leads', label: 'Leads', Icon: Target, badgeKey: 'leads', badgeLabel: 'New' },
       ...(SHOW_TEST_DRIVE ? [{ to: '/test-drives', label: 'Test drives', Icon: Gauge, badgeKey: 'testDrives', badgeLabel: 'Pending' }] : []),
       { to: '/bookings', label: 'Bookings & tokens', Icon: CreditCard, badgeKey: 'bookings', badgeLabel: 'New' },
+      { to: '/pdi', label: 'PDI leads', Icon: ClipboardCheck },
       { to: '/payments', label: 'Payments & ledger', Icon: Wallet },
       { to: '/commissions', label: 'Commissions & payouts', Icon: Percent },
       { to: '/finance', label: 'Finance leads', Icon: Landmark },
@@ -47,14 +48,39 @@ const GROUPS = [
       { to: '/support', label: 'Complaints & tickets', Icon: LifeBuoy },
       { to: '/content', label: 'Content CMS', Icon: FileText },
       { to: '/settings', label: 'System settings', Icon: Settings },
+      { to: '/staff', label: 'Child admins', Icon: Users },
     ],
   },
 ];
+
+function groupsFor(role) {
+  if (role === 'field_agent') {
+    return [{
+      label: 'Field agent',
+      items: [
+        { to: '/cars/add', label: 'Upload vehicle', Icon: CarFront },
+        { to: '/uploads', label: 'My uploads', Icon: Library },
+      ],
+    }];
+  }
+  if (role === 'executive_agent') {
+    return [{
+      label: 'Executive',
+      items: [
+        { to: '/', label: 'Executive dashboard', Icon: LayoutDashboard, end: true },
+        { to: '/cars', label: 'Vehicle listings', Icon: CarFront },
+        { to: '/sold', label: 'Sold cars', Icon: Wallet },
+      ],
+    }];
+  }
+  return GROUPS;
+}
 
 export default function AdminSidebar({ user, onLogout }) {
   const alerts = useRealtimeAlerts();
   const counts = alerts?.counts || {};
   const unreadByType = counts.unreadByType || {};
+  const groups = groupsFor(user?.role);
 
   return (
     <aside className="w-72 bg-[#070b14]/80 backdrop-blur-xl border-r border-slate-800/80 text-slate-200 flex-shrink-0 flex flex-col">
@@ -62,7 +88,7 @@ export default function AdminSidebar({ user, onLogout }) {
         <img src="/blue-logo.png" alt="4TYREZZ" className="h-9 w-auto bg-white rounded-md px-1.5 py-0.5" />
       </div>
       <nav className="flex-1 py-4 px-3 space-y-5 overflow-y-auto">
-        {GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.label}>
             <p className="px-3 mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
               {group.label}

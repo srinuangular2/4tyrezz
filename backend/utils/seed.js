@@ -221,6 +221,8 @@ async function run() {
       quickInsights: extras.quickInsights,
       rtoDetails: extras.rtoDetails,
       status: 'approved',
+      listingStatus: 'PUBLISHED',
+      listingCleared: true,
       isFeatured: Math.random() > 0.75,
       isPremium: Math.random() > 0.85,
       owner: Math.random() > 0.5 ? dealer._id : customer._id,

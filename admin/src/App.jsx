@@ -19,6 +19,8 @@ import FinanceHub from './pages/FinanceHub';
 import InsuranceLeads from './pages/InsuranceLeads';
 import SellExchange from './pages/SellExchange';
 import InventoryEngine from './pages/InventoryEngine';
+import Staff from './pages/Staff';
+import CarsManager from './components/CarsManager';
 import Leads from './pages/Leads';
 import TestDrives from './pages/TestDrives';
 import BookingsAdmin from './pages/BookingsAdmin';
@@ -28,6 +30,7 @@ import ReviewsAdmin from './pages/ReviewsAdmin';
 import Support from './pages/Support';
 import Settings from './pages/Settings';
 import Moderation from './pages/Moderation';
+import PdiAdmin from './pages/PdiAdmin';
 import { Toaster } from 'react-hot-toast';
 
 export default function App() {
@@ -43,6 +46,8 @@ export default function App() {
           <Route path="users" element={<Users />} />
           <Route path="dealers" element={<Dealers />} />
           <Route path="cars" element={<Cars />} />
+          <Route path="sold" element={<CarsManager defaultStatus="sold" />} />
+          <Route path="uploads" element={<CarsManager />} />
           <Route path="cars/add" element={<CarForm />} />
           <Route path="add-car" element={<CarForm />} />
           <Route path="cars/edit/:id" element={<CarForm />} />
@@ -53,6 +58,7 @@ export default function App() {
           <Route path="leads" element={<Leads />} />
           <Route path="test-drives" element={<TestDrives />} />
           <Route path="bookings" element={<BookingsAdmin />} />
+          <Route path="pdi" element={<PdiAdmin />} />
           <Route path="payments" element={<Payments />} />
           <Route path="commissions" element={<Commissions />} />
           <Route path="finance" element={<FinanceHub />} />
@@ -66,6 +72,7 @@ export default function App() {
           <Route path="support" element={<Support />} />
           <Route path="content" element={<ContentCMS />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="staff" element={<Staff />} />
         </Route>
       </Routes>
       <Toaster

@@ -199,8 +199,8 @@ export default function CompareDetailsBoard({ cars = [], ids = [], onRemove, onA
               {cars.map((c, i) => (
                 <div key={c.id} className="relative flex items-center gap-2 shrink-0">
                   {i === 1 && (
-                    <span className="absolute -left-5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#3083ff] text-white text-[10px] font-black flex items-center justify-center">
-                      VS
+                    <span className="absolute -left-5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#3083ff] text-white text-[10px] font-black leading-none flex items-center justify-center">
+                      <span className="translate-y-px">VS</span>
                     </span>
                   )}
                   <img src={c.images?.[0] || '/pwa-192.png'} alt="" className="w-14 h-10 object-cover rounded-md bg-slate-100" />

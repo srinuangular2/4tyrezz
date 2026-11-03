@@ -19,8 +19,8 @@ export default function CompareVsCard({ pair, onOpen, to }) {
           <img src={a.images?.[0]} alt={a.title} className="h-24 sm:h-28 w-full object-cover" />
           <img src={b.images?.[0]} alt={b.title} className="h-24 sm:h-28 w-full object-cover" />
         </div>
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#3083ff] text-white text-[11px] font-black flex items-center justify-center shadow-lg shadow-blue-500/30 ring-4 ring-white">
-          VS
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#3083ff] text-white text-[11px] font-black leading-none flex items-center justify-center shadow-lg shadow-blue-500/30 ring-4 ring-white">
+          <span className="translate-y-px">VS</span>
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3 px-5 pt-2 pb-4">

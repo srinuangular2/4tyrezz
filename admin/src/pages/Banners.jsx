@@ -30,7 +30,7 @@ export default function Banners() {
   const load = () => api.get('/banners/all').then((r) => setBanners(r.data));
   useEffect(() => {
     load();
-    api.get('/cars', { params: { limit: 200, status: 'approved' } }).then((r) => setCars(r.data.cars));
+    api.get('/cars', { params: { inventory: 1, limit: 200, status: 'approved' } }).then((r) => setCars(r.data.cars));
   }, []);
 
   const persistOrder = async (next) => {

@@ -10,6 +10,8 @@ const ROLE_NAMES = {
   finance_admin: '4TYREZZ Finance/Admin',
   admin: 'Admin',
   super_admin: 'Super Admin',
+  field_agent: 'Field Agent',
+  executive_agent: 'Executive Agent',
 };
 
 async function bootstrapRoles() {

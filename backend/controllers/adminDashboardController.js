@@ -323,6 +323,10 @@ exports.refundPayment = async (req, res) => {
   if (payment.booking) {
     await Booking.findByIdAndUpdate(payment.booking, { status: 'Cancelled/Refunded' });
   }
+  if (payment.meta?.pdiBooking) {
+    const PdiBooking = require('../models/PdiBooking');
+    await PdiBooking.findByIdAndUpdate(payment.meta.pdiBooking, { status: 'CANCELLED' });
+  }
   res.json({ data: payment });
 };
 

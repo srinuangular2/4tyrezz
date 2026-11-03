@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import api from '../api/axios';
 import { GlassCard, KpiCard, PageHeader, inr } from '../components/admin/ui';
@@ -6,6 +7,7 @@ import { GlassCard, KpiCard, PageHeader, inr } from '../components/admin/ui';
 const tooltipStyle = { background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, color: '#e2e8f0' };
 
 export default function Dashboard() {
+  const role = useSelector((state) => state.auth.user?.role);
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -24,7 +26,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker="Command center" title="Dashboard" subtitle="Live inventory, revenue, and operational queues." />
+      <PageHeader
+        kicker={role === 'executive_agent' ? 'Executive' : 'Command center'}
+        title={role === 'executive_agent' ? 'Executive dashboard' : 'Dashboard'}
+        subtitle={role === 'executive_agent' ? 'Listings and sold cars for your assigned region.' : 'Live inventory, revenue, and operational queues.'}
+      />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard label="GMV (tokens paid)" value={inr(stats.gmv)} delta={stats.trends?.gmv} />
         <KpiCard label="Active listings" value={stats.activeListings} />

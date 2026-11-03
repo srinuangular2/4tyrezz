@@ -104,6 +104,7 @@ export default function Header() {
     { label: 'Buy Used Cars', path: '/cars' },
     { label: 'Sell My Car', path: '/sell' },
     { label: 'Car Valuation', path: '/valuation' },
+    { label: 'Car Inspection', path: '/inspection' },
     { label: 'Compare', path: '/compare' },
     { label: 'Finance', path: '/finance' },
     { label: 'Insurance', path: '/insurance' },

@@ -80,7 +80,7 @@ exports.listDealers = async (req, res) => {
 exports.getDealer = async (req, res) => {
   const profile = await DealerProfile.findById(req.params.id).populate(
     'user',
-    'name email mobile dealershipName dealerCode city isActive kycVerified'
+    'name email mobile dealershipName dealerCode city isActive kycVerified razorpayAccountId'
   );
   if (!profile) return res.status(404).json({ message: 'Dealer profile not found' });
   res.json({ data: serialize(profile) });
@@ -346,6 +346,9 @@ exports.updateDealer = async (req, res) => {
   user.city = city;
   user.email = email || undefined;
   user.mobile = mobile || undefined;
+  if (req.body.razorpayAccountId !== undefined) {
+    user.razorpayAccountId = String(req.body.razorpayAccountId || '').trim();
+  }
   await user.save();
 
   profile.businessName = dealershipName;
@@ -358,7 +361,7 @@ exports.updateDealer = async (req, res) => {
   res.json({
     success: true,
     message: 'Dealer details updated. Dealer ID is unchanged.',
-    data: serialize(await DealerProfile.findById(profile._id).populate('user', 'name email mobile dealershipName dealerCode city isActive kycVerified')),
+    data: serialize(await DealerProfile.findById(profile._id).populate('user', 'name email mobile dealershipName dealerCode city isActive kycVerified razorpayAccountId')),
   });
 };
 

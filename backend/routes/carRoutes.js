@@ -18,7 +18,7 @@ router.post('/:carId/wishlist', protect, ctrl.toggleWishlist);
 router.post('/connect-whatsapp', protect, ctrl.connectCarOnWhatsApp);
 // Single Car operations
 router.get('/:id', optionalAuth, ctrl.getCarById);
-router.post('/', protect, authorize('dealer', 'admin'), requireDealerKyc, uploadCarImages.array('images', 20), ctrl.createCar);
+router.post('/', protect, authorize('dealer', 'admin', 'field_agent'), requireDealerKyc, uploadCarImages.array('images', 20), ctrl.createCar);
 router.put('/:id', protect, authorize('dealer', 'admin'), requireDealerKyc, uploadCarImages.array('images', 20), ctrl.updateCar);
 router.delete('/:id', protect, authorize('dealer', 'admin'), ctrl.deleteCar);
 module.exports = router;

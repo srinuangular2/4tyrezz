@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { GlassCard, PageHeader, btnPrimary } from '../../components/dealer/ui';
 
-const HEADERS = ['registration_no', 'brand', 'model', 'variant', 'year', 'km_driven', 'price', 'fuel_type', 'transmission', 'city'];
+const HEADERS = ['registration_no', 'brand', 'model', 'variant', 'year', 'km_driven', 'price', 'fuel_type', 'transmission', 'ownership', 'color', 'city'];
 
 export default function DealerBulkUpload() {
   const [rows, setRows] = useState([]);
@@ -31,6 +31,8 @@ export default function DealerBulkUpload() {
         price: r.price || '',
         fuel_type: r.fuel_type || '',
         transmission: r.transmission || '',
+        ownership: r.ownership || '',
+        color: r.color || '',
         city: r.city || '',
         errors: r.errors || [],
       })));
@@ -42,7 +44,7 @@ export default function DealerBulkUpload() {
   };
 
   const downloadTemplate = () => {
-    const body = `${HEADERS.join(',')}\nTS09AB1234,Maruti,Swift,VXI,2021,32000,575000,Petrol,Manual,Hyderabad\n`;
+    const body = `${HEADERS.join(',')}\nTS09AB1234,Maruti,Swift,VXI,2021,32000,575000,Petrol,Manual,1,White,Hyderabad\n`;
     const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

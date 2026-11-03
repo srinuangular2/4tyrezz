@@ -68,6 +68,8 @@ const ROLE_PERMISSIONS = {
     'payments:view',
     'kyc:submit',
   ],
+  field_agent: ['inventory:create'],
+  executive_agent: ['analytics:view', 'payments:view', 'commissions:view'],
   operations: [
     'inventory:approve',
     'leads:read_all',

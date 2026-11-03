@@ -44,7 +44,7 @@ export default function Payments() {
         columns={[
           { key: 'invoice', label: 'Invoice', render: (r) => r.invoiceRef || r.providerOrderId || '—' },
           { key: 'user', label: 'Payer', render: (r) => r.user?.name || '—' },
-          { key: 'vehicle', label: 'Vehicle', render: (r) => r.vehicle?.title || '—' },
+          { key: 'vehicle', label: 'Vehicle', render: (r) => r.vehicle?.title || (r.meta?.brand ? `${r.meta.brand} ${r.meta.model} inspection` : '—') },
           { key: 'amount', label: 'Amount', render: (r) => inr(r.amount) },
           { key: 'method', label: 'Method', render: (r) => r.method || r.provider },
           { key: 'status', label: 'Status', render: (r) => <StatusBadge value={r.status} /> },

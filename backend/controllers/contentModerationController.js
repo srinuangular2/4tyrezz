@@ -45,6 +45,7 @@ exports.approve = async (req, res) => {
   const car = await Car.findById(req.params.id);
   if (!car) return res.status(404).json({ message: 'Listing not found' });
   Object.assign(car, syncFromListingStatus('PUBLISHED', car));
+  car.listingCleared = true;
   car.moderationNotes = '';
   await car.save();
   if (car.owner) {
@@ -64,6 +65,7 @@ exports.reject = async (req, res) => {
   if (!car) return res.status(404).json({ message: 'Listing not found' });
   const notes = req.body.remarks || req.body.reason || req.body.moderationNotes || 'Rejected by moderation';
   Object.assign(car, syncFromListingStatus('REJECTED', car));
+  car.listingCleared = false;
   car.moderationNotes = notes;
   await car.save();
   if (car.owner) {

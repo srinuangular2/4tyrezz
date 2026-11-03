@@ -176,8 +176,9 @@ exports.bulkActions = async (req, res) => {
     const previousPrice = Number(car.price);
     if (action === 'unpublish') Object.assign(car, syncFromListingStatus('UNPUBLISHED', car));
     if (action === 'publish') {
-      if (requiresListingModeration() && car.status !== 'approved') {
+      if (requiresListingModeration() && !car.listingCleared) {
         Object.assign(car, syncFromListingStatus('PENDING_MODERATION', car));
+        car.listingCleared = false;
       } else {
         Object.assign(car, syncFromListingStatus('PUBLISHED', car));
       }
@@ -209,10 +210,13 @@ exports.moderate = async (req, res) => {
   if (!car) return res.status(404).json({ message: 'Listing not found' });
   if (decision === 'PUBLISHED' || decision === 'APPROVED') {
     Object.assign(car, syncFromListingStatus('PUBLISHED', car));
+    car.listingCleared = true;
   } else if (decision === 'REJECTED') {
     Object.assign(car, syncFromListingStatus('REJECTED', car));
+    car.listingCleared = false;
   } else if (decision === 'PENDING_MODERATION' || decision === 'PENDING') {
     Object.assign(car, syncFromListingStatus('PENDING_MODERATION', car));
+    car.listingCleared = false;
   } else {
     return res.status(400).json({ message: 'status must be PUBLISHED, REJECTED or PENDING_MODERATION' });
   }

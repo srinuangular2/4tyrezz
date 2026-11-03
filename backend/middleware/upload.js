@@ -64,4 +64,5 @@ module.exports = {
   uploadBulkInventory: makeUploader('bulk'),
   uploadAvatar: makeUploader('avatars'),
   uploadSellPhotos: makeUploader('sell'),
+  uploadPdiPhotos: makeUploader('pdi'),
 };

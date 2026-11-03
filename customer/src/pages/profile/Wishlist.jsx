@@ -142,9 +142,9 @@ export default function ProfileWishlist() {
                       if (result.full) toast.error('Compare tray is full (4 cars)');
                       else toast.success(result.already ? 'Already in compare' : 'Added to compare');
                     }}
-                    className="text-[11px] font-black uppercase tracking-wider border border-white/40 rounded-xl px-3"
+                    className="inline-flex items-center justify-center text-[11px] font-black uppercase leading-none tracking-wider border border-slate-200 rounded-xl px-3 py-2"
                   >
-                    VS
+                    <span className="translate-y-px">VS</span>
                   </button>
                   <button
                     type="button"

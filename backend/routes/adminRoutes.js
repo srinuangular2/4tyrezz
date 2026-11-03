@@ -18,6 +18,7 @@ router.get('/settings', dash.getSettings);
 router.put('/settings', dash.updateSettings);
 
 router.get('/users', ctrl.listUsers);
+router.post('/staff', ctrl.createStaff);
 router.patch('/users/:id/toggle-active', ctrl.toggleUserActive);
 
 router.patch('/cars/:id/status', ctrl.setCarStatus);

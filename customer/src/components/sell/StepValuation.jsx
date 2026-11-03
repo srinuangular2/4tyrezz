@@ -94,7 +94,7 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
         <div className="grid grid-cols-2 gap-2">
           {[
             { id: 'home', title: 'Home inspection', body: 'Executive visits your address' },
-            { id: 'hub', title: 'Nearest 4TYREZZ hub', body: 'Drive in, faster slot' },
+            //{ id: 'hub', title: 'Nearest 4TYREZZ hub', body: 'Drive in, faster slot' },
           ].map((opt) => (
             <button
               key={opt.id}

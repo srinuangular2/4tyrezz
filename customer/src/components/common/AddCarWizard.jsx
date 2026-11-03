@@ -25,6 +25,8 @@ const FEATURES = [
   ['Alloy Wheels', '⚙️'],
   ['ABS', '🛑'],
   ['Touchscreen', '🖥️'],
+  ['Power Windows', '🪟'],
+  ['Dual Airbags', '💨'],
 ];
 
 const HEALTH = [
@@ -640,6 +642,11 @@ export default function AddCarWizard({
 
         {step === 2 && (
           <div className="space-y-5">
+            {String(form.description || '').toLowerCase().includes('bulk upload') && (
+              <p className="text-sm font-semibold text-slate-600">
+                All vehicle information supplied in your bulk upload file will auto-populate automatically. You can review and complete any remaining details as needed.
+              </p>
+            )}
             <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 shadow-lg shadow-blue-500/20">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-100 inline-flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" /> Suggested market range
@@ -691,6 +698,14 @@ export default function AddCarWizard({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
+                <span className={labelCls}>Transmission</span>
+                <div className="flex flex-wrap gap-2">
+                  {['Manual', 'Automatic'].map((t) => (
+                    <Pill key={t} active={form.transmission === t} onClick={() => set('transmission', t)}>{t}</Pill>
+                  ))}
                 </div>
               </div>
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">

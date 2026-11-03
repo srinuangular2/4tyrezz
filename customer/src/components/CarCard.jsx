@@ -352,9 +352,9 @@ export default function CarCard({ car }) {
               type="button"
               onClick={handleCompare}
               aria-label="Add to compare"
-              className="hidden sm:inline-flex h-9 px-2.5 rounded-full bg-white/60 backdrop-blur-md border border-white/80 text-[10px] font-black uppercase tracking-wider text-slate-800 hover:bg-white hover:text-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer"
+              className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/60 backdrop-blur-md border border-white/80 text-[10px] font-black uppercase leading-none tracking-wide text-slate-800 hover:bg-white hover:text-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer"
             >
-              VS
+              <span className="translate-y-px">VS</span>
             </button>
             <button
               type="button"

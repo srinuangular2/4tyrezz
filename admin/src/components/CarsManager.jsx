@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
@@ -34,6 +35,13 @@ function carImage(c) {
   return src;
 }
 
+function stockState(c) {
+  const unavailable = c.status === 'sold' || c.unpublished || (c.availability && c.availability !== 'available');
+  return unavailable
+    ? { label: 'Unavailable', cls: 'bg-rose-500/15 text-rose-300 border border-rose-500/30' }
+    : { label: 'Available', cls: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' };
+}
+
 function priceTone(c) {
   const ask = Number(c.price);
   const min = Number(c.quickInsights?.marketPriceMin);
@@ -44,17 +52,32 @@ function priceTone(c) {
   return { label: 'High', cls: 'bg-amber-50 text-amber-700' };
 }
 
-export default function CarsManager({ defaultStatus = '' }) {
+export default function CarsManager({ defaultStatus = '', liveOnly = false }) {
   const [cars, setCars] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0 });
   const [status, setStatus] = useState(defaultStatus);
   const [search, setSearch] = useState('');
+  const [dealerId, setDealerId] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [dealers, setDealers] = useState([]);
   const [carToDelete, setCarToDelete] = useState(null);
+  const role = useSelector((state) => state.auth.user?.role);
+  const isMainAdmin = role === 'admin';
   const [deleting, setDeleting] = useState(false);
 
   const load = async (page = 1) => {
     const { data } = await api.get('/cars', {
-      params: { status: status || undefined, search: search || undefined, page, limit: 10, sort: '-createdAt' },
+      params: {
+        inventory: 1,
+        listingCleared: liveOnly ? 1 : undefined,
+        status: status || undefined,
+        owner: dealerId || undefined,
+        availability: availability || undefined,
+        search: search || undefined,
+        page,
+        limit: 10,
+        sort: '-createdAt',
+      },
     });
     setCars(data.cars);
     setMeta({ page: data.page, pages: data.pages, total: data.total || data.cars?.length || 0 });
@@ -63,12 +86,23 @@ export default function CarsManager({ defaultStatus = '' }) {
   useEffect(() => {
     load(1);
     /* eslint-disable-next-line */
-  }, [status]);
+  }, [status, dealerId, availability]);
+
+  useEffect(() => {
+    if (!isMainAdmin) return;
+    api.get('/admin/dealers', { params: { limit: 50 } })
+      .then((res) => setDealers(res.data.data || []))
+      .catch(() => setDealers([]));
+  }, [isMainAdmin]);
 
   const setCarStatus = async (id, newStatus) => {
-    await api.patch(`/admin/cars/${id}/status`, { status: newStatus });
-    toast.success(`Car status updated to ${newStatus}`);
-    load(meta.page);
+    try {
+      await api.patch(`/admin/cars/${id}/status`, { status: newStatus });
+      toast.success(`Car status updated to ${newStatus}`);
+      load(meta.page);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not update listing');
+    }
   };
 
 
@@ -133,7 +167,24 @@ export default function CarsManager({ defaultStatus = '' }) {
         );
       },
     },
-    { key: 'seller', label: 'Seller', render: (c) => c.owner?.dealershipName || c.owner?.name || c.owner?.mobile || '—' },
+    {
+      key: 'seller',
+      label: 'Dealer',
+      render: (c) => (
+        <div>
+          <p className="font-semibold text-white">{c.owner?.dealershipName || c.owner?.name || '—'}</p>
+          <p className="text-[11px] text-slate-400">{c.upload_address || c.car_location || c.location?.city || ''}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'availability',
+      label: 'Availability',
+      render: (c) => {
+        const stock = stockState(c);
+        return <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${stock.cls}`}>{stock.label}</span>;
+      },
+    },
     {
       key: 'status',
       label: 'Status',
@@ -161,18 +212,18 @@ export default function CarsManager({ defaultStatus = '' }) {
     {
       key: 'actions',
       label: 'Actions',
-      render: (c) => (
+      render: (c) => !isMainAdmin ? <span className="text-[11px] text-slate-500">View only</span> : (
         <div className="flex items-center gap-2.5 flex-wrap">
           <Link to={`/cars/edit/${c._id}`} className="text-[#3083ff] text-xs font-bold hover:underline">
             Edit
           </Link>
-          {(c.unpublished || c.listingStatus === 'UNPUBLISHED') && c.status === 'approved' ? (
+          {!c.listingCleared && c.status !== 'rejected' && c.status !== 'sold' ? (
+            <Link to="/listings/moderation" className="text-amber-300 text-xs font-bold hover:underline">
+              Inspect & approve
+            </Link>
+          ) : (c.unpublished || c.listingStatus === 'UNPUBLISHED') && c.status === 'approved' ? (
             <button onClick={() => setCarStatus(c._id, 'approved')} className="text-emerald-600 text-xs font-bold hover:underline">
               Publish
-            </button>
-          ) : c.status !== 'approved' ? (
-            <button onClick={() => setCarStatus(c._id, 'approved')} className="text-emerald-600 text-xs font-bold hover:underline">
-              Approve
             </button>
           ) : null}
           {c.status !== 'rejected' && (
@@ -207,13 +258,36 @@ export default function CarsManager({ defaultStatus = '' }) {
           placeholder="Search title, brand, city…"
           className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm w-64 text-slate-100 outline-none focus:border-blue-500/50"
         />
+        {isMainAdmin && (
+          <select
+            value={dealerId}
+            onChange={(e) => setDealerId(e.target.value)}
+            className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none"
+          >
+            <option value="">All dealers</option>
+            {dealers.map((dealer) => (
+              <option key={dealer.user?._id || dealer._id} value={dealer.user?._id || ''}>
+                {dealer.businessName || dealer.user?.dealershipName || dealer.user?.name || 'Dealer'}
+              </option>
+            ))}
+          </select>
+        )}
+        <select
+          value={availability}
+          onChange={(e) => setAvailability(e.target.value)}
+          className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none"
+        >
+          <option value="">Available and unavailable</option>
+          <option value="available">Available</option>
+          <option value="unavailable">Unavailable</option>
+        </select>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none"
         >
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
+          <option value="">{liveOnly ? 'Published' : 'All statuses'}</option>
+          {!liveOnly && <option value="pending">Pending</option>}
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
           <option value="sold">Sold</option>

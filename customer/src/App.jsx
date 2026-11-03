@@ -34,6 +34,8 @@ import Finance from './pages/Finance';
 import Insurance from './pages/Insurance';
 import Offers from './pages/Offers';
 import Valuation from './pages/Valuation';
+import Inspection from './pages/Inspection';
+import InspectionBook from './pages/InspectionBook';
 import { About, Contact, FAQs, Blog, Careers, Terms, Privacy, CorporatePolicies } from './pages/Static';
 
 import DashboardLayout from './pages/dashboard/DashboardLayout';
@@ -48,6 +50,7 @@ import SavedSearches from './pages/profile/SavedSearches';
 import Comparisons from './pages/profile/Comparisons';
 import TestDrives from './pages/profile/TestDrives';
 import Bookings from './pages/profile/Bookings';
+import PdiBookings from './pages/profile/PdiBookings';
 import FinanceApplications from './pages/profile/FinanceApplications';
 import InsuranceEnquiries from './pages/profile/InsuranceEnquiries';
 import Notifications from './pages/profile/Notifications';
@@ -155,6 +158,9 @@ export default function App() {
               <Route path="/insurance" element={<Insurance />} />
               <Route path="/offers" element={<Offers />} />
               <Route path="/valuation" element={<Valuation />} />
+              <Route path="/inspection" element={<Inspection />} />
+              <Route path="/pdi" element={<Inspection />} />
+              <Route path="/inspection/book" element={<InspectionBook />} />
               <Route path="/dealers" element={<Navigate to="/cars" replace />} />
               <Route path="/dealers/:id" element={<Navigate to="/cars" replace />} />
               <Route path="/login" element={<Login />} />
@@ -227,6 +233,7 @@ export default function App() {
                 <Route path="comparisons" element={<Comparisons />} />
                 <Route path="test-drives" element={<TestDrives />} />
                 <Route path="bookings" element={<Bookings />} />
+                <Route path="pdi" element={<PdiBookings />} />
                 <Route path="finance-applications" element={<FinanceApplications />} />
                 <Route path="insurance-enquiries" element={<InsuranceEnquiries />} />
                 <Route path="notifications" element={<Notifications />} />

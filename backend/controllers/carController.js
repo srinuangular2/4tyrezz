@@ -109,9 +109,30 @@ exports.getCars = async (req, res) => {
     } = req.query;
 
     const filter = {};
-    // Public listing always stays on live published cars. Admin inventory can see every status.
-    if (req.user?.role === 'admin') {
+    // Customer buy pages always use the public filter, even if an admin is signed in.
+    // Admin inventory passes inventory=1 to see every status.
+    const staffRoles = ['admin', 'super_admin', 'field_agent', 'executive_agent'];
+    const adminInventory = req.query.inventory === '1' && staffRoles.includes(req.user?.role);
+    if (adminInventory) {
+      if (req.query.listingCleared === '1') filter.listingCleared = true;
       if (status) filter.status = status;
+      if (req.user.role === 'field_agent') filter.owner = req.user._id;
+      if (req.query.owner && req.user.role === 'admin') filter.owner = req.query.owner;
+      if (req.query.availability === 'available') {
+        filter.availability = 'available';
+        filter.status = filter.status || { $ne: 'sold' };
+        filter.unpublished = { $ne: true };
+      } else if (req.query.availability === 'unavailable') {
+        filter.$and = [...(filter.$and || []), { $or: [{ availability: { $ne: 'available' } }, { status: 'sold' }, { unpublished: true }] }];
+      }
+      if (req.user.role === 'executive_agent' && req.user.assignedRegion) {
+        const region = String(req.user.assignedRegion).trim();
+        const regionRx = new RegExp(`^${region.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+        const regionCity = await City.findOne({ name: regionRx }).select('_id');
+        const regionOr = [{ 'location.city': regionRx }, { car_location: regionRx }];
+        if (regionCity) regionOr.push({ city: regionCity._id });
+        filter.$and = [...(filter.$and || []), { $or: regionOr }];
+      }
     } else {
       Object.assign(filter, publicListingFilter());
     }
@@ -263,12 +284,12 @@ exports.getCars = async (req, res) => {
 
     const skip = (Number(page) - 1) * Number(limit);
     const [cars, total] = await Promise.all([
-      Car.find(filter).populate(POPULATE_PUBLIC).sort(sort).skip(skip).limit(Number(limit)),
+      Car.find(filter).populate(adminInventory ? POPULATE : POPULATE_PUBLIC).sort(sort).skip(skip).limit(Number(limit)),
       Car.countDocuments(filter),
     ]);
 
     res.json({
-      cars: cars.map(stripDealerFromPublic),
+      cars: adminInventory ? cars : cars.map(stripDealerFromPublic),
       total,
       page: Number(page),
       pages: Math.ceil(total / limit),
@@ -288,7 +309,7 @@ exports.getCarById = async (req, res) => {
     if (!car) return res.status(404).json({ message: 'Car not found' });
     const isOwner = req.user && String(car.owner?._id || car.owner) === String(req.user._id);
     const isStaff = req.user?.role === 'admin';
-    const live = car.status === 'approved' && !car.unpublished;
+    const live = car.status === 'approved' && !car.unpublished && car.listingCleared;
     if (!live && !isOwner && !isStaff) {
       return res.status(404).json({ message: 'Car not found' });
     }
@@ -370,7 +391,8 @@ exports.createCar = async (req, res) => {
       }
     }
     const { images, inspectionReport, mediaSlots, listingDocuments } = splitCarUploads(req.files || [], req.body);
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
+    const isFieldAgent = req.user.role === 'field_agent';
 
     let owner = req.user._id;
     let sellerType = req.user.role === 'dealer' ? 'dealer' : 'individual';
@@ -441,13 +463,16 @@ exports.createCar = async (req, res) => {
       images,
       owner,
       sellerType,
-      ...listingFieldsForCreate({ isAdmin }),
+      car_location: String(req.body.car_location || req.body.carLocation || '').trim(),
+      upload_address: String(req.body.upload_address || req.body.uploadAddress || '').trim(),
+      paymentRoute: isAdmin && req.body.paymentRoute === 'dealer' ? 'dealer' : 'platform',
+      ...listingFieldsForCreate({ isAdmin: isAdmin && !isFieldAgent }),
     });
 
     const populatedCar = await Car.findById(car._id).populate(POPULATE);
     recountLocations().catch(() => {});
 
-    if (!isAdmin && populatedCar.listingStatus === 'PENDING_MODERATION') {
+    if (populatedCar.listingStatus === 'PENDING_MODERATION') {
       inventory.notifyOnCreateOrUpdate({
         title: 'New listing pending moderation',
         body: `${populatedCar.title} from ${req.user.dealershipName || req.user.name} needs approval`,
@@ -610,10 +635,20 @@ exports.updateCar = async (req, res) => {
     if (payload.listingDocuments || Object.keys(listingDocuments).length) {
       updateData.listingDocuments = { ...(car.listingDocuments || {}), ...(payload.listingDocuments || {}), ...listingDocuments };
     }
+    if (req.body.car_location != null || req.body.carLocation != null) {
+      updateData.car_location = String(req.body.car_location || req.body.carLocation || '').trim();
+    }
+    if (req.body.upload_address != null || req.body.uploadAddress != null) {
+      updateData.upload_address = String(req.body.upload_address || req.body.uploadAddress || '').trim();
+    }
+    if (req.user.role === 'admin' && req.body.paymentRoute) {
+      updateData.paymentRoute = req.body.paymentRoute === 'dealer' ? 'dealer' : 'platform';
+    }
 
     if (req.user.role !== 'admin') {
       if (requiresListingModeration()) {
         Object.assign(updateData, syncFromListingStatus('PENDING_MODERATION', car));
+        updateData.listingCleared = false;
         inventory.notifyOnCreateOrUpdate({
           title: 'Listing updated — pending moderation',
           body: `${car.title} was edited and needs re-approval`,

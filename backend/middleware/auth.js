@@ -81,12 +81,23 @@ const requireDealerKyc = async (req, res, next) => {
 
 const protectCustomerRoute = authorize('customer');
 
+const STAFF_ROLES = ['admin', 'super_admin', 'field_agent', 'executive_agent'];
+
 const protectAdminRoute = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Not authorized' });
-  if (!['admin', 'super_admin'].includes(req.user.role)) {
+  if (!STAFF_ROLES.includes(req.user.role)) {
     return res.status(403).json({ message: 'Forbidden — admin only' });
   }
-  return next();
+  const role = req.user.role;
+  if (role === 'admin' || role === 'super_admin') return next();
+  const url = req.originalUrl || '';
+  if (role === 'executive_agent' && req.method === 'GET' && /\/admin\/(metrics|stats|reports|dealers)/.test(url)) {
+    return next();
+  }
+  if (role === 'field_agent') {
+    return res.status(403).json({ message: 'Field agents can upload vehicles. Approval stays with the main admin.' });
+  }
+  return res.status(403).json({ message: 'This area is limited to the main admin' });
 };
 
 module.exports = {

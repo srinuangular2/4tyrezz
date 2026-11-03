@@ -13,7 +13,7 @@ const User = require('./models/User');
 const { ensureVehicleCatalog } = require('./services/vehicleDataService');
 const { bootstrapLocations } = require('./services/locationService');
 const { initSocket } = require('./services/socketService');
-const { republishOrphanedApprovedCars } = require('./utils/listingStatus');
+const { backfillListingCleared, republishOrphanedApprovedCars } = require('./utils/listingStatus');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -60,6 +60,7 @@ app.use('/api/dealer', require('./routes/dealerRoutes'));
 app.use('/api/kyc', require('./routes/kycRoutes'));
 app.use('/api/test-drives', require('./routes/testDriveRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
+app.use('/api/pdi', require('./routes/pdiRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/commissions', require('./routes/commissionRoutes'));
 app.use('/api/valuations', require('./routes/valuationRoutes'));
@@ -96,6 +97,13 @@ const start = async () => {
   });
   if (repaired.updated) {
     console.log(`Republished ${repaired.updated} approved listings with missing sellers`);
+  }
+  const cleared = await backfillListingCleared().catch((err) => {
+    console.warn('listing clearance backfill:', err.message);
+    return { updated: 0 };
+  });
+  if (cleared.updated) {
+    console.log(`Marked ${cleared.updated} existing live listings as inspected`);
   }
   initSocket(httpServer);
   httpServer.listen(PORT, () => {

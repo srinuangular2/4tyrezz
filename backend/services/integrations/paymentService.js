@@ -22,7 +22,7 @@ function stubOrder({ amount, currency = 'INR', receipt }) {
   };
 }
 
-async function createOrder({ amount, currency = 'INR', receipt, notes = {} }) {
+async function createOrder({ amount, currency = 'INR', receipt, notes = {}, transfers } = {}) {
   if (!configured()) {
     console.log('[razorpay:stub] createOrder', { amount, currency, receipt });
     return stubOrder({ amount, currency, receipt });
@@ -43,6 +43,7 @@ async function createOrder({ amount, currency = 'INR', receipt, notes = {} }) {
       currency,
       receipt,
       notes,
+      ...(Array.isArray(transfers) && transfers.length ? { transfers } : {}),
     }),
   });
 
