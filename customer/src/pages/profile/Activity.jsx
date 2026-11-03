@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
+import { formatWhen } from './hubUtils';
 
 const TYPE_LABEL = {
   test_drive: 'Test drive',
@@ -37,7 +38,7 @@ export default function Activity() {
               <p className="font-black text-slate-900 text-sm mt-0.5">{a.title}</p>
               {a.body && <p className="text-xs font-semibold text-slate-500 mt-1">{a.body}</p>}
               <p className="text-[11px] font-semibold text-slate-400 mt-2">
-                {a.createdAt ? new Date(a.createdAt).toLocaleString('en-IN') : ''}
+                {formatWhen(a.createdAt)}
                 {a.link ? (
                   <>
                     {' · '}

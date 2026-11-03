@@ -11,6 +11,7 @@ const Notification = require('../models/Notification');
 const SupportTicket = require('../models/SupportTicket');
 const { validateEmail } = require('../utils/kycValidators');
 const { recordActivity } = require('../models/UserDashboard');
+const { catalogImages, pickCatalog } = require('../utils/modelPhoto');
 
 const CAR_POP = [
   { path: 'brand', select: 'name logo' },
@@ -128,18 +129,80 @@ exports.uploadPhoto = async (req, res) => {
   res.json({ success: true, avatar: url });
 };
 
+function sellVisitStatus(status) {
+  const map = {
+    New: 'Visit booked',
+    Submitted: 'Visit booked',
+    Assigned: 'Inspector assigned',
+    'In Progress': 'Inspection in progress',
+    'Follow-up': 'Follow-up',
+    'Inspection / Offer': 'Offer ready',
+    Quoted: 'Offer ready',
+    Purchased: 'Sold',
+    Exchanged: 'Exchanged',
+    Closed: 'Closed',
+    Rejected: 'Closed',
+  };
+  return map[status] || 'Visit booked';
+}
+
+exports.listSellRequests = async (req, res) => {
+  const rows = await Enquiry.find({ user: req.user._id, type: 'seller' }).sort('-createdAt').lean();
+  const catalog = await catalogImages(rows.map((row) => ({ brand: row.brand, model: row.model })));
+  const data = rows.map((row) => {
+    const missing = [
+      !row.variant && 'Variant',
+      !row.registrationNumber && 'Registration',
+      !row.city && 'City',
+      !row.kmDriven && 'Kilometres',
+      !row.expectedPrice && 'Price',
+      !row.inspectionDate && 'Visit time',
+    ].filter(Boolean);
+    return {
+      id: row._id,
+      title: [row.year, row.brand, row.model].filter(Boolean).join(' ') || 'Your car',
+      brand: row.brand || '',
+      model: row.model || '',
+      variant: row.variant || '',
+      plate: row.registrationNumber || '',
+      city: row.city || '',
+      year: row.year || '',
+      fuel: row.fuel || '',
+      transmission: row.transmission || '',
+      ownership: row.ownership || 1,
+      kmDriven: row.kmDriven || null,
+      expectedPrice: row.expectedPrice || null,
+      estimatePrice: row.estimatePrice || null,
+      minPrice: row.minPrice || null,
+      maxPrice: row.maxPrice || null,
+      inspectionDate: row.inspectionDate || '',
+      inspectionSlot: row.inspectionSlot || '',
+      inspectionType: row.inspectionType || '',
+      status: sellVisitStatus(row.status),
+      active: missing.length === 0,
+      missing,
+      hasPhotos: (row.photos || []).length > 0,
+      image: (row.photos || []).find(Boolean) || pickCatalog(catalog, row.brand, row.model, row.year),
+      createdAt: row.createdAt,
+    };
+  });
+  res.json({ success: true, data });
+};
+
 exports.listEnquiries = async (req, res) => {
   const userId = req.user._id;
   const [leads, enquiries] = await Promise.all([
     Lead.find({ $or: [{ email: req.user.email || '__none__' }, { phone: req.user.mobile || '__none__' }] })
-      .populate('car', 'title price year')
+      .populate('car', 'title price year images fuel transmission kmDriven')
       .sort('-createdAt')
       .lean(),
-    Enquiry.find({ user: userId, type: { $nin: ['finance', 'insurance'] } })
-      .populate('vehicle', 'title price year')
+    Enquiry.find({ user: userId, type: { $nin: ['finance', 'insurance', 'seller'] } })
+      .populate('vehicle', 'title price year images fuel transmission kmDriven')
       .sort('-createdAt')
       .lean(),
   ]);
+  const photo = (car) => car?.images?.[0] || '';
+  const catalog = await catalogImages(enquiries.map((row) => ({ brand: row.brand, model: row.model })));
   const data = [
     ...leads.map((l) => ({
       id: l._id,
@@ -148,14 +211,24 @@ exports.listEnquiries = async (req, res) => {
       message: l.message,
       status: enquiryStatus(l.status),
       createdAt: l.createdAt,
+      image: photo(l.car),
+      price: l.car?.price ?? null,
+      year: l.car?.year || '',
+      fuel: l.car?.fuel || '',
+      carId: l.car?._id || '',
     })),
     ...enquiries.map((e) => ({
       id: e._id,
       kind: e.type,
-      title: [e.brand, e.model, e.vehicle?.title].filter(Boolean).join(' ') || 'Seller enquiry',
+      title: e.vehicle?.title || [e.brand, e.model, e.year].filter(Boolean).join(' ') || 'Seller enquiry',
       message: e.message,
       status: enquiryStatus(e.status),
       createdAt: e.createdAt,
+      image: photo(e.vehicle) || (e.photos || []).find(Boolean) || pickCatalog(catalog, e.brand, e.model, e.year),
+      price: e.vehicle?.price ?? e.expectedPrice ?? null,
+      year: e.vehicle?.year || e.year || '',
+      fuel: e.vehicle?.fuel || e.fuel || '',
+      carId: e.vehicle?._id || '',
     })),
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json({ success: true, data });
@@ -223,7 +296,7 @@ exports.bookingReceipt = async (req, res) => {
 
 exports.listFinance = async (req, res) => {
   const data = await Enquiry.find({ user: req.user._id, type: 'finance' })
-    .populate('vehicle', 'title price year')
+    .populate('vehicle', 'title price year images')
     .sort('-createdAt')
     .lean();
   res.json({
@@ -231,6 +304,7 @@ exports.listFinance = async (req, res) => {
     data: data.map((e) => ({
       id: e._id,
       vehicle: e.vehicle,
+      image: e.vehicle?.images?.[0] || '',
       loanAmount: e.loanAmount,
       tenureMonths: e.tenureMonths,
       bankName: e.bankName || e.partnerName || '',
@@ -242,7 +316,7 @@ exports.listFinance = async (req, res) => {
 
 exports.listInsurance = async (req, res) => {
   const data = await Enquiry.find({ user: req.user._id, type: 'insurance' })
-    .populate('vehicle', 'title price year')
+    .populate('vehicle', 'title price year images')
     .sort('-createdAt')
     .lean();
   res.json({
@@ -250,6 +324,7 @@ exports.listInsurance = async (req, res) => {
     data: data.map((e) => ({
       id: e._id,
       vehicle: e.vehicle,
+      image: e.vehicle?.images?.[0] || '',
       insuranceType: e.insuranceType,
       addOns: e.addOns || [],
       premium: e.premium,

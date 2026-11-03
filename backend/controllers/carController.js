@@ -114,24 +114,42 @@ exports.getCars = async (req, res) => {
     const staffRoles = ['admin', 'super_admin', 'field_agent', 'executive_agent'];
     const adminInventory = req.query.inventory === '1' && staffRoles.includes(req.user?.role);
     if (adminInventory) {
-      if (req.query.listingCleared === '1') filter.listingCleared = true;
+      if (req.query.listingCleared === '1' && (req.user.role === 'admin' || req.user.role === 'super_admin')) {
+        const staffOwners = await User.find({ role: { $in: ['executive_agent', 'field_agent'] } }).select('_id');
+        filter.$and = [...(filter.$and || []), {
+          $or: [
+            { listingCleared: true },
+            { owner: { $in: staffOwners.map((user) => user._id) } },
+          ],
+        }];
+      } else if (req.query.listingCleared === '1') {
+        filter.listingCleared = true;
+      }
       if (status) filter.status = status;
       if (req.user.role === 'field_agent') filter.owner = req.user._id;
       if (req.query.owner && req.user.role === 'admin') filter.owner = req.query.owner;
-      if (req.query.availability === 'available') {
+      if (req.user.role === 'executive_agent') {
+        // Personal workspace: only cars this agent uploaded. Ignore region and other owners.
+        filter.owner = req.user._id;
+        delete filter.listingCleared;
+        const bucket = executiveInventoryBucket(req.query);
+        if (bucket === 'pending') filter.status = 'pending';
+        else if (bucket === 'approved') filter.status = 'approved';
+        else if (bucket === 'rejected') filter.status = 'rejected';
+        else if (bucket === 'sold') filter.status = 'sold';
+        else if (bucket === 'available') {
+          filter.status = 'approved';
+          filter.availability = 'available';
+          filter.unpublished = { $ne: true };
+        } else if (bucket === 'all') {
+          delete filter.status;
+        }
+      } else if (req.query.availability === 'available') {
         filter.availability = 'available';
         filter.status = filter.status || { $ne: 'sold' };
         filter.unpublished = { $ne: true };
       } else if (req.query.availability === 'unavailable') {
         filter.$and = [...(filter.$and || []), { $or: [{ availability: { $ne: 'available' } }, { status: 'sold' }, { unpublished: true }] }];
-      }
-      if (req.user.role === 'executive_agent' && req.user.assignedRegion) {
-        const region = String(req.user.assignedRegion).trim();
-        const regionRx = new RegExp(`^${region.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
-        const regionCity = await City.findOne({ name: regionRx }).select('_id');
-        const regionOr = [{ 'location.city': regionRx }, { car_location: regionRx }];
-        if (regionCity) regionOr.push({ city: regionCity._id });
-        filter.$and = [...(filter.$and || []), { $or: regionOr }];
       }
     } else {
       Object.assign(filter, publicListingFilter());
@@ -160,6 +178,12 @@ exports.getCars = async (req, res) => {
         { 'location.city': searchRegex },
         { 'location.state': searchRegex },
       ];
+    }
+
+    function executiveInventoryBucket(query = {}) {
+      const requested = String(query.filter || query.status || '').trim().toLowerCase();
+      if (['all', 'pending', 'approved', 'available', 'sold', 'rejected'].includes(requested)) return requested;
+      return '';
     }
 
     function splitCsv(value) {

@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import { useVehicleBrands, useVehicleModels, useVehicleYears } from '../../hooks/useVehicleCatalog';
 import { inputClass } from '../../lib/kycValidation';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
+import { DataCard } from './hubUtils';
 
 const blank = {
   brand: '',
@@ -72,7 +73,24 @@ export default function Garage() {
         {rows === null && <p className="text-sm font-semibold text-slate-500">Loading garage…</p>}
         {rows && rows.length === 0 && <EmptyNote>No owned cars on file yet. Add one below.</EmptyNote>}
         {rows && rows.length > 0 && (
-          <div className="space-y-3">
+          <>
+          <div className="space-y-3 lg:hidden">
+            {rows.map((v, index) => (
+              <DataCard
+                key={v._id}
+                index={index}
+                emoji="🚙"
+                title={`${v.brand || ''} ${v.model || ''} ${v.year ? `· ${v.year}` : ''}`.trim()}
+                meta={v.registrationNumber}
+                detail={[v.rtoNotes ? `RTO: ${v.rtoNotes}` : '', v.lastServiceNotes ? `Service: ${v.lastServiceNotes}` : ''].filter(Boolean).join(' · ')}
+              >
+                <button type="button" onClick={() => remove(v._id)} className="text-[12px] font-black text-rose-600">
+                  Remove
+                </button>
+              </DataCard>
+            ))}
+          </div>
+          <div className="hidden lg:block space-y-3">
             {rows.map((v) => (
               <div key={v._id} className="rounded-2xl border border-slate-100 bg-white px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
@@ -95,6 +113,7 @@ export default function Garage() {
               </div>
             ))}
           </div>
+          </>
         )}
       </ProfileCard>
 

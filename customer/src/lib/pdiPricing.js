@@ -14,6 +14,9 @@ export const PRIMARY_CITIES = [
 ];
 
 export const VISIT_FEE = 500;
+export const ENGINE_PRICE = { UPTO_1249: 1299, ABOVE_1249: 1599, ELECTRIC: 1799 };
+export const OBD_FEE = 600;
+export const HISTORY_FEE = 400;
 
 export function inr(n) {
   return `₹${Number(n || 0).toLocaleString('en-IN')}`;
@@ -26,6 +29,13 @@ export function cityVisitFee(city) {
   return included ? 0 : VISIT_FEE;
 }
 
+export function quoteInspection({ pdiType, engineBand, obdScan, serviceHistory }) {
+  const base = ENGINE_PRICE[engineBand] || 0;
+  const obd = obdScan ? OBD_FEE : 0;
+  const history = pdiType === 'USED_CAR' && serviceHistory ? HISTORY_FEE : 0;
+  return { base, obd, history, total: base + obd + history };
+}
+
 export function quoteSegment({ pdiType, vehicleSegment, city }) {
   const type = pdiType === 'NEW_CAR' ? 'NEW_CAR' : 'USED_CAR';
   const segment = vehicleSegment === 'SUV_LUXURY' ? 'SUV_LUXURY' : 'HATCH_SEDAN';
@@ -34,11 +44,14 @@ export function quoteSegment({ pdiType, vehicleSegment, city }) {
   return { base, visit, total: base + visit, vehicleSegment: segment, pdiType: type };
 }
 
-export function bookPath({ pdiType, vehicleSegment, city }) {
+export function bookPath({ pdiType, city, engineBand, obdScan = true, serviceHistory = false }) {
   const params = new URLSearchParams({
     type: pdiType === 'NEW_CAR' ? 'new' : 'used',
-    segment: vehicleSegment === 'SUV_LUXURY' ? 'suv' : 'hatch',
   });
   if (city) params.set('city', city);
+  if (engineBand === 'ABOVE_1249') params.set('engine', 'above');
+  else if (engineBand === 'UPTO_1249') params.set('engine', 'upto');
+  if (!obdScan) params.set('obd', '0');
+  if (serviceHistory) params.set('history', '1');
   return `/inspection/book?${params.toString()}`;
 }

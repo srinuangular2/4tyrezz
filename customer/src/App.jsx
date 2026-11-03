@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import CompareTray from './components/CompareTray';
 import PwaInstallBanner from './components/PwaInstallBanner';
+import MobileOnboarding from './components/MobileOnboarding';
 import ProtectedRoute from './components/ProtectedRoute';
 import DealerChrome from './components/dealer/DealerChrome';
 import { fetchWishlist } from './app/wishlistSlice';
@@ -49,12 +50,13 @@ import Enquiries from './pages/profile/Enquiries';
 import SavedSearches from './pages/profile/SavedSearches';
 import Comparisons from './pages/profile/Comparisons';
 import TestDrives from './pages/profile/TestDrives';
-import Bookings from './pages/profile/Bookings';
 import PdiBookings from './pages/profile/PdiBookings';
 import FinanceApplications from './pages/profile/FinanceApplications';
 import InsuranceEnquiries from './pages/profile/InsuranceEnquiries';
 import Notifications from './pages/profile/Notifications';
 import SupportTickets from './pages/profile/SupportTickets';
+import Orders from './pages/profile/Orders';
+import Cart from './pages/profile/Cart';
 import CustomerRegister from './pages/auth/CustomerRegister';
 import CustomerLogin from './pages/auth/CustomerLogin';
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -125,6 +127,24 @@ export default function App() {
   const { user } = useSelector((s) => s.auth);
   const location = useLocation();
   const dealerWindow = location.pathname.startsWith('/dealer');
+  const accountPage = /^\/profile\/.+/.test(location.pathname);
+
+  useEffect(() => {
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (location.hash) return;
+    const root = document.documentElement;
+    const previous = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    root.style.scrollBehavior = previous;
+  }, [location.pathname]);
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
@@ -141,10 +161,14 @@ export default function App() {
 
   return (
     <RealtimeAlertsProvider token={token} enabled={alertsEnabled} variant={alertsVariant}>
-      <div className="min-h-screen flex flex-col overflow-x-clip">
+      <div className="min-h-screen flex flex-col">
         <div className="w-full flex flex-col flex-1">
           <KickDealerFromMarketplace />
-          {!dealerWindow && <Header />}
+          {!dealerWindow && (
+            <div className={accountPage ? 'hidden lg:block' : undefined}>
+              <Header />
+            </div>
+          )}
           <main className={`flex-1 ${dealerWindow ? '' : 'pb-20 lg:pb-0'}`}>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -225,20 +249,22 @@ export default function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="settings" replace />} />
+                <Route index element={null} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="enquiries" element={<Enquiries />} />
                 <Route path="wishlist" element={<ProfileWishlist />} />
                 <Route path="saved-searches" element={<SavedSearches />} />
                 <Route path="comparisons" element={<Comparisons />} />
                 <Route path="test-drives" element={<TestDrives />} />
-                <Route path="bookings" element={<Bookings />} />
+                <Route path="bookings" element={<Navigate to="/profile/orders" replace />} />
                 <Route path="pdi" element={<PdiBookings />} />
                 <Route path="finance-applications" element={<FinanceApplications />} />
                 <Route path="insurance-enquiries" element={<InsuranceEnquiries />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="support-tickets" element={<SupportTickets />} />
-                <Route path="orders" element={<Navigate to="/profile/bookings" replace />} />
+                <Route path="orders" element={<Orders />} />
+                <Route path="sell-requests" element={<Navigate to="/profile/my-vehicles" replace />} />
+                <Route path="cart" element={<Cart />} />
                 <Route path="activity" element={<Navigate to="/profile/notifications" replace />} />
                 <Route path="my-vehicles" element={<MyVehicles />} />
                 <Route path="garage" element={<Garage />} />
@@ -262,6 +288,7 @@ export default function App() {
           {!dealerWindow && <BottomNav />}
           {!dealerWindow && <CompareTray />}
           {!dealerWindow && <PwaInstallBanner />}
+          {!dealerWindow && <MobileOnboarding />}
         </div>
       </div>
       <Toaster position="top-center" containerClassName="!top-16 lg:!top-4" reverseOrder={false} />

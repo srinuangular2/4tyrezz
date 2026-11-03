@@ -33,23 +33,26 @@ function listingStatus(car, leadCount = 0) {
 
 exports.listOrders = async (req, res) => {
   const userId = req.user._id;
-  const [stored, bookings, valuations, inspections] = await Promise.all([
-    Order.find({ user: userId }).sort('-createdAt').limit(50).lean(),
-    Booking.find({ user: userId }).sort('-createdAt').limit(50).populate('vehicle', 'title images price').lean(),
-    Valuation.find({ user: userId }).sort('-createdAt').limit(50).lean(),
-    Enquiry.find({ user: userId, inspectionType: { $nin: ['', null] } }).sort('-createdAt').limit(50).lean(),
+  const [stored, bookings] = await Promise.all([
+    Order.find({ user: userId }).sort('-createdAt').limit(50).populate('vehicle', 'title images price year fuel').lean(),
+    Booking.find({ user: userId }).sort('-createdAt').limit(50).populate('vehicle', 'title images price year fuel').lean(),
   ]);
 
+  const photo = (car) => car?.images?.[0] || '';
   const mapped = [
     ...stored.map((o) => ({
       id: o._id,
       type: o.type,
-      title: o.title,
+      title: o.vehicle?.title || o.title,
       status: o.status,
       amount: o.amount,
       refId: o.refId,
       createdAt: o.createdAt,
-      vehicle: o.vehicle,
+      image: photo(o.vehicle),
+      price: o.vehicle?.price ?? null,
+      year: o.vehicle?.year || '',
+      fuel: o.vehicle?.fuel || '',
+      carId: o.vehicle?._id || '',
       source: 'order',
     })),
     ...bookings.map((b) => ({
@@ -60,28 +63,12 @@ exports.listOrders = async (req, res) => {
       amount: b.amount,
       refId: b.bookingRef,
       createdAt: b.createdAt,
-      vehicle: b.vehicle,
+      image: photo(b.vehicle),
+      price: b.vehicle?.price ?? null,
+      year: b.vehicle?.year || '',
+      fuel: b.vehicle?.fuel || '',
+      carId: b.vehicle?._id || '',
       source: 'booking',
-    })),
-    ...valuations.map((v) => ({
-      id: v._id,
-      type: 'evaluation',
-      title: [v.brand, v.model, v.year].filter(Boolean).join(' ') || 'Valuation request',
-      status: v.estimate ? 'Completed' : 'Requested',
-      amount: v.estimate || null,
-      refId: String(v._id).slice(-8).toUpperCase(),
-      createdAt: v.createdAt,
-      source: 'valuation',
-    })),
-    ...inspections.map((e) => ({
-      id: e._id,
-      type: 'inspection',
-      title: [e.brand, e.model].filter(Boolean).join(' ') || 'Inspection booking',
-      status: e.status,
-      amount: null,
-      refId: String(e._id).slice(-8).toUpperCase(),
-      createdAt: e.createdAt,
-      source: 'enquiry',
     })),
   ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -130,7 +117,7 @@ exports.listActivity = async (req, res) => {
     ...valuations.map((v) => ({
       id: v._id,
       type: 'valuation',
-      title: 'Valuation query',
+      title: 'Car valuation',
       body: [v.brand, v.model, v.year].filter(Boolean).join(' '),
       createdAt: v.createdAt,
       link: '/valuation',
@@ -138,10 +125,10 @@ exports.listActivity = async (req, res) => {
     ...enquiries.map((e) => ({
       id: e._id,
       type: 'enquiry',
-      title: `Dealer enquiry · ${e.type}`,
+      title: e.type === 'seller' ? 'Sell inspection booked' : `Enquiry · ${e.type}`,
       body: e.message || [e.brand, e.model].filter(Boolean).join(' '),
       createdAt: e.createdAt,
-      link: '/profile/activity',
+      link: e.type === 'seller' ? '/profile/sell-requests' : '/profile/enquiries',
     })),
   ];
 

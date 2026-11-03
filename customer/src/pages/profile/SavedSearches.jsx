@@ -2,8 +2,46 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
+import { formatINR } from '../../components/PageShell';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
 import { describeFilters } from './hubUtils';
+
+function isId(value) {
+  return /^[a-f0-9]{24}$/i.test(String(value || '').trim());
+}
+
+function filterChips(filters = {}) {
+  const chips = [];
+  const add = (value) => {
+    String(value || '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part && !isId(part))
+      .forEach((part) => chips.push(part));
+  };
+  add(filters.brand);
+  add(filters.model);
+  add(filters.fuel);
+  add(filters.transmission);
+  add(filters.bodyType);
+  add(filters.color);
+  if (filters.seats) chips.push(`${filters.seats} seats`);
+  if (filters.city && !isId(filters.city)) chips.push(filters.city);
+  if (filters.rto) chips.push(`RTO ${filters.rto}`);
+  if (filters.minPrice || filters.maxPrice) {
+    const from = filters.minPrice ? formatINR(filters.minPrice) : '';
+    const to = filters.maxPrice ? formatINR(filters.maxPrice) : '';
+    chips.push(from && to ? `${from} – ${to}` : to ? `Under ${to}` : `From ${from}`);
+  }
+  return [...new Set(chips)].slice(0, 6);
+}
+
+const ALERTS = [
+  ['newMatchAlerts', 'New matching cars', (row) => Boolean(row.newMatchAlerts ?? row.emailAlerts ?? row.alertsEnabled)],
+  ['priceChangeAlerts', 'Price-change alerts', (row) => Boolean(row.priceChangeAlerts)],
+  ['emailAlerts', 'Email alerts', (row) => Boolean(row.emailAlerts)],
+  ['whatsappAlerts', 'WhatsApp alerts', (row) => Boolean(row.whatsappAlerts)],
+];
 
 function toQuery(filters = {}) {
   const params = new URLSearchParams();
@@ -69,68 +107,71 @@ export default function SavedSearches() {
       <div className="space-y-3">
         {(rows || []).map((row) => {
           const label = row.name && row.name !== 'Saved search' ? row.name : describeFilters(row.filters, row.name);
+          const chips = filterChips(row.filters).filter((chip) => chip.toLowerCase() !== String(label).toLowerCase());
           return (
-            <article
-              key={row._id}
-              className="rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/80 px-4 py-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  {renaming === row._id ? (
-                    <form
-                      className="flex gap-2"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        rename(row);
-                      }}
-                    >
-                      <input
-                        autoFocus
-                        value={nameDraft}
-                        onChange={(e) => setNameDraft(e.target.value)}
-                        className="border border-slate-200 rounded-xl px-3 py-1.5 text-sm font-bold"
-                      />
-                      <button type="submit" className="text-[11px] font-black text-[#3083ff]">Save</button>
-                      <button type="button" onClick={() => setRenaming(null)} className="text-[11px] font-bold text-slate-400">Cancel</button>
-                    </form>
-                  ) : (
-                    <>
-                      <p className="font-black text-slate-900">{label}</p>
-                      <div className="flex gap-3 mt-1">
-                        <Link to={toQuery(row.filters)} className="text-[11px] font-black text-[#3083ff]">Open results</Link>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRenaming(row._id);
-                            setNameDraft(label);
-                          }}
-                          className="text-[11px] font-bold text-slate-400"
-                        >
-                          Rename
-                        </button>
+            <article key={row._id} className="overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+              <div className="p-3.5">
+                {renaming === row._id ? (
+                  <form
+                    className="flex flex-wrap items-center gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      rename(row);
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-[13px] font-medium text-slate-900"
+                    />
+                    <button type="submit" className="text-[12px] font-semibold text-[#3083ff]">Save</button>
+                    <button type="button" onClick={() => setRenaming(null)} className="text-[12px] font-medium text-slate-500">Cancel</button>
+                  </form>
+                ) : (
+                  <>
+                    <p className="text-[13px] font-semibold leading-snug text-slate-900">{label}</p>
+                    {chips.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {chips.map((chip) => (
+                          <span key={chip} className="rounded-full bg-[#eaf2ff] px-2 py-0.5 text-[11px] font-medium text-[#1853ff]">
+                            {chip}
+                          </span>
+                        ))}
                       </div>
-                    </>
-                  )}
-                </div>
-                <button type="button" onClick={() => remove(row._id)} className="text-[11px] font-black text-rose-600">Remove</button>
+                    )}
+                    <div className="mt-2.5 flex flex-wrap gap-3">
+                      <Link to={toQuery(row.filters)} className="text-[12px] font-semibold text-[#3083ff]">Open results</Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRenaming(row._id);
+                          setNameDraft(label);
+                        }}
+                        className="text-[12px] font-medium text-slate-500"
+                      >
+                        Rename
+                      </button>
+                      <button type="button" onClick={() => remove(row._id)} className="text-[12px] font-semibold text-rose-500">Remove</button>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="grid sm:grid-cols-2 gap-2 mt-3 text-xs font-bold text-slate-600">
-                <label className="inline-flex items-center gap-2">
-                  <input type="checkbox" className="accent-[#3083ff]" checked={Boolean(row.newMatchAlerts ?? row.emailAlerts ?? row.alertsEnabled)} onChange={(e) => toggle(row, 'newMatchAlerts', e.target.checked)} />
-                  New matching cars
-                </label>
-                <label className="inline-flex items-center gap-2">
-                  <input type="checkbox" className="accent-[#3083ff]" checked={Boolean(row.priceChangeAlerts)} onChange={(e) => toggle(row, 'priceChangeAlerts', e.target.checked)} />
-                  Price-change alerts
-                </label>
-                <label className="inline-flex items-center gap-2">
-                  <input type="checkbox" className="accent-[#3083ff]" checked={Boolean(row.emailAlerts)} onChange={(e) => toggle(row, 'emailAlerts', e.target.checked)} />
-                  Email alerts
-                </label>
-                <label className="inline-flex items-center gap-2">
-                  <input type="checkbox" className="accent-[#3083ff]" checked={Boolean(row.whatsappAlerts)} onChange={(e) => toggle(row, 'whatsappAlerts', e.target.checked)} />
-                  WhatsApp alerts
-                </label>
+              <div className="border-t border-slate-100 px-3.5 py-3">
+                <p className="text-[11px] font-medium text-slate-400">Alerts</p>
+                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
+                  {ALERTS.map(([key, text, checked]) => (
+                    <label key={key} className="inline-flex items-center gap-2 text-[12px] font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        className="h-3.5 w-3.5 accent-[#3083ff]"
+                        checked={checked(row)}
+                        onChange={(e) => toggle(row, key, e.target.checked)}
+                      />
+                      {text}
+                    </label>
+                  ))}
+                </div>
               </div>
             </article>
           );

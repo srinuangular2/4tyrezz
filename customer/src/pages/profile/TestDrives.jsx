@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
-import { mediaUrl, StatusPill } from './hubUtils';
+import { DataCard, formatDateLabel, mediaUrl, StatusPill } from './hubUtils';
 
 export default function TestDrives() {
   const [rows, setRows] = useState(null);
@@ -14,7 +14,24 @@ export default function TestDrives() {
     <ProfileCard eyebrow="Schedule" title="My test drives">
       {rows === null && <p className="text-sm font-semibold text-slate-500">Loading test drives…</p>}
       {rows && rows.length === 0 && <EmptyNote>No home or dealership test drives booked yet.</EmptyNote>}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="space-y-3 lg:hidden">
+        {(rows || []).map((d, index) => (
+          <DataCard
+            key={d.id}
+            index={index}
+            emoji="🚘"
+            title={d.vehicle?.title || 'Vehicle'}
+            meta={`${d.homeTestDrive ? 'Home test drive' : 'Dealership'} · ${d.dealerName || 'Dealer'}`}
+            detail={[d.location, d.preferredDate ? formatDateLabel(d.preferredDate) : '', d.preferredTime].filter(Boolean).join(' · ')}
+            status={<StatusPill value={d.status} />}
+          >
+            {d.vehicle?.images?.[0] ? (
+              <img src={mediaUrl(d.vehicle.images[0])} alt="" className="h-24 w-full object-cover rounded-2xl bg-white" />
+            ) : null}
+          </DataCard>
+        ))}
+      </div>
+      <div className="hidden lg:grid md:grid-cols-2 gap-4">
         {(rows || []).map((d) => (
           <article key={d.id} className="rounded-2xl border border-slate-100 p-4">
             <div className="flex gap-3">
@@ -31,7 +48,7 @@ export default function TestDrives() {
             </div>
             <div className="flex items-center justify-between mt-3">
               <p className="text-xs font-bold text-slate-600">
-                {d.preferredDate ? new Date(d.preferredDate).toLocaleDateString('en-IN') : ''} {d.preferredTime || ''}
+                {[d.preferredDate ? formatDateLabel(d.preferredDate) : '', d.preferredTime].filter(Boolean).join(' · ')}
               </p>
               <StatusPill value={d.status} />
             </div>

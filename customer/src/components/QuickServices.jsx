@@ -128,7 +128,6 @@ const SERVICES = [
     badgeStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     cta: 'Browse Inventory',
     link: '/cars',
-    // Theme Colors
     cardBg: 'bg-gradient-to-b from-blue-50/70 to-white hover:from-blue-100/80',
     borderColor: 'border-blue-100 hover:border-blue-300',
     iconBg: 'bg-[#0052ff] text-white shadow-blue-500/20',
@@ -147,7 +146,6 @@ const SERVICES = [
     badgeStyle: 'bg-amber-50 text-amber-700 border-amber-200',
     cta: 'Get Online Valuation',
     link: '/sell',
-    // Theme Colors
     cardBg: 'bg-gradient-to-b from-slate-50 to-white hover:from-slate-100/90',
     borderColor: 'border-slate-200 hover:border-slate-400',
     iconBg: 'bg-slate-900 text-white shadow-slate-900/20',
@@ -159,6 +157,42 @@ const SERVICES = [
     ),
   },
   {
+    id: 'inspection',
+    title: 'Car Inspection',
+    subtitle: 'Book a new or used car inspection. 300+ point check from ₹1,999, report in 60 minutes.',
+    badge: '60 Min Report',
+    badgeStyle: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+    cta: 'Book Inspection',
+    link: '/inspection',
+    cardBg: 'bg-gradient-to-b from-cyan-50/80 to-white hover:from-cyan-100/80',
+    borderColor: 'border-cyan-100 hover:border-cyan-300',
+    iconBg: 'bg-[#0c2e68] text-white shadow-[#0c2e68]/20',
+    accentDot: 'bg-[#0c2e68]',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    id: 'valuation',
+    title: 'Car Valuation',
+    subtitle: 'See a free online price range for your car before you decide to sell or buy.',
+    badge: 'Free Estimate',
+    badgeStyle: 'bg-violet-50 text-violet-700 border-violet-200',
+    cta: 'Check Car Value',
+    link: '/valuation',
+    cardBg: 'bg-gradient-to-b from-violet-50/70 to-white hover:from-violet-100/80',
+    borderColor: 'border-violet-100 hover:border-violet-300',
+    iconBg: 'bg-violet-600 text-white shadow-violet-500/20',
+    accentDot: 'bg-violet-600',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v18m0-18l-4 4m4-4l4 4M4 10h2a4 4 0 010 8H4m16-8h-2a4 4 0 000 8h2" />
+      </svg>
+    ),
+  },
+  {
     id: 'finance',
     title: 'Car Finance & EMI',
     subtitle: 'Competitive interest rates starting at 8.5% with zero processing fee deals.',
@@ -166,7 +200,6 @@ const SERVICES = [
     badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     cta: 'Calculate EMI',
     link: '/finance',
-    // Theme Colors
     cardBg: 'bg-gradient-to-b from-indigo-50/70 to-white hover:from-indigo-100/80',
     borderColor: 'border-indigo-100 hover:border-indigo-300',
     iconBg: 'bg-indigo-600 text-white shadow-indigo-500/20',
@@ -185,7 +218,6 @@ const SERVICES = [
     badgeStyle: 'bg-rose-50 text-rose-700 border-rose-200',
     cta: 'Check Premium',
     link: '/insurance',
-    // Theme Colors
     cardBg: 'bg-gradient-to-b from-sky-50/70 to-white hover:from-sky-100/80',
     borderColor: 'border-sky-100 hover:border-sky-300',
     iconBg: 'bg-sky-600 text-white shadow-sky-500/20',
@@ -203,7 +235,7 @@ export default function QuickServices() {
 
   return (
     <section className="relative z-30 max-w-7xl mx-auto font-sans">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {SERVICES.map((item) => (
           <div
             key={item.id}

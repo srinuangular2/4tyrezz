@@ -3,7 +3,8 @@ import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { GlassCard, PageHeader, btnPrimary } from '../../components/dealer/ui';
 
-const HEADERS = ['registration_no', 'brand', 'model', 'variant', 'year', 'km_driven', 'price', 'fuel_type', 'transmission', 'ownership', 'color', 'city'];
+const HEADERS = ['registration_no', 'brand', 'model', 'variant', 'year', 'km_driven', 'fuel_type', 'transmission', 'price', 'owners', 'city', 'state', 'pincode', 'car_location', 'upload_address', 'body_type', 'color', 'description', 'images', 'features', 'status'];
+const SAMPLE = 'TS09FA4821,Maruti Suzuki,Swift,ZXI,2021,32000,PETROL,MANUAL,575000,1,Hyderabad,Telangana,500081,Gachibowli,Plot 12 Gachibowli,Hatchback,White,Well maintained,,ABS|Sunroof,AVAILABLE';
 
 export default function DealerBulkUpload() {
   const [rows, setRows] = useState([]);
@@ -31,9 +32,18 @@ export default function DealerBulkUpload() {
         price: r.price || '',
         fuel_type: r.fuel_type || '',
         transmission: r.transmission || '',
-        ownership: r.ownership || '',
-        color: r.color || '',
+        owners: r.owners || r.ownership || '',
         city: r.city || '',
+        state: r.state || '',
+        pincode: r.pincode || '',
+        car_location: r.car_location || '',
+        upload_address: r.upload_address || '',
+        body_type: r.body_type || '',
+        color: r.color || '',
+        description: r.description || '',
+        images: Array.isArray(r.images) ? r.images.join('|') : (r.images || ''),
+        features: Array.isArray(r.features) ? r.features.join('|') : (r.features || ''),
+        status: r.status || '',
         errors: r.errors || [],
       })));
       if (!preview.length) toast.error('No data rows found in this file');
@@ -44,7 +54,7 @@ export default function DealerBulkUpload() {
   };
 
   const downloadTemplate = () => {
-    const body = `${HEADERS.join(',')}\nTS09AB1234,Maruti,Swift,VXI,2021,32000,575000,Petrol,Manual,1,White,Hyderabad\n`;
+    const body = `${HEADERS.join(',')}\n${SAMPLE}\n`;
     const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

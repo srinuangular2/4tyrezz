@@ -53,6 +53,30 @@ async function findEligibleDealer(city) {
 
 exports.SELL_PIPELINE = SELL_PIPELINE;
 
+exports.addSellerPhotos = async (req, res) => {
+  const doc = await Enquiry.findOne({ _id: req.params.id, user: req.user._id, type: 'seller' });
+  if (!doc) return res.status(404).json({ message: 'Sell request not found' });
+  const photos = photoPaths(req.files);
+  if (!photos.length) return res.status(400).json({ message: 'Add at least one photo' });
+  doc.photos = [...(doc.photos || []), ...photos].slice(0, 8);
+  await doc.save();
+  res.json({ success: true, data: doc });
+};
+
+exports.updateMine = async (req, res) => {
+  const doc = await Enquiry.findOne({ _id: req.params.id, user: req.user._id, type: 'seller' });
+  if (!doc) return res.status(404).json({ message: 'Sell request not found' });
+  const fields = ['brand', 'model', 'variant', 'city', 'fuel', 'transmission', 'bodyType', 'color', 'registrationNumber', 'inspectionType', 'inspectionDate', 'inspectionSlot', 'rto', 'state'];
+  fields.forEach((key) => {
+    if (req.body[key] !== undefined && req.body[key] !== '') doc[key] = req.body[key];
+  });
+  ['year', 'kmDriven', 'ownership', 'expectedPrice', 'estimatePrice', 'minPrice', 'maxPrice'].forEach((key) => {
+    if (req.body[key] !== undefined && req.body[key] !== '') doc[key] = num(req.body[key]);
+  });
+  await doc.save();
+  res.json({ success: true, data: doc });
+};
+
 exports.create = async (req, res) => {
   const type = req.body.type || req.params.type;
   if (!['finance', 'insurance', 'seller'].includes(type)) {
@@ -120,7 +144,14 @@ exports.create = async (req, res) => {
     message: `${name} submitted a ${intentLabel} enquiry${phone ? ` • ${phone}` : ''}${doc.brand ? ` • ${doc.year || ''} ${doc.brand} ${doc.model}` : ''}`,
     dealerId,
     entityId: doc._id,
-    meta: { enquiryId: doc._id, enquiryType: type, soundKey: type === 'seller' ? 'lead' : type, phone, intent },
+    meta: {
+      enquiryId: doc._id,
+      enquiryType: type,
+      soundKey: type === 'seller' ? 'lead' : type,
+      phone,
+      intent,
+      carId: doc.vehicle || undefined,
+    },
   });
 
   sendWhatsAppTemplate({

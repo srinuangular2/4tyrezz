@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api/axios';
+import { formatINR } from '../../components/PageShell';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
-import { StatusPill } from './hubUtils';
+import { formatWhen, StatusPill, VehicleCard } from './hubUtils';
+
+const KIND_LABEL = {
+  seller: 'Sell request',
+  vehicle: 'Car enquiry',
+  dealer: 'Dealer enquiry',
+  exchange: 'Exchange',
+};
 
 export default function Enquiries() {
   const [rows, setRows] = useState(null);
@@ -13,36 +22,31 @@ export default function Enquiries() {
   return (
     <ProfileCard eyebrow="Inbox" title="My enquiries">
       {rows === null && <p className="text-sm font-semibold text-slate-500">Loading enquiries…</p>}
-      {rows && rows.length === 0 && <EmptyNote>No seller, dealer or vehicle enquiries yet.</EmptyNote>}
+      {rows && rows.length === 0 && (
+        <EmptyNote>
+          No questions about cars for sale yet.{' '}
+          <Link to="/cars" className="text-[#3083ff] font-semibold">Browse cars</Link>
+        </EmptyNote>
+      )}
       {rows && rows.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                <th className="pb-3">Vehicle / seller</th>
-                <th className="pb-3">Type</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <td className="py-3 pr-3">
-                    <p className="font-black text-slate-900">{row.title}</p>
-                    {row.message && <p className="text-xs font-semibold text-slate-500 mt-0.5">{row.message}</p>}
-                  </td>
-                  <td className="py-3 pr-3 text-xs font-bold capitalize text-slate-600">{row.kind}</td>
-                  <td className="py-3 pr-3"><StatusPill value={row.status} /></td>
-                  <td className="py-3 text-xs font-semibold text-slate-500">
-                    {row.createdAt ? new Date(row.createdAt).toLocaleString('en-IN') : ''}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {rows.map((row) => (
+            <VehicleCard
+              key={row.id}
+              image={row.image}
+              title={row.title}
+              price={row.price != null ? formatINR(row.price) : ''}
+              facts={[row.year, row.fuel, KIND_LABEL[row.kind] || row.kind].filter(Boolean).join(' · ')}
+              when={formatWhen(row.createdAt, true)}
+              note={row.message}
+              status={<StatusPill value={row.status} />}
+            >
+              {row.carId ? <Link to={`/cars/${row.carId}`} className="text-[12px] font-semibold text-[#3083ff]">View car</Link> : null}
+            </VehicleCard>
+          ))}
         </div>
       )}
     </ProfileCard>
   );
 }
+

@@ -4,6 +4,7 @@ const Payment = require('../models/Payment');
 const paymentService = require('../services/integrations/paymentService');
 const { TIME_SLOTS, blankChecklist, scoreChecklist, REPAINT_PANELS } = require('../utils/pdiChecklist');
 const pricing = require('../utils/pdiPricing');
+const { catalogImages, pickCatalog } = require('../utils/modelPhoto');
 
 function quote(input) {
   if (input.vehicleSegment) return pricing.quoteSegment(input).total;
@@ -179,11 +180,16 @@ exports.confirm = async (req, res) => {
 exports.list = async (req, res) => {
   const filter = isStaff(req.user) ? {} : { user: req.user._id };
   if (req.query.status) filter.status = req.query.status;
-  const data = await PdiBooking.find(filter).sort('-createdAt').limit(200).populate('user', 'name mobile').lean();
+  const data = await PdiBooking.find(filter).sort('-createdAt').limit(200).populate('user', 'name mobile').populate('car', 'title images year').lean();
   const reports = await PdiReport.find({ booking: { $in: data.map((row) => row._id) } }).select('booking score').lean();
   const scoreByBooking = Object.fromEntries(reports.map((row) => [String(row.booking), row.score]));
+  const catalog = await catalogImages(data.map((row) => ({ brand: row.brand, model: row.model })));
   res.json({
-    data: data.map((row) => ({ ...row, score: scoreByBooking[String(row._id)] ?? null })),
+    data: data.map((row) => ({
+      ...row,
+      image: row.car?.images?.[0] || pickCatalog(catalog, row.brand, row.model, row.car?.year),
+      score: scoreByBooking[String(row._id)] ?? null,
+    })),
   });
 };
 

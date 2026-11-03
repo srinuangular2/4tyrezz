@@ -1,6 +1,17 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const Car = require('../models/Car');
 const { emitToRooms, adminRoom, dealerRoom, userRoom } = require('./socketService');
+
+const STAFF_ROLES = ['field_agent', 'executive_agent'];
+const STAFF_EVENTS = new Set([
+  'NEW_LEAD',
+  'NEW_FINANCE',
+  'NEW_INSURANCE',
+  'NEW_TEST_DRIVE',
+  'NEW_BOOKING',
+  'NEW_LISTING_MODERATION',
+]);
 
 const EVENTS = {
   NEW_LEAD: 'NEW_LEAD',
@@ -81,6 +92,36 @@ async function adminRecipients() {
   }).select('_id role');
 }
 
+function staffHome(role) {
+  if (role === 'field_agent') return '/uploads';
+  if (role === 'executive_agent') return '/cars';
+  return '/';
+}
+
+async function staffOwner(meta = {}) {
+  const seen = new Set();
+  const candidates = [meta.inventoryOwner, meta.ownerId].filter(Boolean);
+  for (const id of candidates) {
+    const key = String(id);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const user = await User.findById(id).select('_id role isActive');
+    if (user && user.isActive !== false && STAFF_ROLES.includes(user.role)) return user;
+  }
+  if (meta.carId) {
+    const car = await Car.findById(meta.carId).select('owner');
+    if (car?.owner && !seen.has(String(car.owner))) {
+      const user = await User.findById(car.owner).select('_id role isActive');
+      if (user && user.isActive !== false && STAFF_ROLES.includes(user.role)) return user;
+    }
+  }
+  if (meta.dealerId) {
+    const user = await User.findById(meta.dealerId).select('_id role isActive');
+    if (user && user.isActive !== false && STAFF_ROLES.includes(user.role)) return user;
+  }
+  return null;
+}
+
 function withId(link, entityId) {
   if (!link) return '';
   if (!entityId) return link;
@@ -104,6 +145,7 @@ async function dispatch({
   entityId,
   meta = {},
   adminOnly,
+  notifyMains = true,
 } = {}) {
   if (!event || !EVENTS[event]) {
     throw new Error('Unknown notification event');
@@ -118,20 +160,39 @@ async function dispatch({
   const dLink = withId(dealerLink || links.dealer, entityId);
 
   const rows = [];
-  const admins = await adminRecipients();
-  admins.forEach((admin) => {
-    rows.push({
-      user: admin._id,
-      recipientRole: 'admin',
-      title: heading,
-      body: text,
-      type: mappedType,
-      event,
-      link: aLink,
-      read: false,
-      meta: { ...meta, event, soundKey, entityId, dealerId: dealerId ? String(dealerId) : undefined },
+  if (notifyMains) {
+    const admins = await adminRecipients();
+    admins.forEach((admin) => {
+      rows.push({
+        user: admin._id,
+        recipientRole: 'admin',
+        title: heading,
+        body: text,
+        type: mappedType,
+        event,
+        link: aLink,
+        read: false,
+        meta: { ...meta, event, soundKey, entityId, dealerId: dealerId ? String(dealerId) : undefined },
+      });
     });
-  });
+  }
+
+  if (STAFF_EVENTS.has(event)) {
+    const owner = await staffOwner(meta);
+    if (owner && !rows.some((row) => String(row.user) === String(owner._id))) {
+      rows.push({
+        user: owner._id,
+        recipientRole: owner.role,
+        title: heading,
+        body: `For your listing — ${text}`,
+        type: mappedType,
+        event,
+        link: staffHome(owner.role),
+        read: false,
+        meta: { ...meta, event, soundKey, entityId, audience: 'owner' },
+      });
+    }
+  }
 
   const dealerKey = dealerId ? String(dealerId) : '';
   if (dealerKey && !onlyAdmins) {
@@ -187,7 +248,8 @@ async function dispatch({
     meta: { ...meta, event, soundKey, enquiryType: meta.enquiryType || undefined },
   };
 
-  const rooms = [adminRoom()];
+  const rooms = [];
+  if (notifyMains) rooms.push(adminRoom());
   if (dealerKey && !onlyAdmins) rooms.push(dealerRoom(dealerKey));
   emitToRooms(rooms, event, payload);
   emitToRooms(rooms, 'notification', payload);
@@ -195,6 +257,9 @@ async function dispatch({
     emitToRooms([userRoom(doc.user)], 'notification', {
       ...payload,
       notification: serializeDoc(doc),
+      title: doc.title,
+      message: doc.body,
+      body: doc.body,
       link: doc.link,
     });
   });
@@ -209,6 +274,23 @@ function dispatchSafe(opts) {
   });
 }
 
+async function notifyListingDecision({ car, title, message }) {
+  if (!car?.owner) return [];
+  const owner = await User.findById(car.owner).select('_id role isActive');
+  if (!owner || owner.isActive === false) return [];
+  const forDealer = owner.role === 'dealer';
+  return dispatch({
+    event: EVENTS.NEW_LISTING_MODERATION,
+    title,
+    message,
+    entityId: car._id,
+    dealerId: forDealer ? owner._id : undefined,
+    meta: { carId: car._id, inventoryOwner: owner._id },
+    notifyMains: false,
+    adminOnly: !forDealer,
+  });
+}
+
 module.exports = {
   EVENTS,
   EVENT_TYPE,
@@ -216,5 +298,6 @@ module.exports = {
   soundKeyFor,
   dispatch,
   dispatchSafe,
+  notifyListingDecision,
   serializeDoc,
 };

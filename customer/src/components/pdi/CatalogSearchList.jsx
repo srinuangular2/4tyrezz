@@ -27,6 +27,8 @@ export default function CatalogSearchList({
   loading,
   disabled,
   emptyText,
+  inline = false,
+  openToken = 0,
 }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -39,6 +41,11 @@ export default function CatalogSearchList({
     if (!q) return items;
     return items.filter((item) => item.name.toLowerCase().includes(q));
   }, [items, query]);
+
+  useEffect(() => {
+    if (!openToken || disabled || inline) return;
+    setOpen(true);
+  }, [openToken, disabled, inline]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -60,6 +67,43 @@ export default function CatalogSearchList({
     setQuery('');
     setOpen(false);
   };
+
+  if (inline) {
+    return (
+      <div className={disabled ? 'opacity-60' : ''}>
+        <span className="text-[13px] font-medium text-slate-700">{label}</span>
+        <label className="relative mt-1.5 block">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={selected?.name || placeholder}
+            disabled={disabled}
+            className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-9 pr-3 text-[14px] font-medium text-slate-900 outline-none focus:border-[#3083ff]"
+          />
+        </label>
+        <div className="mt-2 max-h-44 overflow-y-auto rounded-2xl border border-slate-100">
+          {loading && <p className="px-3 py-3 text-[13px] font-normal text-slate-400">Loading…</p>}
+          {!loading && filtered.slice(0, 12).map((item) => {
+            const active = item.name === value;
+            return (
+              <button
+                key={item.name}
+                type="button"
+                disabled={disabled}
+                onClick={() => pick(item.name)}
+                className={`flex h-11 w-full items-center gap-2.5 px-3 text-left text-[14px] ${active ? 'bg-[#eaf2ff] font-semibold text-[#1853ff]' : 'font-medium text-slate-800'}`}
+              >
+                <BrandIcon name={item.logo ? item.name : item.brandName || item.name} logo={item.logo} />
+                <span className="truncate">{item.name}</span>
+              </button>
+            );
+          })}
+          {!loading && !filtered.length && <p className="px-3 py-3 text-[13px] font-normal text-slate-400">{emptyText}</p>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} className={`relative ${open ? 'z-30' : ''} ${disabled ? 'opacity-60' : ''}`}>

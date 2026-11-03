@@ -14,7 +14,36 @@ const STEPS = [
 
 export default function SellBanner() {
   return (
-    <section className="relative overflow-hidden min-h-[200px] sm:min-h-[420px] lg:min-h-[540px]">
+    <>
+    <section className="relative min-h-[320px] overflow-hidden lg:hidden">
+      <img src="/sell-my-car.png" alt="" className="absolute inset-0 h-full w-full object-cover object-[85%_center]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#061433]/90 via-[#0b2a6e]/62 to-[#0b2a6e]/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#061433]/55 via-transparent to-[#061433]/25" />
+      <div className="relative px-4 py-5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-white">Sell with 4tyrezz</p>
+        <h1 className="mt-1 max-w-[16rem] text-[20px] font-semibold leading-snug text-white">
+          Sell your car the <span className="font-bold">smart way</span>
+        </h1>
+        <p className="mt-1.5 text-[13px] font-normal leading-snug text-white/90">Instant estimate · Doorstep inspection · Fair final offer</p>
+        <div className="mt-3 grid max-w-[20rem] grid-cols-3 gap-2">
+          {POINTS.map(({ icon: Icon, label }) => (
+            <div key={label} className="rounded-xl border border-white/25 bg-white/12 px-1.5 py-2 text-center">
+              <Icon className="mx-auto h-4 w-4 text-white" strokeWidth={2.25} />
+              <p className="mt-1 text-[11px] font-semibold leading-tight text-white">{label}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2 overflow-x-auto">
+          {STEPS.map(({ n, title }) => (
+            <div key={n} className="flex shrink-0 items-center gap-2 rounded-full bg-white px-2.5 py-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#3083ff] text-[10px] font-bold text-white">{n}</span>
+              <p className="whitespace-nowrap text-[12px] font-medium text-slate-800">{title}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+    <section className="relative hidden overflow-hidden min-h-[200px] sm:min-h-[420px] lg:block lg:min-h-[540px]">
       <img
         src="/sell-my-car.png"
         alt="Sell your car with 4tyrezz"
@@ -94,5 +123,6 @@ export default function SellBanner() {
         </div>
       </div>
     </section>
+    </>
   );
 }

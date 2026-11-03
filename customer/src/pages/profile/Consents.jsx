@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { ProfileCard } from './ProfileLayout';
+import { DataCard } from './hubUtils';
 
 const ITEMS = [
-  { key: 'whatsappUpdates', title: 'WhatsApp updates', body: 'Booking, valuation and listing alerts on WhatsApp.' },
-  { key: 'marketingSms', title: 'Marketing SMS', body: 'Offers, price drops and campaign messages.' },
-  { key: 'wishlistPriceDrop', title: 'Wishlist price-drop alerts', body: 'Notify me when a shortlisted car price falls.' },
-  { key: 'wishlistAvailability', title: 'Wishlist availability alerts', body: 'Notify me when a shortlisted car is sold, reserved or unpublished.' },
-  { key: 'dataSharing', title: 'Data privacy / partner sharing', body: 'Allow verified finance and insurance partners to contact you for quotes you requested.' },
+  { key: 'whatsappUpdates', emoji: '💬', title: 'WhatsApp updates', body: 'Booking, valuation and listing alerts on WhatsApp.' },
+  { key: 'marketingSms', emoji: '📱', title: 'Marketing SMS', body: 'Offers, price drops and campaign messages.' },
+  { key: 'wishlistPriceDrop', emoji: '💸', title: 'Wishlist price-drop alerts', body: 'Notify me when a shortlisted car price falls.' },
+  { key: 'wishlistAvailability', emoji: '🔔', title: 'Wishlist availability alerts', body: 'Notify me when a shortlisted car is sold, reserved or unpublished.' },
+  { key: 'dataSharing', emoji: '🔒', title: 'Data privacy / partner sharing', body: 'Allow verified finance and insurance partners to contact you for quotes you requested.' },
 ];
 
 export default function Consents() {
@@ -41,7 +42,26 @@ export default function Consents() {
     <ProfileCard eyebrow="Privacy" title="Manage consents">
       {!consents && <p className="text-sm font-semibold text-slate-500">Loading preferences…</p>}
       {consents && (
-        <div className="space-y-3">
+        <>
+        <div className="space-y-3 lg:hidden">
+          {ITEMS.map((item, index) => (
+            <label key={item.key} className="block cursor-pointer">
+              <DataCard index={index} emoji={item.emoji} title={item.title} detail={item.body}>
+                <span className="inline-flex items-center gap-2 text-[12px] font-black text-slate-700">
+                  <input
+                    type="checkbox"
+                    disabled={saving}
+                    checked={Boolean(consents[item.key])}
+                    onChange={() => toggle(item.key)}
+                    className="w-4 h-4 accent-[#3083ff]"
+                  />
+                  {consents[item.key] ? 'On' : 'Off'}
+                </span>
+              </DataCard>
+            </label>
+          ))}
+        </div>
+        <div className="hidden lg:block space-y-3">
           {ITEMS.map((item) => (
             <label key={item.key} className="flex items-start justify-between gap-4 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/80 px-4 py-4 cursor-pointer">
               <div>
@@ -58,6 +78,7 @@ export default function Consents() {
             </label>
           ))}
         </div>
+        </>
       )}
     </ProfileCard>
   );

@@ -1,6 +1,5 @@
 const Car = require('../models/Car');
-const Notification = require('../models/Notification');
-const { dispatchSafe, EVENTS } = require('../services/notifyService');
+const { dispatchSafe, EVENTS, notifyListingDecision } = require('../services/notifyService');
 const buyerAlerts = require('../services/buyerAlertService');
 const {
   listingFieldsForCreate,
@@ -221,16 +220,13 @@ exports.moderate = async (req, res) => {
     return res.status(400).json({ message: 'status must be PUBLISHED, REJECTED or PENDING_MODERATION' });
   }
   await car.save();
-  if (car.owner) {
-    await Notification.create({
-      user: car.owner,
-      title: car.listingStatus === 'PUBLISHED' ? 'Listing approved' : 'Listing update',
-      body: `${car.title} is now ${car.listingStatus}`,
-      type: 'approval',
-      link: `/cars/${car._id}`,
-      meta: { carId: car._id },
-    });
-  }
+  await notifyListingDecision({
+    car,
+    title: car.listingStatus === 'PUBLISHED' ? 'Listing approved' : car.listingStatus === 'REJECTED' ? 'Listing needs changes' : 'Listing update',
+    message: car.listingStatus === 'PUBLISHED'
+      ? `${car.title} is now live on 4TYREZZ`
+      : `${car.title} is now ${String(car.listingStatus || 'updated').replace(/_/g, ' ').toLowerCase()}`,
+  });
   if (car.listingStatus === 'PUBLISHED') buyerAlerts.onListingPublished(car);
   if (car.listingStatus === 'REJECTED' || car.listingStatus === 'UNPUBLISHED') {
     buyerAlerts.onAvailabilityChange(car, { reason: car.listingStatus.toLowerCase() });

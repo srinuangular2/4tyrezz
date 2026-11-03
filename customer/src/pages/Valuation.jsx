@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, IndianRupee } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
@@ -25,6 +27,10 @@ import {
 import ResumeListingCard from '../components/sell/ResumeListingCard';
 import SearchableSelect from '../components/common/SearchableSelect';
 import { isAutomatic, variantRowKey } from '../lib/vehicleVariant';
+import { cityFromPlate, matchCityName, sellStateFromValuation } from '../components/sell/sellCarState';
+import { saveSellDraft } from '../lib/listingDrafts';
+import { useIsPhone } from '../components/sell/ui';
+import { formatWhen } from './profile/hubUtils';
 import {
   BRAND,
   Card,
@@ -34,6 +40,12 @@ import {
   formatINR,
   inputClass,
 } from '../components/PageShell';
+
+const VAL_STEPS = [
+  { label: 'Car', title: 'Which car is it?', hint: 'Pick the brand, year and model, or enter the registration number.' },
+  { label: 'Details', title: 'A few details', hint: 'Kilometres, owners and city make the range more accurate.' },
+  { label: 'Price', title: 'Your market price', hint: 'This is a guide. The final offer comes after inspection.' },
+];
 
 const EMPTY_FORM = {
   brand: '',
@@ -124,6 +136,10 @@ export default function Valuation() {
   const [submitting, setSubmitting] = useState(false);
   const [history, setHistory] = useState([]);
   const [gate, setGate] = useState('check');
+  const [mobileStep, setMobileStep] = useState(1);
+  const [guided, setGuided] = useState(false);
+  const phone = useIsPhone();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState(null);
   const { requireAuth, isAuthed } = useAuthGuard();
 
@@ -213,6 +229,15 @@ export default function Valuation() {
   }, [isAuthed]);
 
   useEffect(() => {
+    if (!phone || !guided) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [phone, guided]);
+
+  useEffect(() => {
     if (!form.brand || !brandNames.length) return;
     if (brandNames.includes(form.brand)) return;
     const matched = matchFromList(brandNames, form.brand);
@@ -231,6 +256,12 @@ export default function Valuation() {
     if (form.fuel && fuelTypes.includes(form.fuel)) return;
     set('fuel', fuelTypes[0]);
   }, [fuelTypes, form.fuel]);
+
+  useEffect(() => {
+    if (form.city || !form.plate) return;
+    const name = matchCityName(cityFromPlate(form.plate), cities);
+    if (name) set('city', name);
+  }, [cities, form.city, form.plate]);
 
   const pickBrand = (brand) => {
     setForm((f) => ({
@@ -278,7 +309,7 @@ export default function Valuation() {
       fuel: details.fuel || details.fuelType || current.fuel,
       transmission: details.transmission || current.transmission,
       bodyType: details.bodyType || current.bodyType,
-      city: details.city || current.city,
+      city: details.city || matchCityName(cityFromPlate(current.plate), cities) || current.city,
       ownership: Number(details.ownership || details.ownerCount || current.ownership) || 1,
     };
   };
@@ -314,7 +345,28 @@ export default function Valuation() {
         ...(data.data || {}),
         valuation: data.valuation,
       });
-      document.getElementById('result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHistory((rows) => [
+        {
+          _id: data.data?.id || `local-${Date.now()}`,
+          brand: payload.brand,
+          model: payload.model,
+          year: Number(payload.year),
+          variant: payload.variant,
+          kmDriven: payload.kmDriven,
+          ownership: payload.ownership,
+          fuel: payload.fuel,
+          transmission: payload.transmission,
+          city: payload.city,
+          estimate: data.data?.estimate || data.valuation?.fairMarketValue,
+          minPrice: data.data?.minPrice || data.valuation?.estimatedMinPrice,
+          maxPrice: data.data?.maxPrice || data.valuation?.estimatedMaxPrice,
+        },
+        ...rows.filter((row) => String(row._id) !== String(data.data?.id)),
+      ]);
+      setMobileStep(3);
+      if (window.matchMedia('(min-width: 1024px)').matches) {
+        document.getElementById('result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     } catch (e) {
       toast.error(e.response?.data?.message || 'Could not calculate a valuation');
     } finally {
@@ -394,6 +446,8 @@ export default function Valuation() {
     setResult(saved.result || null);
     setContact(saved.contact || { name: '', phone: '', city: '' });
     setGate('form');
+    setGuided(true);
+    setMobileStep(saved.result ? 3 : saved.form?.brand ? 2 : 1);
   };
 
   const startNewValuation = () => {
@@ -402,7 +456,106 @@ export default function Valuation() {
     setForm(EMPTY_FORM);
     setResult(null);
     setContact({ name: '', phone: '', city: '' });
+    setMobileStep(1);
+    setGuided(false);
     setGate('form');
+  };
+
+  const openSheet = (step = 1) => {
+    setMobileStep(step);
+    setGuided(true);
+  };
+
+  const startFromPlate = () => {
+    const reg = normalizeReg(form.plate);
+    if (reg.length < 8) {
+      toast.error('Enter a full registration number, e.g. TS 09 AB 1234');
+      return;
+    }
+    setGuided(true);
+    requireAuth(async () => {
+      const filled = await lookupAndFill();
+      if (filled?.brand && filled?.model && filled?.year) setMobileStep(2);
+      else setMobileStep(1);
+    });
+  };
+
+  const startInspection = async (nextForm, nextResult) => {
+    const sell = sellStateFromValuation(nextForm, nextResult);
+    await saveSellDraft(sell, { immediate: true });
+    navigate('/sell', { state: { fromValuation: true, sell } });
+  };
+
+  const continueToSell = async () => {
+    if (form.brand && form.model && result) {
+      await startInspection(form, result);
+      return;
+    }
+    const usable = history.filter((row) => row.brand && row.model && row.estimate);
+    if (usable.length === 1) {
+      await bookFromHistory(usable[0]);
+      return;
+    }
+    if (usable.length > 1) {
+      toast('Pick a saved price, then tap Book inspection on that car.');
+      document.getElementById('saved-prices')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    toast.error('Check a car’s price first. The range has to be on screen before inspection can be booked.');
+    document.getElementById('valuation-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const bookFromHistory = async (row) => {
+    const next = {
+      ...EMPTY_FORM,
+      brand: row.brand || '',
+      model: row.model || '',
+      year: row.year || '',
+      variant: row.variant || '',
+      kmDriven: row.kmDriven || 45000,
+      ownership: row.ownership || 1,
+      fuel: row.fuel || '',
+      transmission: row.transmission || '',
+      city: row.city || '',
+    };
+    const nextResult = {
+      estimate: row.estimate,
+      minPrice: row.minPrice,
+      maxPrice: row.maxPrice,
+      valuation: {
+        fairMarketValue: row.estimate,
+        estimatedMinPrice: row.minPrice,
+        estimatedMaxPrice: row.maxPrice,
+      },
+    };
+    if (!next.brand || !next.model || !nextResult.estimate) {
+      toast.error('This saved price is missing car details.');
+      return;
+    }
+    setForm(next);
+    setResult(nextResult);
+    await startInspection(next, nextResult);
+  };
+
+  const goMobileNext = () => {
+    if (mobileStep === 1) {
+      const reg = normalizeReg(form.plate);
+      if (form.brand && form.model && form.year) {
+        setMobileStep(2);
+        return;
+      }
+      if (reg.length >= 8) {
+        requireAuth(async () => {
+          const filled = await lookupAndFill();
+          if (filled?.brand && filled?.model && filled?.year) setMobileStep(2);
+          else toast.error('We could not match this plate. Pick the brand, year and model.');
+        });
+        return;
+      }
+      toast.error('Enter the registration number, or pick brand, year and model');
+      return;
+    }
+    if (mobileStep === 2) checkValue();
   };
 
   const editHistory = (row) => {
@@ -430,6 +583,8 @@ export default function Valuation() {
       },
     });
     setGate('form');
+    setGuided(true);
+    setMobileStep(3);
     saveValuationDraft({ form: next, result: null });
   };
 
@@ -444,7 +599,7 @@ export default function Valuation() {
     <div className="bg-slate-50 overflow-x-clip pb-24 lg:pb-0">
       <ValuationBanner />
 
-      <Section eyebrow="SmartPrice" title="Used car price calculator" className="!py-4 lg:!py-12">
+      <Section eyebrow="SmartPrice" title="Used car price calculator" className="!py-4 lg:!py-12" headerClassName="hidden lg:flex">
         {gate === 'resume' && valuationDraftReady(draft) ? (
           <ResumeListingCard
             subtitle="Thanks for sharing the details"
@@ -464,23 +619,97 @@ export default function Valuation() {
         ) : gate === 'form' ? (
           <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-4 lg:gap-6 items-start">
           <Card id="valuation-form" className="p-4 sm:p-7 rounded-2xl lg:rounded-3xl" highlighted>
-            <div className="flex items-start justify-between gap-3 mb-4 lg:mb-5">
+            {phone && !guided && (
+              <div className="space-y-4">
+                <p className="text-[12px] font-medium text-[#3083ff]">Check your car’s price</p>
+                <h2 className="text-[18px] font-semibold text-slate-900">Which car is it?</h2>
+                <p className="text-[13px] font-normal leading-snug text-slate-500">Enter the number on the plate, or choose the brand yourself.</p>
+                <label className="block">
+                  <span className="text-[13px] font-medium text-slate-700">Registration number</span>
+                  <input
+                    className={`${inputClass} mt-1.5`}
+                    value={form.plate}
+                    onChange={(e) => set('plate', formatPlateInput(e.target.value))}
+                    placeholder="TS 09 AB 1234"
+                    autoCapitalize="characters"
+                  />
+                </label>
+                <button type="button" onClick={startFromPlate} disabled={lookingUp} className="h-11 w-full rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white disabled:opacity-50">
+                  {lookingUp ? 'Looking up…' : 'Find my car'}
+                </button>
+                <button type="button" onClick={() => openSheet(1)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left">
+                  <span className="block text-[14px] font-semibold text-[#3083ff]">Choose brand, year and model</span>
+                  <span className="mt-0.5 block text-[12px] font-normal text-slate-500">Use this if the RC number is not with you.</span>
+                </button>
+              </div>
+            )}
+            <div className="mb-4 hidden items-start justify-between gap-3 lg:mb-5 lg:flex">
               <div className="min-w-0">
-                <h2 className="text-[16px] lg:font-display lg:font-black lg:text-xl font-black text-slate-900">Used car price calculator</h2>
-                <p className="text-[12px] lg:text-xs font-semibold text-slate-400 mt-1">Get your estimate in under a minute</p>
+                <h2 className="font-display text-xl font-black text-slate-900">Used car price calculator</h2>
+                <p className="mt-1 text-xs font-semibold text-slate-400">Get your estimate in under a minute</p>
               </div>
               {form.brand && (
                 <button
                   type="button"
                   onClick={startNewValuation}
-                  className="text-[11px] font-black uppercase tracking-wider text-[#3083ff] shrink-0"
+                  className="shrink-0 text-[11px] font-black uppercase tracking-wider text-[#3083ff]"
                 >
                   New car
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(!(phone && !guided)) && (
+            <ValuationSheet
+              open={phone && guided}
+              step={mobileStep}
+              busy={estimating || lookingUp}
+              nextLabel={mobileStep === 1 ? 'Continue' : (lookingUp ? 'Looking up RC…' : estimating ? 'Calculating…' : 'See my price')}
+              onBack={() => {
+                if (mobileStep > 1) setMobileStep((n) => n - 1);
+                else setGuided(false);
+              }}
+              onJump={(n) => setMobileStep(n)}
+              onNext={goMobileNext}
+              onSell={continueToSell}
+              carLine={[form.year, form.brand, form.model].filter(Boolean).join(' ')}
+              carMeta={[form.variant, form.plate, form.city].filter(Boolean).join(' · ')}
+            >
+            {mobileStep === 3 && phone && (
+              <div>
+                {result ? (
+                  <div className="rounded-2xl bg-[#1853ff] px-4 py-4 text-white">
+                    <p className="text-[12px] font-medium text-white/80">Fair market price</p>
+                    <p className="mt-1 text-[26px] font-semibold leading-tight">{formatINR(fair)}</p>
+                    <p className="mt-1 text-[13px] font-normal text-white/90">Range {formatINR(minP)} – {formatINR(maxP)}</p>
+                  </div>
+                ) : (
+                  <p className="text-[13px] font-normal text-slate-500">Tap See my price to calculate the range.</p>
+                )}
+                <p className="mt-3 text-[12px] font-normal leading-snug text-slate-500">
+                  {result?.disclaimer || 'This is an estimated market value only. It is not a final purchase offer.'}
+                </p>
+                <p className="mt-3 text-[13px] font-normal leading-snug text-slate-600">
+                  This price stays on this page under Saved prices. Next you add photos, then book the visit. The car stays in Account → My Vehicles, where you can edit details or upload photos later.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGuided(false);
+                    window.setTimeout(() => document.getElementById('saved-prices')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+                  }}
+                  className="mt-2 block w-full text-center text-[13px] font-semibold text-[#3083ff]"
+                >
+                  See saved prices
+                </button>
+                <button type="button" onClick={() => setMobileStep(1)} className="mt-1 w-full py-2 text-center text-[13px] font-medium text-slate-500">
+                  Check another car
+                </button>
+              </div>
+            )}
+
+            <div className={`${phone && guided && mobileStep === 3 ? 'hidden' : 'grid'} grid-cols-1 sm:grid-cols-2 gap-3`}>
+              <div className={phone && guided && mobileStep !== 1 ? 'hidden' : 'contents'}>
               <Field label="Brand">
                 <SearchableSelect
                   value={form.brand}
@@ -541,6 +770,8 @@ export default function Valuation() {
                   }}
                 />
               </Field>
+              </div>
+              <div className={phone && guided && mobileStep !== 2 ? 'hidden' : 'contents'}>
               <Field label="City">
                 <SearchableSelect
                   value={form.city}
@@ -588,13 +819,15 @@ export default function Valuation() {
                   className="w-full accent-[#3083ff] cursor-pointer mt-3"
                 />
               </Field>
+              </div>
             </div>
 
-            <div className="relative my-5 text-center">
+            <div className={`relative my-5 text-center ${phone && guided && mobileStep !== 1 ? 'hidden' : ''}`}>
               <span className="absolute inset-x-0 top-1/2 border-t border-slate-200" />
               <span className="relative bg-white px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">or</span>
             </div>
 
+            <div className={phone && guided && mobileStep !== 1 ? 'hidden' : ''}>
             <Field label="Enter your car registration">
               <input
                 className={inputClass}
@@ -603,6 +836,9 @@ export default function Valuation() {
                 placeholder="Enter Your Car No. (TS 09 AB 1234)"
               />
             </Field>
+            </div>
+            </ValuationSheet>
+            )}
 
             <PrimaryButton className="w-full mt-5 hidden lg:inline-flex" disabled={estimating || lookingUp} onClick={checkValue}>
               {lookingUp ? 'Looking up RC…' : estimating ? 'Calculating…' : 'Check value'}
@@ -625,33 +861,16 @@ export default function Valuation() {
                 <p className="text-sm font-medium text-slate-600 leading-relaxed">
                   An indicative market range — not a final offer. 4tyrezz confirms the real price after inspection if you choose to sell.
                 </p>
-                <Link to="/sell" className="inline-flex font-black text-sm text-[#3083ff] pt-1">
-                  Sell this car next →
-                </Link>
+                <button type="button" onClick={continueToSell} className="inline-flex font-black text-sm text-[#3083ff] pt-1">
+                  Book inspection for this car →
+                </button>
               </Card>
             </div>
           </div>
         ) : null}
       </Section>
 
-      {/* Mobile sticky Check value */}
-      {gate === 'form' && (
-        <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(15,23,42,0.08)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
-          <div className="px-3 py-2.5">
-            <button
-              type="button"
-              disabled={estimating || lookingUp}
-              onClick={checkValue}
-              className="w-full h-11 rounded-xl bg-[#3083ff] text-white text-[13px] font-black disabled:opacity-50"
-            >
-              {lookingUp ? 'Looking up RC…' : estimating ? 'Calculating…' : 'Check value'}
-            </button>
-            <p className="text-center text-[10px] font-semibold text-emerald-600 mt-1.5">100% free · Instant estimate</p>
-          </div>
-        </div>
-      )}
-
-      <div id="result" className="scroll-mt-24">
+      <div id="result" className="hidden scroll-mt-24 lg:block">
         {result && (
           <Section eyebrow="SmartPrice" title="Your used car valuation" className="!py-5 lg:!py-12">
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-4 lg:gap-6">
@@ -706,9 +925,9 @@ export default function Valuation() {
                   <PrimaryButton className="w-full" disabled={submitting} onClick={requestOffers}>
                     {submitting ? 'Sending…' : 'Request a 4tyrezz follow-up'}
                   </PrimaryButton>
-                  <Link to="/sell" className="block text-center text-xs font-black uppercase tracking-wider text-[#3083ff] pt-1">
-                    Or sell this car
-                  </Link>
+                  <button type="button" onClick={continueToSell} className="block w-full text-center text-xs font-black uppercase tracking-wider text-[#3083ff] pt-1">
+                    Book inspection for this car
+                  </button>
                 </div>
               </Card>
             </div>
@@ -729,25 +948,73 @@ export default function Valuation() {
           <div>
             <p className="text-[11px] font-black uppercase tracking-widest text-[#3083ff]">Next step</p>
             <h3 className="font-display text-2xl font-black text-slate-900 mt-1">Happy with the range?</h3>
-            <p className="text-sm font-medium text-slate-500 mt-1">Book inspection on Sell your car. 4tyrezz confirms the offer in person.</p>
+            <p className="text-sm font-medium text-slate-500 mt-1">Next, add photos. The car then stays in My Vehicles, where you can edit anything that is still missing.</p>
           </div>
-          <Link to="/sell">
-            <PrimaryButton>Sell this car</PrimaryButton>
-          </Link>
+          <PrimaryButton onClick={continueToSell}>Book inspection</PrimaryButton>
         </div>
       </Section>
 
-      <Section className="bg-gradient-to-b from-blue-50/70">
-        <FaqsSection
-          faqs={VALUATION_FAQS}
-          subtitle="Everything you need to know about checking your car’s price on 4tyrezz."
-          layout="stack"
-        />
-      </Section>
-
       {history.length > 0 && (
-        <Section eyebrow="Your account" title="Previous valuations">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <Section id="saved-prices" eyebrow="On this page" title="Saved prices">
+          <div className="lg:hidden">
+            <p className="text-[12px] font-normal leading-snug text-slate-500">
+              A price check stays here. It is not a booking. Open it to see the range, or book the inspection when you are ready.
+            </p>
+            <div className="mt-3 space-y-2.5">
+              {history.slice(0, 6).map((h) => {
+                const facts = [
+                  h.variant,
+                  h.kmDriven ? `${Number(h.kmDriven).toLocaleString('en-IN')} km` : '',
+                  h.fuel,
+                  h.city,
+                ].filter(Boolean);
+                return (
+                  <article key={h._id} className="rounded-2xl bg-white p-3.5 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#1853ff]">
+                        <IndianRupee className="h-4 w-4" strokeWidth={2.25} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] font-semibold text-slate-900">
+                          {[h.year, h.brand, h.model].filter(Boolean).join(' ')}
+                        </p>
+                        {facts.length > 0 && (
+                          <p className="mt-0.5 truncate text-[12px] font-normal text-slate-500">{facts.join(' · ')}</p>
+                        )}
+                        {h.createdAt && (
+                          <p className="mt-0.5 text-[11px] font-normal text-slate-400">{formatWhen(h.createdAt, true)}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-xl bg-[#f4f8ff] px-3 py-2.5">
+                      <p className="text-[11px] font-medium text-[#3083ff]">Fair price</p>
+                      <p className="text-[18px] font-semibold leading-tight text-slate-900">{formatINR(h.estimate)}</p>
+                      <p className="mt-0.5 text-[12px] font-normal text-slate-500">
+                        Range {formatINR(h.minPrice)} – {formatINR(h.maxPrice)}
+                      </p>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => editHistory(h)}
+                        className="h-10 rounded-xl border border-slate-200 bg-white text-[12px] font-semibold text-slate-800"
+                      >
+                        See price
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => bookFromHistory(h)}
+                        className="h-10 rounded-xl bg-[#3083ff] text-[12px] font-semibold text-white"
+                      >
+                        Book inspection
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+          <div className="hidden lg:grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {history.slice(0, 6).map((h) => (
               <Card key={h._id} className="p-5">
                 <p className="font-black text-slate-900 text-sm">
@@ -769,6 +1036,89 @@ export default function Valuation() {
           </div>
         </Section>
       )}
+
+      <Section className="bg-gradient-to-b from-blue-50/70">
+        <FaqsSection
+          faqs={VALUATION_FAQS}
+          subtitle="Everything you need to know about checking your car’s price on 4tyrezz."
+          layout="stack"
+        />
+      </Section>
     </div>
+  );
+}
+
+function ValuationSheet({ open, step, busy, nextLabel, onBack, onJump, onNext, onSell, carLine, carMeta, children }) {
+  if (!open || typeof document === 'undefined') return children;
+  const meta = VAL_STEPS[step - 1] || VAL_STEPS[0];
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex flex-col bg-white">
+      <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700"
+            aria-label="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold text-[#3083ff]">Step {step} of 3</p>
+            <h3 className="truncate text-[16px] font-semibold text-slate-900">{meta.title}</h3>
+          </div>
+        </div>
+        <p className="mt-2 text-[12px] font-normal leading-snug text-slate-500">{meta.hint}</p>
+        <div className="mt-3 grid grid-cols-3 gap-1.5">
+          {VAL_STEPS.map((item, index) => {
+            const n = index + 1;
+            const on = n === step;
+            const done = n < step;
+            return (
+              <button
+                key={item.label}
+                type="button"
+                disabled={!done}
+                onClick={() => onJump(n)}
+                className={`rounded-full px-1 py-1 text-[11px] font-semibold ${on ? 'bg-[#3083ff] text-white' : done ? 'bg-[#eaf2ff] text-[#1853ff]' : 'bg-slate-100 text-slate-400'}`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 [&_.block>span:first-child]:normal-case [&_.block>span:first-child]:text-[13px] [&_.block>span:first-child]:font-medium [&_.block>span:first-child]:tracking-normal [&_.block>span:first-child]:text-slate-700 [&_input]:font-medium">
+        {step > 1 && carLine && (
+          <div className="mb-3 rounded-2xl border border-[#3083ff]/20 bg-[#f4f8ff] px-3.5 py-3">
+            <p className="text-[11px] font-medium text-[#3083ff]">Your car</p>
+            <p className="mt-0.5 text-[14px] font-medium text-slate-900">{carLine}</p>
+            {carMeta && <p className="mt-0.5 text-[12px] font-normal text-slate-500">{carMeta}</p>}
+          </div>
+        )}
+        {children}
+      </div>
+      <div className="shrink-0 border-t border-slate-100 bg-white px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+        {step < 3 ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onNext}
+            className="h-11 w-full rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white disabled:opacity-50"
+          >
+            {nextLabel}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onSell}
+            className="h-11 w-full rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white"
+          >
+            Book inspection
+          </button>
+        )}
+      </div>
+    </div>,
+    document.body
   );
 }

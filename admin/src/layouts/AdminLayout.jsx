@@ -1,15 +1,30 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../app/authSlice';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import NotificationBell from '../components/NotificationBell';
 import { RealtimeAlertsProvider } from '../hooks/useRealtimeAlerts';
 
+function executiveAllowed(pathname) {
+  return pathname === '/'
+    || pathname === '/cars'
+    || pathname === '/cars/add'
+    || pathname.startsWith('/cars/edit/')
+    || pathname === '/profile'
+    || pathname.startsWith('/executive/');
+}
+
 export default function AdminLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((s) => s.auth);
+  const { pathname } = useLocation();
   const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
+  const executiveRedirect = user?.role === 'executive_agent' && pathname === '/sold'
+    ? '/cars?filter=sold'
+    : user?.role === 'executive_agent' && !executiveAllowed(pathname)
+      ? '/'
+      : '';
 
   return (
     <RealtimeAlertsProvider token={token} enabled={Boolean(token)} variant="admin">
@@ -30,7 +45,7 @@ export default function AdminLayout() {
             </span>
           </header>
           <main className="flex-1 p-6 overflow-auto">
-            <Outlet />
+            {executiveRedirect ? <Navigate to={executiveRedirect} replace /> : <Outlet />}
           </main>
         </div>
       </div>

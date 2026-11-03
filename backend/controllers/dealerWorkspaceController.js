@@ -18,12 +18,21 @@ const TEMPLATE_HEADERS = [
   'variant',
   'year',
   'km_driven',
-  'price',
   'fuel_type',
   'transmission',
-  'ownership',
-  'color',
+  'price',
+  'owners',
   'city',
+  'state',
+  'pincode',
+  'car_location',
+  'upload_address',
+  'body_type',
+  'color',
+  'description',
+  'images',
+  'features',
+  'status',
 ];
 
 const REG_RX = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}$/;
@@ -81,8 +90,8 @@ function normalizeHeader(value) {
     fueltype: 'fuel_type',
     gearbox: 'transmission',
     gear_box: 'transmission',
-    owners: 'ownership',
-    owner: 'ownership',
+    owners: 'owners',
+    owner: 'owners',
     owner_count: 'ownership',
     no_of_owners: 'ownership',
     number_of_owners: 'ownership',
@@ -255,14 +264,45 @@ function validateInventoryRow(row) {
       price,
       fuel_type: normalizeFuel(row.fuel_type || row.fuel),
       transmission: normalizeTrans(row.transmission || row.gearbox),
-      ownership: normalizeOwnership(row.ownership || row.owners || row.owner),
+      owners: normalizeOwnership(row.owners || row.ownership || row.owner),
       color: normalizeColor(row.color || row.colour),
       description: String(row.description || '').trim(),
       images: normalizeImages(row.images || row.image || row.photos),
       features: normalizeFeatures(row.features || row.key_features),
       city: row.city || 'Hyderabad',
+      state: String(row.state || '').trim(),
+      pincode: String(row.pincode || '').trim(),
+      car_location: String(row.car_location || '').trim(),
+      upload_address: String(row.upload_address || '').trim(),
+      body_type: normalizeBodyType(row.body_type, row.model, row.variant),
+      status: normalizeListingStatus(row.status),
     },
   };
+}
+
+function normalizeBodyType(value, model, variant) {
+  const raw = String(value || '').trim().toLowerCase();
+  const known = { hatchback: 'Hatchback', sedan: 'Sedan', suv: 'SUV', muv: 'MUV', luxury: 'Luxury', convertible: 'Convertible' };
+  if (known[raw]) return known[raw];
+  return inferBodyType(model, variant);
+}
+
+function normalizeListingStatus(value) {
+  const raw = String(value || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+  if (['AVAILABLE', 'PENDING_APPROVAL', 'BOOKED', 'SOLD', 'REJECTED'].includes(raw)) return raw;
+  return 'PENDING_APPROVAL';
+}
+
+function stockFromStatus(status) {
+  if (status === 'SOLD') {
+    return { status: 'sold', listingStatus: 'SOLD', availability: 'unavailable', unpublished: true, listingCleared: false };
+  }
+  if (status === 'REJECTED') {
+    return { status: 'rejected', listingStatus: 'REJECTED', unpublished: true, listingCleared: false };
+  }
+  if (status === 'BOOKED') return { availability: 'reserved' };
+  if (status === 'AVAILABLE') return { availability: 'available' };
+  return {};
 }
 
 function inferBodyType(model, variant) {
@@ -337,7 +377,7 @@ function driveStatus(status) {
 exports.templateCsv = (_req, res) => {
   const sample = [
     TEMPLATE_HEADERS.join(','),
-    'TS09AB1234,Maruti,Swift,VXI,2021,32000,575000,Petrol,Manual,1,White,Hyderabad',
+    'TS09FA4821,Maruti Suzuki,Swift,ZXI,2021,32000,PETROL,MANUAL,575000,1,Hyderabad,Telangana,500081,Gachibowli,Plot 12 Gachibowli,Hatchback,White,Well maintained,,ABS|Sunroof,AVAILABLE',
   ].join('\n');
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="4tyrezz_bulk_inventory_template.csv"');
@@ -376,9 +416,9 @@ exports.bulkUpload = async (req, res) => {
         variant: row.variant,
         fuel: row.fuel_type,
         transmission: row.transmission || 'Manual',
-        ownership: row.ownership,
+        ownership: row.owners,
         color: row.color,
-        bodyType: inferBodyType(row.model, row.variant),
+        bodyType: row.body_type || inferBodyType(row.model, row.variant),
         title: `${row.year} ${row.brand} ${row.model}`.trim(),
         rtoDetails: { rcNumber: row.registration_no, rcStatus: 'Active' },
       });
@@ -401,7 +441,15 @@ exports.bulkUpload = async (req, res) => {
         city: refs.city,
         owner: dealerId(req),
         sellerType: 'dealer',
-        location: { city: row.city || '', formattedAddress: row.city || '' },
+        location: {
+          city: row.city || '',
+          state: row.state || '',
+          pincode: row.pincode || '',
+          area: row.car_location || '',
+          formattedAddress: row.upload_address || row.city || '',
+        },
+        car_location: row.car_location || '',
+        upload_address: row.upload_address || '',
         rto: row.city || '',
         rtoDetails: refs.rtoDetails,
         images: row.images || [],
@@ -414,6 +462,7 @@ exports.bulkUpload = async (req, res) => {
           tyres: row.images?.[4] || '',
         },
         ...listingFieldsForCreate({ isAdmin: false }),
+        ...stockFromStatus(row.status),
         description: row.description || 'Imported via bulk upload',
       });
       imported.push(car._id);

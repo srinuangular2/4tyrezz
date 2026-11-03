@@ -16,8 +16,8 @@ import HowItWorks from '../components/HowItWorks';
 import CarBannerSection from '../components/CarBannerSection';
 import WhatsAppFloat from '../components/WhatsAppFloat';
 import LastViewedCars from '../components/LastViewedCars';
-import PdiCta from '../components/pdi/PdiCta';
-import { Car, BadgeCheck, Scale, GitCompare, Banknote, Shield, Tag, Phone } from 'lucide-react';
+import MobileHome from '../components/MobileHome';
+import { Car, BadgeCheck, Scale, GitCompare, Banknote, Shield, Tag, Phone, ClipboardCheck } from 'lucide-react';
 import CompareVsCard from '../components/CompareVsCard';
 import { mediaUrl } from './profile/hubUtils';
 import { BUDGETS, budgetQuery } from '../utils/filterOptions';
@@ -160,12 +160,15 @@ export default function Home() {
     { label: 'Compare', hint: 'See cars side by side', path: '/compare', icon: GitCompare },
     { label: 'Finance', hint: 'EMI on used cars', path: '/finance', icon: Banknote },
     { label: 'Insurance', hint: 'Paperless cover', path: '/insurance', icon: Shield },
+    { label: 'Car Inspection', hint: '300+ point check', path: '/inspection', icon: ClipboardCheck },
     { label: 'Offers', hint: 'Deals on live stock', path: '/offers', icon: Tag, badge: 'HOT' },
     { label: 'Contact', hint: 'Talk to 4tyrezz', path: '/contact', icon: Phone },
   ];
 
   return (
     <div className="bg-slate-50 min-h-screen text-slate-900 font-sans antialiased selection:bg-[#3083ff] selection:text-white">
+      <MobileHome />
+      <div className="hidden lg:block">
       {/* ---- HERO SECTION ---- */}
       <section className="relative w-full bg-slate-900 overflow-hidden">
         <div className="w-full relative z-0">
@@ -290,10 +293,6 @@ export default function Home() {
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="px-3 lg:px-0 pt-4 lg:pt-0 lg:container-px lg:mx-auto lg:max-w-3xl">
-        <PdiCta />
       </section>
 
       {/* ---- KEY METRICS ---- */}
@@ -592,6 +591,7 @@ export default function Home() {
 
      
 
+      </div>
       <WhatsAppFloat/>
     </div>
   );

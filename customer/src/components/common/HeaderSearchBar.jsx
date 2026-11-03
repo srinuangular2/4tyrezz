@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import { Close, Search } from '../icons';
+import { Close, Mic, Search } from '../icons';
 import { formatINR } from '../PageShell';
 import { mediaUrl } from '../../pages/profile/hubUtils';
 import { BUDGETS, budgetQuery, looksLikeBudgetQuery, matchBudgets, parseBudgetQuery } from '../../utils/filterOptions';
@@ -32,6 +32,18 @@ function readRecent() {
 
 function writeRecent(rows) {
   localStorage.setItem(RECENT_KEY, JSON.stringify(rows.slice(0, 8)));
+}
+
+function speechCtor() {
+  if (typeof window === 'undefined') return null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function voiceBlockedMessage() {
+  if (typeof window !== 'undefined' && !window.isSecureContext) {
+    return 'This http link blocks the microphone. Open the https address on your phone.';
+  }
+  return 'Open this page in Chrome or Safari to use voice search.';
 }
 
 function cityParam(location) {
@@ -82,8 +94,11 @@ export default function HeaderSearchBar({
   const panelRef = useRef(null);
   const abortRef = useRef(null);
   const seqRef = useRef(0);
+  const recRef = useRef(null);
 
   const [query, setQuery] = useState('');
+  const [listening, setListening] = useState(false);
+  const [voiceNote, setVoiceNote] = useState('');
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState({
@@ -108,6 +123,84 @@ export default function HeaderSearchBar({
   const panelOpen = isModal ? open : focused;
   const cityName = cityParam(city);
 
+  const stopVoice = useCallback(() => {
+    const rec = recRef.current;
+    recRef.current = null;
+    if (rec) {
+      rec.onresult = null;
+      rec.onerror = null;
+      rec.onend = null;
+      try { rec.stop(); } catch { /* already stopped */ }
+    }
+    setListening(false);
+  }, []);
+
+  const toggleVoice = useCallback(() => {
+    if (recRef.current) {
+      stopVoice();
+      return;
+    }
+    const Ctor = speechCtor();
+    if (!Ctor) {
+      setVoiceNote(voiceBlockedMessage());
+      return;
+    }
+
+    const startWith = (lang) => {
+      const rec = new Ctor();
+      rec.lang = lang;
+      rec.interimResults = true;
+      rec.continuous = false;
+      rec.maxAlternatives = 1;
+      rec.onresult = (event) => {
+        let text = '';
+        for (let i = 0; i < event.results.length; i += 1) {
+          text += event.results[i][0].transcript;
+        }
+        setQuery(text.replace(/\s+/g, ' ').trim());
+        setFocused(true);
+        setVoiceNote('');
+      };
+      rec.onerror = (event) => {
+        const code = event?.error;
+        if (code === 'language-not-supported' && lang !== 'en-US') {
+          recRef.current = null;
+          startWith('en-US');
+          return;
+        }
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          setVoiceNote(window.isSecureContext
+            ? 'Allow the microphone, then tap the mic again.'
+            : voiceBlockedMessage());
+        } else if (code === 'no-speech') {
+          setVoiceNote('No speech heard. Tap the mic and try again.');
+        } else if (code === 'network') {
+          setVoiceNote('Voice search needs an internet connection on the phone.');
+        } else if (code !== 'aborted') {
+          setVoiceNote('Voice search did not catch that. Try again.');
+        }
+        setListening(false);
+        recRef.current = null;
+      };
+      rec.onend = () => {
+        setListening(false);
+        recRef.current = null;
+      };
+      recRef.current = rec;
+      try {
+        rec.start();
+      } catch {
+        recRef.current = null;
+        setListening(false);
+        setVoiceNote(voiceBlockedMessage());
+      }
+    };
+
+    setVoiceNote('');
+    setListening(true);
+    startWith('en-IN');
+  }, [stopVoice]);
+
   const remember = useCallback((entry) => {
     const label = String(entry?.label || entry?.q || '').trim();
     if (!label) return;
@@ -120,9 +213,10 @@ export default function HeaderSearchBar({
     const payload = { ...params };
     if (recentEntry) remember(recentEntry);
     setFocused(false);
+    stopVoice();
     onClose?.();
     navigate(listingHref(payload));
-  }, [navigate, onClose, remember]);
+  }, [navigate, onClose, remember, stopVoice]);
 
   const fetchAutocomplete = useCallback(async (q) => {
     abortRef.current?.abort();
@@ -201,6 +295,23 @@ export default function HeaderSearchBar({
       document.body.style.overflow = prev;
     };
   }, [isModal, open]);
+
+  useEffect(() => {
+    if (isModal && !open) {
+      stopVoice();
+      setVoiceNote('');
+    }
+  }, [isModal, open, stopVoice]);
+
+  useEffect(() => () => {
+    const rec = recRef.current;
+    recRef.current = null;
+    if (!rec) return;
+    rec.onresult = null;
+    rec.onerror = null;
+    rec.onend = null;
+    try { rec.abort(); } catch { /* ignore */ }
+  }, []);
 
   const items = useMemo(() => {
     const budgetItems = budgetHits.map((b) => ({
@@ -711,9 +822,10 @@ export default function HeaderSearchBar({
         aria-autocomplete="list"
         aria-expanded={panelOpen}
         aria-controls="header-search-dropdown"
-        placeholder="Type Swift, Honda, or 10 lakhs…"
-        className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none py-2"
+        placeholder={listening ? 'Listening…' : 'Type Swift, Honda, or 10 lakhs…'}
+        className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none py-2 [&::-webkit-search-cancel-button]:hidden"
         onChange={(e) => {
+          if (recRef.current) stopVoice();
           setQuery(e.target.value);
           setFocused(true);
         }}
@@ -733,6 +845,19 @@ export default function HeaderSearchBar({
           <Close className="w-3.5 h-3.5" />
         </button>
       )}
+      {isModal && (
+        <button
+          type="button"
+          className={`ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+            listening ? 'bg-[#3083ff] text-white' : 'text-[#1853ff]'
+          }`}
+          aria-label={listening ? 'Stop voice search' : 'Search by voice'}
+          aria-pressed={listening}
+          onClick={toggleVoice}
+        >
+          <Mic className={`h-4 w-4 ${listening ? 'animate-pulse' : ''}`} />
+        </button>
+      )}
     </div>
   );
 
@@ -742,10 +867,22 @@ export default function HeaderSearchBar({
       <div className="fixed inset-0 z-[100] bg-white flex flex-col md:hidden">
         <div className="flex items-center gap-2 px-3 py-3 border-b border-slate-100">
           {field}
-          <button type="button" className="text-xs font-black text-slate-600 px-2 py-2" onClick={() => onClose?.()}>
+          <button
+            type="button"
+            className="text-xs font-black text-slate-600 px-2 py-2"
+            onClick={() => {
+              stopVoice();
+              onClose?.();
+            }}
+          >
             Close
           </button>
         </div>
+        {(listening || voiceNote) && (
+          <p className={`px-4 py-2 text-[12px] font-medium ${listening ? 'text-[#1853ff]' : 'text-rose-500'}`}>
+            {listening ? 'Listening… say a car name or a budget' : voiceNote}
+          </p>
+        )}
         {dropdown}
       </div>,
       document.body

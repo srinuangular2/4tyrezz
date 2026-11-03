@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -7,7 +8,6 @@ import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
 import CarCard from '../components/CarCard';
 import { CarGridSkeleton } from '../components/Skeletons';
-import Pagination from '../components/Pagination';
 import FilterSidebar from '../components/listing/FilterSidebar';
 import UsedCarsBanner from '../components/listing/UsedCarsBanner';
 import { describeFilters } from './profile/hubUtils';
@@ -62,6 +62,7 @@ function isBucketActive(bucket, minKey, maxKey, filters) {
 }
 
 const KEEP_ON_CLEAR = ['sort'];
+const PAGE_SIZE = 12;
 
 export default function Listing() {
   const [params, setParams] = useSearchParams();
@@ -71,7 +72,15 @@ export default function Listing() {
   const [cars, setCars] = useState([]);
   const [meta, setMeta] = useState({ total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const filterBarRef = useRef(null);
+  const sentinelRef = useRef(null);
+  const pageRef = useRef(1);
+  const loadingMoreRef = useRef(false);
+  const listGen = useRef(0);
+  const [filterBarHeight, setFilterBarHeight] = useState(52);
 
   const currentParamsObj = Object.fromEntries([...params.entries()]);
   const [filters, setFilters] = useState(currentParamsObj);
@@ -103,29 +112,47 @@ export default function Listing() {
   const modelDocs = matchRefs(brandModels, filters.model);
   const cityDoc = matchRef(cities, filters.city || filters.location);
 
+  const brandKey = brandDocs.map((b) => b._id).join(',');
+  const modelKey = modelDocs.map((m) => m._id).join(',');
+  const cityKey = cityDoc?._id || cityDoc?.name || '';
+  const listKey = useMemo(() => {
+    const { page, ...rest } = filters;
+    return JSON.stringify({ rest, brandKey, modelKey, cityKey });
+  }, [filters, brandKey, modelKey, cityKey]);
+
+  const buildParams = (page) => {
+    const clean = Object.fromEntries(
+      Object.entries(filters).filter(([key, value]) => key !== 'page' && value !== '' && value !== null && value !== undefined)
+    );
+    if (clean.q && !clean.search) clean.search = clean.q;
+    if (brandDocs.length) clean.brand = brandDocs.map((b) => b._id).join(',');
+    if (modelDocs.length) clean.model = modelDocs.map((m) => m._id).join(',');
+    if (cityDoc) clean.city = cityDoc.name || cityDoc._id;
+    if (filters.state) clean.state = filters.state;
+    if (filters.area) clean.area = filters.area;
+    return { ...clean, page, limit: PAGE_SIZE };
+  };
+
   useEffect(() => {
     const controller = new AbortController();
+    const gen = ++listGen.current;
+    pageRef.current = 1;
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
 
     const fetchCars = async () => {
       setLoading(true);
       try {
-        const clean = Object.fromEntries(
-          Object.entries(filters).filter(([, v]) => v !== '' && v !== null && v !== undefined)
-        );
-        if (clean.q && !clean.search) clean.search = clean.q;
-        if (brandDocs.length) clean.brand = brandDocs.map((b) => b._id).join(',');
-        if (modelDocs.length) clean.model = modelDocs.map((m) => m._id).join(',');
-        if (cityDoc) clean.city = cityDoc.name || cityDoc._id;
-        if (filters.state) clean.state = filters.state;
-        if (filters.area) clean.area = filters.area;
-
         const { data } = await api.get('/cars', {
-          params: { ...clean, limit: 12 },
+          params: buildParams(1),
           signal: controller.signal,
         });
-
-        setCars(data.cars || []);
-        setMeta({ total: data.total || 0, pages: data.pages || 1 });
+        if (listGen.current !== gen) return;
+        const next = data.cars || [];
+        const pages = data.pages || 1;
+        setCars(next);
+        setMeta({ total: data.total || 0, pages });
+        setHasMore(pages > 1 && next.length > 0);
       } catch (err) {
         if (
           api.isCancel?.(err) ||
@@ -137,15 +164,54 @@ export default function Listing() {
         console.error('Failed to load cars:', err);
         setCars([]);
         setMeta({ total: 0, pages: 1 });
+        setHasMore(false);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchCars();
+    window.scrollTo({ top: 0, behavior: 'auto' });
 
     return () => controller.abort();
-  }, [JSON.stringify(filters), brandDocs.map((b) => b._id).join(','), modelDocs.map((m) => m._id).join(','), cityDoc?._id]);
+  }, [listKey]);
+
+  const loadMoreRef = useRef(async () => {});
+  loadMoreRef.current = async () => {
+    if (loadingMoreRef.current || loading || !hasMore) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const gen = listGen.current;
+    const nextPage = pageRef.current + 1;
+    try {
+      const { data } = await api.get('/cars', { params: buildParams(nextPage) });
+      if (listGen.current !== gen) return;
+      const next = data.cars || [];
+      const pages = data.pages || 1;
+      setCars((prev) => {
+        const seen = new Set(prev.map((car) => car._id));
+        return [...prev, ...next.filter((car) => car && !seen.has(car._id))];
+      });
+      pageRef.current = nextPage;
+      setMeta({ total: data.total || 0, pages });
+      setHasMore(nextPage < pages && next.length > 0);
+    } catch (err) {
+      console.error('Failed to load more cars:', err);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || loading || !hasMore) return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) loadMoreRef.current();
+    }, { rootMargin: '640px 0px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loading, hasMore, cars.length]);
 
   const apply = (next) => {
     const clean = Object.fromEntries(
@@ -275,6 +341,16 @@ export default function Listing() {
   );
 
   useEffect(() => {
+    const bar = filterBarRef.current;
+    if (!bar) return undefined;
+    const sync = () => setFilterBarHeight(bar.offsetHeight);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [chips.length, loading]);
+
+  useEffect(() => {
     if (!mobileOpen) return undefined;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -291,12 +367,13 @@ export default function Listing() {
 
       <div className="bg-slate-50 lg:bg-slate-50 min-h-screen">
       <div className="lg:container-px lg:py-8 pb-6 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">
-        <aside className="hidden lg:block lg:sticky lg:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1">
+        <aside className="hidden lg:block lg:sticky lg:top-[5.5rem] lg:z-20 max-h-[calc(100vh-6.5rem)] overflow-y-auto pr-1">
           {sidebar(false)}
         </aside>
 
         <div>
-          <div className="lg:hidden sticky top-14 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+          {createPortal(
+          <div ref={filterBarRef} className="lg:hidden fixed top-14 inset-x-0 z-40 bg-white border-b border-slate-200 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
             <div className="flex items-center gap-2 px-3 py-2">
               <button
                 type="button"
@@ -343,9 +420,12 @@ export default function Listing() {
                 </button>
               </div>
             )}
-          </div>
+          </div>,
+          document.body
+          )}
+          <div className="lg:hidden" style={{ height: filterBarHeight }} />
 
-          <div className="hidden lg:flex flex-wrap justify-between items-center gap-3 mb-4">
+          <div className="hidden lg:flex sticky top-[5.5rem] z-20 bg-slate-50/95 backdrop-blur flex-wrap justify-between items-center gap-3 mb-4 py-2">
             <strong className="font-display font-semibold text-xl">
               {loading ? '...' : `${meta.total} cars found`}
             </strong>
@@ -408,11 +488,15 @@ export default function Listing() {
                   No cars match those filters yet. Try widening your budget or clearing a filter.
                 </p>
               )}
-              <Pagination
-                page={Number(filters.page) || 1}
-                pages={meta.pages}
-                onChange={(p) => apply({ ...filters, page: p })}
-              />
+              <div ref={sentinelRef} className="h-8" />
+              {loadingMore && (
+                <p className="py-4 text-center text-[13px] font-bold text-slate-500">Loading more cars…</p>
+              )}
+              {!hasMore && cars.length > 0 && (
+                <p className="py-4 text-center text-[12px] font-semibold text-slate-400">
+                  You have seen all {meta.total} cars
+                </p>
+              )}
             </>
           )}
         </div>

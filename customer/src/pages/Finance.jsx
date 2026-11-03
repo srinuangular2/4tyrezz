@@ -167,7 +167,32 @@ export default function Finance() {
         </BannerActions>
       </DesignedPageBanner>
 
-      <Section eyebrow="How it works" title="Three simple steps">
+      <section className="space-y-4 px-4 py-4 lg:hidden">
+        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <p className="text-[12px] font-medium text-[#3083ff]">How a loan works</p>
+          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Three steps, then a callback</h2>
+          <ol className="mt-3 space-y-3">
+            {[
+              ['1', 'Set the price', 'Car price, down payment and tenure. The EMI updates as you move the sliders.'],
+              ['2', 'Check the monthly amount', 'You see the loan, the interest and the total before you share any details.'],
+              ['3', 'Send your number', 'The finance desk matches a partner bank and calls you. This form does not affect your CIBIL score.'],
+            ].map(([n, title, body]) => (
+              <li key={n} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
+                <div>
+                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
+                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <a href="#emi-calculator" className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
+            Start with the EMI
+          </a>
+        </div>
+      </section>
+
+      <Section eyebrow="How it works" title="Three simple steps" className="hidden lg:block">
         <div className="grid sm:grid-cols-3 gap-5">
           {[
             ['01', 'Pick a car', 'Choose any inspected 4tyrezz listing. The asking price feeds the EMI calculator automatically.'],
@@ -191,7 +216,7 @@ export default function Finance() {
         </div>
       </Section>
 
-      <Section eyebrow="Why finance with us" title="Built for used-car buyers" bg>
+      <Section eyebrow="Why finance with us" title="Built for used-car buyers" bg className="hidden lg:block">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {BENEFITS.map(({ icon: Icon, title, body }) => (
             <Card key={title} className="p-5">
@@ -207,8 +232,9 @@ export default function Finance() {
 
       <div id="emi-calculator" className="scroll-mt-24">
         <Section eyebrow="Plan your budget" title="Car EMI Calculator">
-          <div className="grid lg:grid-cols-[1.1fr_1fr] gap-6">
-            <Card className="p-6 space-y-6" highlighted>
+          <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 1. Move the sliders. The monthly amount is on the next card and in the bar below.</p>
+          <div className="grid lg:grid-cols-[1.1fr_1fr] gap-4 lg:gap-6">
+            <Card className="p-4 lg:p-6 space-y-5 lg:space-y-6" highlighted>
               <SliderRow
                 label="Car price"
                 value={formatINR(price)}
@@ -242,7 +268,7 @@ export default function Finance() {
                       key={m}
                       type="button"
                       onClick={() => setMonths(m)}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider border transition ${
+                      className={`px-3 py-2.5 lg:py-1.5 rounded-xl lg:rounded-lg text-[13px] lg:text-[11px] font-semibold lg:font-black lg:uppercase lg:tracking-wider border transition ${
                         months === m
                           ? 'bg-[#3083ff] text-white border-[#3083ff]'
                           : 'bg-white text-slate-600 border-slate-200 hover:border-[#3083ff]/50'
@@ -277,8 +303,10 @@ export default function Finance() {
               />
             </Card>
 
-            <Card className="p-6 flex flex-col" highlighted>
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Your monthly EMI</p>
+            <Card className="p-4 lg:p-6 flex flex-col" highlighted>
+              <p className="text-[12px] font-medium text-[#3083ff] lg:hidden">Step 2</p>
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 hidden lg:block">Your monthly EMI</p>
+              <p className="text-[13px] font-medium text-slate-700 lg:hidden">Your monthly EMI</p>
               <p className="font-black text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">
                 {formatINR(emi)}
                 <span className="text-sm font-extrabold text-slate-400 ml-1.5">/month</span>
@@ -321,8 +349,9 @@ export default function Finance() {
 
       <div id="apply" className="scroll-mt-24">
         <Section eyebrow="Get started" title="Apply for car finance" bg>
-          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
-            <Card className="p-6" highlighted>
+          <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 3. Name and mobile are enough to start. The desk calls you with the bank and the documents.</p>
+          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4 lg:gap-6">
+            <Card className="p-4 lg:p-6" highlighted>
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Full name">
                   <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Your name" />
@@ -380,6 +409,15 @@ export default function Finance() {
                 </p>
               </div>
 
+              <div className="mt-4 lg:hidden">
+                <p className="text-[13px] font-medium text-slate-700">Keep these ready for the call</p>
+                <ul className="mt-2 space-y-1.5">
+                  {DOCUMENTS.map((d) => (
+                    <li key={d} className="text-[12px] font-normal text-slate-500">• {d}</li>
+                  ))}
+                </ul>
+              </div>
+
               <PrimaryButton className="w-full mt-5" disabled={submitting} onClick={submit}>
                 {submitting ? 'Submitting…' : 'Apply for finance'}
               </PrimaryButton>
@@ -395,7 +433,7 @@ export default function Finance() {
               </a>
             </Card>
 
-            <Card className="p-6">
+            <Card className="hidden p-6 lg:block">
               <h3 className="font-black text-slate-900 text-base">Documents you'll need</h3>
               <ul className="mt-4 space-y-3">
                 {DOCUMENTS.map((d) => (
@@ -419,7 +457,7 @@ export default function Finance() {
         </Section>
       </div>
 
-      <Section eyebrow="Ready to finance" title="Cars you can drive home on EMI" viewAllHref="/cars">
+      <Section eyebrow="Ready to finance" title="Cars you can drive home on EMI" viewAllHref="/cars" className="hidden lg:block">
         {loadingCars ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -441,7 +479,7 @@ export default function Finance() {
         )}
       </Section>
 
-      <Section eyebrow="Lending partners" title="Banks we work with" bg>
+      <Section eyebrow="Lending partners" title="Banks we work with" bg className="hidden lg:block">
         <div className="flex flex-wrap justify-center gap-3">
           {BANKS.map((b) => (
             <span
@@ -475,17 +513,11 @@ export default function Finance() {
         </div>
       </Section>
 
-      <div className="lg:hidden h-16" />
-      <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-3 pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-4 py-3 shadow-xl">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-white/60">Indicative EMI</p>
-            <p className="font-black text-lg leading-tight">{formatINR(emi)}<span className="text-xs font-bold text-white/60"> /mo</span></p>
-          </div>
-          <a href="#apply" className="shrink-0 px-4 py-2 rounded-xl bg-[#3083ff] text-xs font-black uppercase tracking-wider">
-            Apply now
-          </a>
-        </div>
+      <div className="lg:hidden h-20" />
+      <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
+        <a href="#apply" className="flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
+          Apply for this EMI · {formatINR(emi)}/mo
+        </a>
       </div>
     </div>
   );

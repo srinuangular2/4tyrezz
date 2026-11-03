@@ -15,7 +15,7 @@ function vsTitle(cars) {
 
 function Controls({ hideSame, setHideSame, highlightDiff, setHighlightDiff, compact }) {
   return (
-    <div className={`flex flex-col gap-2 ${compact ? 'text-xs' : 'text-sm'} font-medium text-slate-600`}>
+    <div className={`flex flex-wrap gap-x-4 gap-y-2 font-medium text-slate-600 ${compact ? 'flex-col text-xs' : 'flex-row text-sm'}`}>
       <label className="inline-flex items-center gap-2 cursor-pointer whitespace-nowrap">
         <input
           type="checkbox"
@@ -124,7 +124,19 @@ function TabBar({ activeTab, onJump, query, setQuery }) {
   );
 }
 
-function AddCarSlot({ onClick, compact }) {
+function AddCarSlot({ onClick, compact, short }) {
+  if (short) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex min-h-[148px] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white text-slate-500"
+      >
+        <Plus className="h-5 w-5" />
+        <span className="text-[13px] font-semibold">Add a car</span>
+      </button>
+    );
+  }
   if (compact) {
     return (
       <button
@@ -186,7 +198,23 @@ export default function CompareDetailsBoard({ cars = [], ids = [], onRemove, onA
   return (
     <div id="compare-details" className="max-w-6xl mx-auto">
       {compact && (
-        <div className="sticky top-16 z-30 bg-white border-b border-slate-200 shadow-sm">
+        <div className="sticky top-1 z-30 border-b border-slate-200 bg-white shadow-sm lg:hidden">
+          <div className="grid gap-2 px-3 py-2" style={{ gridTemplateColumns: `repeat(${cars.length}, minmax(0, 1fr))` }}>
+            {cars.map((c) => (
+              <div key={c.id} className="min-w-0">
+                <p className="truncate text-[12px] font-semibold text-slate-900">{compareShortName(c)}</p>
+                <p className="text-[12px] font-semibold text-[#1853ff]">{formatINR(c.price)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="px-2">
+            <TabBar activeTab={activeTab} onJump={jumpTo} query={query} setQuery={setQuery} />
+          </div>
+        </div>
+      )}
+
+      {compact && (
+        <div className="sticky top-16 z-30 hidden border-b border-slate-200 bg-white shadow-sm lg:block">
           <div className="px-4 sm:px-6 py-3 flex items-center gap-4 overflow-x-auto">
             <Controls
               hideSame={hideSame}
@@ -222,45 +250,80 @@ export default function CompareDetailsBoard({ cars = [], ids = [], onRemove, onA
         </div>
       )}
 
-      <div ref={heroRef} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6">{vsTitle(cars)}</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-6 items-start">
-          <Controls
-            hideSame={hideSame}
-            setHideSame={setHideSame}
-            highlightDiff={highlightDiff}
-            setHighlightDiff={setHighlightDiff}
-          />
-          <div className={`grid gap-4 ${showAdd ? 'sm:grid-cols-3' : cars.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
-            {cars.map((c) => (
-              <article key={c.id} className="relative text-center">
-                <button
-                  type="button"
-                  onClick={() => onRemove(c.id)}
-                  className="absolute top-0 right-0 z-10 w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center"
-                  aria-label={`Remove ${compareShortName(c)}`}
-                >
-                  <X className="w-3.5 h-3.5" />
+      <div ref={heroRef} className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-8">
+        <h1 className="text-[16px] font-semibold leading-snug text-slate-900 lg:hidden">
+          {cars.map((c) => compareShortName(c)).join(' vs ')}
+        </h1>
+        <h1 className="mb-6 hidden text-2xl font-bold text-slate-900 lg:block">{vsTitle(cars)}</h1>
+        <div className="mt-3 flex gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setHideSame((v) => !v)}
+            className={`h-9 flex-1 rounded-full text-[12px] font-semibold ${hideSame ? 'bg-[#3083ff] text-white' : 'bg-slate-100 text-slate-600'}`}
+          >
+            Hide matches
+          </button>
+          <button
+            type="button"
+            onClick={() => setHighlightDiff((v) => !v)}
+            className={`h-9 flex-1 rounded-full text-[12px] font-semibold ${highlightDiff ? 'bg-[#3083ff] text-white' : 'bg-slate-100 text-slate-600'}`}
+          >
+            Differences
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-1 items-start gap-4 lg:mt-0 lg:grid-cols-[180px_1fr] lg:gap-6">
+          <div className="hidden lg:block">
+            <Controls
+              hideSame={hideSame}
+              setHideSame={setHideSame}
+              highlightDiff={highlightDiff}
+              setHighlightDiff={setHighlightDiff}
+            />
+          </div>
+          <div>
+            <div className={`grid grid-cols-2 gap-2.5 lg:gap-4 ${showAdd ? 'lg:grid-cols-3' : cars.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
+              {cars.map((c) => (
+                <article key={c.id} className="relative text-center">
+                  <button
+                    type="button"
+                    onClick={() => onRemove(c.id)}
+                    className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow-sm"
+                    aria-label={`Remove ${compareShortName(c)}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  <img
+                    src={c.images?.[0] || '/pwa-192.png'}
+                    alt={c.title}
+                    className="h-24 w-full rounded-xl bg-slate-50 object-cover lg:h-48 lg:object-contain"
+                  />
+                  <p className="mt-2 line-clamp-2 text-[13px] font-semibold leading-snug text-slate-900 lg:mt-3 lg:text-base">
+                    {compareShortName(c)}
+                  </p>
+                  <p className="mt-0.5 hidden text-sm text-slate-500 lg:block">{c.variant || metaLine(c)}</p>
+                  <p className="mt-0.5 text-[13px] font-semibold text-[#1853ff] lg:text-base lg:font-bold lg:text-slate-900">{formatINR(c.price)}</p>
+                  <Link
+                    to={`/cars/${c.id}`}
+                    className="mt-1 inline-flex text-[12px] font-semibold text-[#3083ff] lg:mt-3 lg:w-full lg:items-center lg:justify-center lg:rounded-lg lg:border lg:border-[#3083ff] lg:py-2.5 lg:text-sm"
+                  >
+                    View listing
+                  </Link>
+                </article>
+              ))}
+              {showAdd && (
+                <div className="hidden lg:block">
+                  <AddCarSlot onClick={onAddClick} />
+                </div>
+              )}
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 lg:hidden">
+              {showAdd ? (
+                <button type="button" onClick={onAddClick} className="text-[13px] font-semibold text-[#3083ff]">
+                  Add another car
                 </button>
-                <img
-                  src={c.images?.[0] || '/pwa-192.png'}
-                  alt={c.title}
-                  className="w-full h-40 sm:h-48 object-contain bg-slate-50 rounded-xl"
-                />
-                <p className="mt-3 font-semibold text-slate-900">
-                  {c.brand} {compareShortName(c)}
-                </p>
-                <p className="text-sm text-slate-500">{c.variant || metaLine(c)}</p>
-                <p className="mt-1 font-bold text-slate-900">{formatINR(c.price)}</p>
-                <Link
-                  to={`/cars/${c.id}`}
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-[#3083ff] text-[#3083ff] text-sm font-semibold py-2.5 hover:bg-[#3083ff] hover:text-white transition"
-                >
-                  View listing
-                </Link>
-              </article>
-            ))}
-            {showAdd && <AddCarSlot onClick={onAddClick} />}
+              ) : <span />}
+              <p className="text-[12px] font-normal text-slate-400">{cars.length} of {COMPARE_MAX}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -271,7 +334,17 @@ export default function CompareDetailsBoard({ cars = [], ids = [], onRemove, onA
         </div>
       )}
 
-      <div className="mt-4 space-y-4 pb-10">
+      <label className="mt-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 lg:hidden">
+        <Search className="h-4 w-4 shrink-0 text-slate-400" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search a feature, such as sunroof"
+          className="w-full bg-transparent text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-400"
+        />
+      </label>
+
+      <div className="mt-3 space-y-3 pb-24 lg:mt-4 lg:space-y-4 lg:pb-10">
         {COMPARE_GROUPS.map((group) => {
           const visibleRows = group.rows.filter(([label, fn]) => {
             if (q && !String(label).toLowerCase().includes(q)) return false;
@@ -297,7 +370,28 @@ export default function CompareDetailsBoard({ cars = [], ids = [], onRemove, onA
                 <ChevronDown className={`w-5 h-5 text-slate-400 transition ${isClosed ? '-rotate-90' : ''}`} />
               </button>
               {!isClosed && (
-                <div className="overflow-x-auto border-t border-slate-100">
+                <div className="border-t border-slate-100 lg:hidden">
+                  {visibleRows.map(([label, fn, mode], idx) => {
+                    const win = winners(cars, fn, mode);
+                    const same = rowIsSame(cars, fn);
+                    const differ = highlightDiff && !same;
+                    return (
+                      <div key={label} className={`px-3.5 py-3 ${differ ? 'bg-blue-50/70' : idx % 2 ? 'bg-slate-50/80' : 'bg-white'}`}>
+                        <p className="text-[12px] font-normal text-slate-500">{label}</p>
+                        <div className="mt-1.5 grid" style={{ gridTemplateColumns: `repeat(${cars.length}, minmax(0, 1fr))` }}>
+                          {cars.map((c, index) => (
+                            <p key={c.id + label} className={`break-words px-1 text-[13px] leading-snug ${index > 0 ? 'border-l border-slate-200' : ''} ${win.has(c.id) ? 'font-semibold text-[#1853ff]' : 'font-medium text-slate-800'}`}>
+                              {fn(c)}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {!isClosed && (
+                <div className="hidden overflow-x-auto border-t border-slate-100 lg:block">
                   <table className="w-full min-w-[640px] text-sm">
                     <tbody>
                       {visibleRows.map(([label, fn, mode], idx) => {

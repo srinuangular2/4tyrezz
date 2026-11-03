@@ -1,6 +1,6 @@
 import { formatINR } from '../PageShell';
 import { HUBS, conditionScoreFromPills } from './sellCarState';
-import { sellFieldClass } from './ui';
+import { StepHeading, sellFieldClass } from './ui';
 
 function nextDays(n = 7) {
   return Array.from({ length: n }, (_, i) => {
@@ -32,14 +32,14 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
   const expected = Number(state.expectedPrice);
 
   return (
-    <div className="space-y-7">
-      <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">Step 3</p>
-        <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-900 mt-1">Estimated market value</h2>
-        <p className="text-sm font-medium text-slate-500 mt-2">
-          Indicative range from brand, model, mileage and condition. This is not a purchase offer.
-        </p>
-      </div>
+    <div className="space-y-5 lg:space-y-7">
+      <StepHeading
+        step={3}
+        title="Your price and a visit slot"
+        desktopTitle="Estimated market value"
+        hint="This range is a guide. Pick the price you want and when we should inspect the car."
+        desktopHint="Indicative range from brand, model, mileage and condition. This is not a purchase offer."
+      />
 
       <div className="rounded-3xl border border-[#3083ff]/20 bg-gradient-to-br from-[#0F172A] to-[#1853ff] text-white p-6">
         {valuating ? (
@@ -54,11 +54,11 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
           </>
         ) : (
           <>
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/60">Indicative estimate</p>
-            <p className="font-display font-black text-3xl sm:text-4xl tracking-tight mt-2">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-white/70">Indicative estimate</p>
+            <p className="mt-2 text-[26px] font-semibold leading-tight tracking-tight text-white lg:text-4xl lg:font-bold">
               {formatINR(v.minPrice)} – {formatINR(v.maxPrice)}
             </p>
-            <p className="text-sm font-bold text-blue-100 mt-2">Fair value {formatINR(v.estimate)}</p>
+            <p className="mt-2 text-[13px] font-normal text-blue-100">Fair value {formatINR(v.estimate)}</p>
             <div className="grid grid-cols-3 gap-2 mt-6">
               <Driver label="Demand" value={v.source === 'comparables' ? 'High' : 'Steady'} />
               <Driver label="Condition" value={`${score}/10`} />
@@ -73,7 +73,10 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
       </div>
 
       <label className="block">
-        <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Your expected price (₹)</span>
+        <span className="text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+          <span className="lg:hidden">What price do you want?</span>
+          <span className="hidden lg:inline">Your expected price (₹)</span>
+        </span>
         <input
           type="number"
           min={10000}
@@ -90,8 +93,11 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
       </label>
 
       <section>
-        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Inspection</h3>
-        <div className="grid grid-cols-2 gap-2">
+        <h3 className="mb-2 text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+          <span className="lg:hidden">Where should we inspect?</span>
+          <span className="hidden lg:inline">Inspection</span>
+        </h3>
+        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
           {[
             { id: 'home', title: 'Home inspection', body: 'Executive visits your address' },
             //{ id: 'hub', title: 'Nearest 4TYREZZ hub', body: 'Drive in, faster slot' },
@@ -127,7 +133,10 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
       </section>
 
       <section>
-        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Select date</h3>
+        <h3 className="mb-2 text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+          <span className="lg:hidden">Which day?</span>
+          <span className="hidden lg:inline">Select date</span>
+        </h3>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {days.map((d) => (
             <button
@@ -147,7 +156,10 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
       </section>
 
       <section>
-        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Time slot</h3>
+        <h3 className="mb-2 text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+          <span className="lg:hidden">What time?</span>
+          <span className="hidden lg:inline">Time slot</span>
+        </h3>
         {Object.entries(SLOTS).map(([group, times]) => (
           <div key={group} className="mb-3">
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">{group}</p>
@@ -188,9 +200,9 @@ export default function StepValuation({ state, patch, valuating, onBack, onNext 
 
 function Driver({ label, value }) {
   return (
-    <div className="rounded-xl bg-white/10 border border-white/15 px-3 py-2.5">
-      <p className="text-[10px] font-black uppercase tracking-wider text-white/50">{label}</p>
-      <p className="text-sm font-extrabold mt-0.5 capitalize">{value}</p>
+    <div className="rounded-xl border border-white/15 bg-white/10 px-2.5 py-2">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-white/60">{label}</p>
+      <p className="mt-0.5 text-[12px] font-medium capitalize leading-tight text-white">{value}</p>
     </div>
   );
 }

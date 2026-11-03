@@ -28,6 +28,7 @@ router.put('/profile', ...customer, portal.updatePreferences);
 router.put('/profile/preferences', ...customer, portal.updatePreferences);
 router.post('/profile-photo', ...customer, uploadAvatar.single('photo'), portal.uploadPhoto);
 router.get('/enquiries', ...customer, portal.listEnquiries);
+router.get('/sell-requests', ...customer, portal.listSellRequests);
 router.get('/test-drives', ...customer, portal.listTestDrives);
 router.get('/bookings', ...customer, portal.listBookings);
 router.get('/bookings/:id/receipt', ...customer, portal.bookingReceipt);

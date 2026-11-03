@@ -114,6 +114,85 @@ export function vehicleReady(state) {
   return Boolean(state.brand && state.model && state.year);
 }
 
+const PLATE_CITY = {
+  TS07: 'Hyderabad',
+  TS08: 'Hyderabad',
+  TS09: 'Hyderabad',
+  TS10: 'Hyderabad',
+  TS11: 'Hyderabad',
+  TS12: 'Hyderabad',
+  TS13: 'Hyderabad',
+  KA01: 'Bengaluru',
+  KA02: 'Bengaluru',
+  KA03: 'Bengaluru',
+  KA04: 'Bengaluru',
+  KA05: 'Bengaluru',
+  KA51: 'Bengaluru',
+  MH01: 'Mumbai',
+  MH02: 'Mumbai',
+  MH03: 'Mumbai',
+  MH04: 'Thane',
+  MH12: 'Pune',
+  MH14: 'Pune',
+  DL01: 'Delhi',
+  DL02: 'Delhi',
+  DL03: 'Delhi',
+  DL04: 'Delhi',
+  TN01: 'Chennai',
+  TN02: 'Chennai',
+  TN07: 'Chennai',
+  TN09: 'Chennai',
+  AP31: 'Visakhapatnam',
+  GJ01: 'Ahmedabad',
+  RJ14: 'Jaipur',
+};
+
+const STATE_CITY = {
+  TS: 'Hyderabad',
+  TG: 'Hyderabad',
+  KA: 'Bengaluru',
+  MH: 'Mumbai',
+  DL: 'Delhi',
+  TN: 'Chennai',
+  AP: 'Visakhapatnam',
+  GJ: 'Ahmedabad',
+  RJ: 'Jaipur',
+  KL: 'Kochi',
+  WB: 'Kolkata',
+  UP: 'Lucknow',
+  HR: 'Gurugram',
+  PB: 'Chandigarh',
+};
+
+/** City implied by an Indian plate prefix, e.g. TS08 → Hyderabad. */
+export function cityFromPlate(plate = '') {
+  const c = compactReg(plate);
+  if (c.length < 4) return '';
+  const keys = Object.keys(PLATE_CITY).sort((a, b) => b.length - a.length);
+  const hit = keys.find((key) => c.startsWith(key));
+  if (hit) return PLATE_CITY[hit];
+  return STATE_CITY[c.slice(0, 2)] || '';
+}
+
+export function matchCityName(guess, cities = []) {
+  const want = String(guess || '').trim().toLowerCase();
+  if (!want) return '';
+  const names = (cities || []).map((city) => city?.name).filter(Boolean);
+  return names.find((name) => name.toLowerCase() === want)
+    || names.find((name) => name.toLowerCase().startsWith(want))
+    || '';
+}
+
+export function conditionMessage(state) {
+  const plateMsg = plateError(state.plate);
+  if (plateMsg) return plateMsg;
+  const variantMsg = variantError(state.variant);
+  if (variantMsg) return variantMsg;
+  if (!state.city) return 'Select the city where the car is';
+  if (!(Number(state.ownership) > 0)) return 'Select how many owners';
+  return '';
+}
+
 export function compactReg(value = '') {
   return String(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
@@ -151,15 +230,86 @@ export function conditionReady(state) {
   return Boolean(
     state.city
     && !plateError(state.plate)
-    && hasPhotos(state)
     && !variantError(state.variant)
     && Number(state.ownership) > 0
   );
 }
 
+export function sellStateFromValuation(form = {}, result = {}) {
+  const valuation = result.valuation || {};
+  const fair = valuation.fairMarketValue || result.estimate || '';
+  const minPrice = valuation.estimatedMinPrice || result.minPrice || '';
+  const maxPrice = valuation.estimatedMaxPrice || result.maxPrice || '';
+  return {
+    ...initialSellCarState(),
+    identifyMode: form.plate ? 'plate' : 'manual',
+    lookupStatus: form.brand ? 'success' : 'idle',
+    verified: Boolean(form.brand && form.plate),
+    plate: form.plate || '',
+    brand: form.brand || '',
+    model: form.model || '',
+    variant: form.variant || '',
+    year: form.year || '',
+    fuel: form.fuel || '',
+    transmission: form.transmission || '',
+    bodyType: form.bodyType || '',
+    city: form.city || '',
+    kmDriven: Number(form.kmDriven) || 35000,
+    ownership: Number(form.ownership) || 1,
+    expectedPrice: fair || '',
+    inspectionDate: new Date().toISOString().slice(0, 10),
+    inspectionSlot: '9:00 AM – 11:00 AM',
+    step: 4,
+    fromValuation: true,
+    valuation: fair
+      ? {
+          estimate: fair,
+          minPrice,
+          maxPrice,
+          id: result.id || '',
+          source: result.source || valuation.source || 'smartprice',
+        }
+      : null,
+  };
+}
+
+export function sellStateFromRequest(row = {}, { photoOnly = false } = {}) {
+  const missingCore = !row.variant || !row.plate || !row.city || !row.kmDriven;
+  const missingPrice = !(Number(row.expectedPrice) > 0) || !row.inspectionDate || !row.inspectionSlot;
+  let step = 4;
+  if (photoOnly) step = 4;
+  else if (missingCore) step = 2;
+  else if (missingPrice) step = 3;
+  return {
+    ...initialSellCarState(),
+    enquiryId: row.id,
+    photoOnly: Boolean(photoOnly),
+    step,
+    identifyMode: row.plate ? 'plate' : 'manual',
+    verified: Boolean(row.brand && row.plate),
+    plate: row.plate || '',
+    brand: row.brand || '',
+    model: row.model || '',
+    variant: row.variant || '',
+    year: row.year || '',
+    fuel: row.fuel || '',
+    transmission: row.transmission || '',
+    city: row.city || '',
+    kmDriven: Number(row.kmDriven) || 35000,
+    ownership: Number(row.ownership) || 1,
+    expectedPrice: row.expectedPrice || '',
+    inspectionDate: row.inspectionDate || new Date().toISOString().slice(0, 10),
+    inspectionSlot: row.inspectionSlot || '9:00 AM – 11:00 AM',
+    inspectionType: row.inspectionType || 'home',
+    valuation: row.estimatePrice
+      ? { estimate: row.estimatePrice, minPrice: row.minPrice, maxPrice: row.maxPrice }
+      : null,
+  };
+}
+
 export function resumeSellStep(saved) {
   const step = Number(saved?.step);
-  if (step >= 1 && step <= 4) return step;
+  if (step >= 1 && step <= 5) return step;
   return vehicleReady(saved) ? 2 : 1;
 }
 

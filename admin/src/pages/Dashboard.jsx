@@ -18,7 +18,26 @@ export default function Dashboard() {
   }, []);
 
   if (!stats) {
-    return <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-28 skeleton" />)}</div>;
+    return <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{Array.from({ length: role === 'executive_agent' ? 5 : 8 }).map((_, i) => <div key={i} className="h-28 skeleton" />)}</div>;
+  }
+
+  if (role === 'executive_agent') {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          kicker="Executive"
+          title="Executive dashboard"
+          subtitle="Only the cars you uploaded. Platform totals, other agents, and main-admin listings stay out of this view."
+        />
+        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
+          <KpiCard label="My uploads total" value={stats.myUploads ?? 0} hint="Cars uploaded by you" />
+          <KpiCard label="Pending approval" value={stats.pendingApproval ?? 0} hint="Waiting for main admin" />
+          <KpiCard label="Approved & live" value={stats.approvedAvailable ?? 0} hint="Live and in stock" />
+          <KpiCard label="My sold cars" value={stats.soldCars ?? 0} hint="Your listings marked sold" />
+          <KpiCard label="Rejected" value={stats.rejected ?? 0} hint="Sent back by main admin" />
+        </div>
+      </div>
+    );
   }
 
   const listingChart = (stats.monthly || []).map((m) => ({ month: m._id, listings: m.count }));
@@ -27,9 +46,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={role === 'executive_agent' ? 'Executive' : 'Command center'}
-        title={role === 'executive_agent' ? 'Executive dashboard' : 'Dashboard'}
-        subtitle={role === 'executive_agent' ? 'Listings and sold cars for your assigned region.' : 'Live inventory, revenue, and operational queues.'}
+        kicker="Command center"
+        title="Dashboard"
+        subtitle="Live inventory, revenue, and operational queues."
       />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard label="GMV (tokens paid)" value={inr(stats.gmv)} delta={stats.trends?.gmv} />

@@ -25,32 +25,32 @@ export default function ResumeListingCard({
   ].filter(Boolean);
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
-      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">{title}</p>
-      <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-900 mt-1">{subtitle}</h2>
-      <div className="mt-6 flex gap-4 items-start rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
-        <div className="w-12 h-12 rounded-xl bg-[#EAF2FF] flex items-center justify-center shrink-0">
-          <CarFront className="w-6 h-6 text-[#3083ff]" strokeWidth={2.1} />
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:rounded-3xl sm:p-8">
+      <p className="text-[12px] font-medium text-[#3083ff]">{title}</p>
+      <h2 className="mt-1 text-[18px] font-semibold text-slate-900 sm:font-display sm:text-3xl sm:font-black">{subtitle}</h2>
+      <div className="mt-4 flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3.5 py-3 sm:mt-6 sm:gap-4 sm:px-4 sm:py-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF2FF] sm:h-12 sm:w-12">
+          <CarFront className="h-5 w-5 text-[#3083ff] sm:h-6 sm:w-6" strokeWidth={1.75} />
         </div>
-        <div>
-          <p className="font-display font-black text-slate-900 leading-snug">{headline || 'Your car'}</p>
+        <div className="min-w-0">
+          <p className="text-[14px] font-semibold leading-snug text-slate-900 sm:font-display sm:font-black">{headline || 'Your car'}</p>
           {meta.length > 0 && (
-            <p className="text-sm font-semibold text-slate-500 mt-1">{meta.join(' · ')}</p>
+            <p className="mt-1 text-[12px] font-normal text-slate-500 sm:text-sm sm:font-semibold">{meta.join(' · ')}</p>
           )}
         </div>
       </div>
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
         <button
           type="button"
           onClick={onResume}
-          className="bg-[#3083ff] hover:bg-[#1853ff] text-white font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl"
+          className="rounded-xl bg-[#3083ff] px-3 py-3 text-[13px] font-semibold text-white hover:bg-[#1853ff] sm:px-6 sm:py-3.5 sm:text-xs sm:font-black sm:uppercase sm:tracking-wider"
         >
           {resumeLabel}
         </button>
         <button
           type="button"
           onClick={onNew}
-          className="border border-slate-200 bg-white text-slate-800 font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-[13px] font-semibold text-slate-700 sm:px-6 sm:py-3.5 sm:text-xs sm:font-black sm:uppercase sm:tracking-wider sm:text-slate-800"
         >
           {newLabel}
         </button>

@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { inputClass } from '../../lib/kycValidation';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
-import { StatusPill } from './hubUtils';
+import { DataCard, StatusPill } from './hubUtils';
 
 export default function SupportTickets() {
   const [rows, setRows] = useState(null);
@@ -77,7 +77,39 @@ export default function SupportTickets() {
       <ProfileCard eyebrow="Tracking" title="Support tickets">
         {rows === null && <p className="text-sm font-semibold text-slate-500">Loading tickets…</p>}
         {rows && rows.length === 0 && <EmptyNote>No tickets yet. Create one above if you need help.</EmptyNote>}
-        <div className="space-y-4">
+        <div className="space-y-3 lg:hidden">
+          {(rows || []).map((t, index) => (
+            <DataCard
+              key={t._id}
+              index={index}
+              emoji="💬"
+              title={t.subject}
+              detail={t.message}
+              status={<StatusPill value={t.statusLabel || t.status} />}
+            >
+              <div className="space-y-2">
+                {(t.replies || []).map((r, i) => (
+                  <div key={`${t._id}-${i}`} className="rounded-xl bg-white/80 px-3 py-2">
+                    <p className="text-[10px] font-black uppercase text-slate-400">{r.role} · {r.author}</p>
+                    <p className="text-xs font-semibold text-slate-700 mt-0.5">{r.body}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-3">
+                <input
+                  className={inputClass}
+                  value={reply[t._id] || ''}
+                  onChange={(e) => setReply((s) => ({ ...s, [t._id]: e.target.value }))}
+                  placeholder="Reply to support"
+                />
+                <button type="button" onClick={() => sendReply(t._id)} className="shrink-0 px-4 rounded-2xl bg-[#3083ff] text-white text-xs font-black">
+                  Send
+                </button>
+              </div>
+            </DataCard>
+          ))}
+        </div>
+        <div className="hidden lg:block space-y-4">
           {(rows || []).map((t) => (
             <article key={t._id} className="rounded-2xl border border-slate-100 p-4">
               <div className="flex flex-wrap justify-between gap-2">
@@ -89,7 +121,7 @@ export default function SupportTickets() {
               </div>
               <div className="mt-3 space-y-2">
                 {(t.replies || []).map((r, i) => (
-                  <div key={`${t._id}-${i}`} className="rounded-xl bg-slate-50 px-3 py-2">
+                  <div key={`${t._id}-desk-${i}`} className="rounded-xl bg-slate-50 px-3 py-2">
                     <p className="text-[10px] font-black uppercase text-slate-400">{r.role} · {r.author}</p>
                     <p className="text-xs font-semibold text-slate-700 mt-0.5">{r.body}</p>
                   </div>

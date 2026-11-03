@@ -3,7 +3,14 @@ import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import { formatINR } from '../../components/PageShell';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
-import { StatusPill } from './hubUtils';
+import { formatWhen, StatusPill, VehicleCard } from './hubUtils';
+
+const STEP_SHORT = {
+  'Under Review': 'Review',
+  'Pre-Approved': 'Approved',
+  'Documents Required': 'Documents',
+  Disbursed: 'Paid',
+};
 
 export default function FinanceApplications() {
   const [rows, setRows] = useState(null);
@@ -23,32 +30,37 @@ export default function FinanceApplications() {
           <Link to="/finance" className="text-[#3083ff] font-black">Start an application</Link>
         </EmptyNote>
       )}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {(rows || []).map((row) => {
           const idx = steps.indexOf(row.status);
           return (
-            <article key={row.id} className="rounded-2xl border border-slate-100 p-4">
-              <div className="flex flex-wrap justify-between gap-3">
-                <div>
-                  <p className="font-black text-slate-900">{row.vehicle?.title || 'Car loan'}</p>
-                  <p className="text-xs font-semibold text-slate-500 mt-1">
-                    {formatINR(row.loanAmount)} · {row.tenureMonths ? `${row.tenureMonths} months` : 'Tenure pending'}
-                    {row.bankName ? ` · ${row.bankName}` : ' · Bank partner assigning'}
+            <VehicleCard
+              key={row.id}
+              image={row.image || row.vehicle?.images?.[0]}
+              title={row.vehicle?.title || 'Car loan'}
+              price={row.loanAmount != null ? formatINR(row.loanAmount) : ''}
+              facts={['Loan', row.tenureMonths ? `${row.tenureMonths} months` : 'Tenure pending', row.bankName || 'Bank partner assigning'].join(' · ')}
+              when={formatWhen(row.createdAt, true)}
+              status={<StatusPill value={row.status} />}
+            >
+              {steps.length > 0 ? (
+                <div className="w-full basis-full">
+                  <p className="text-[11px] font-medium text-slate-400">
+                    Stage · <span className="font-semibold text-slate-800">{row.status}</span>
                   </p>
-                </div>
-                <StatusPill value={row.status} />
-              </div>
-              {steps.length > 0 && (
-                <>
-                  <ol className="grid gap-2 mt-4" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
+                  <ol className="mt-1.5 grid gap-1" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
                     {steps.map((step, i) => (
-                      <li key={step} className={`h-1.5 rounded-full ${idx >= 0 && i <= idx ? 'bg-[#3083ff]' : 'bg-slate-100'}`} title={step} />
+                      <li key={step} className="text-center">
+                        <span className={`block h-1.5 rounded-full ${idx >= 0 && i <= idx ? 'bg-[#3083ff]' : 'bg-slate-200'}`} />
+                        <span className={`mt-1 block text-[11px] font-medium leading-tight ${i === idx ? 'text-[#1853ff]' : i < idx ? 'text-slate-700' : 'text-slate-400'}`}>
+                          {STEP_SHORT[step] || step}
+                        </span>
+                      </li>
                     ))}
                   </ol>
-                  <p className="text-[11px] font-bold text-slate-400 mt-2">{row.status}</p>
-                </>
-              )}
-            </article>
+                </div>
+              ) : null}
+            </VehicleCard>
           );
         })}
       </div>

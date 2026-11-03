@@ -9,11 +9,12 @@ import { formatPrice, formatKm } from '../utils/format';
 import ScrollStrip from '../components/ScrollStrip';
 import ReportAdModal from '../components/ReportAdModal';
 import { Heart } from '../components/icons';
-import { Phone, Share2 } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, IndianRupee, Mail, Phone, Share2, ShieldCheck, ShoppingCart } from 'lucide-react';
 import { toggleWishlist } from '../app/wishlistSlice';
 import WhatsAppConnectButton from '../components/WhatsAppConnectButton';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import { addCompare } from '../lib/compareTray';
+import { addToCart, readCart } from '../lib/cart';
 import { rememberRecentlyViewed } from '../lib/recentlyViewed';
 import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 import { mediaUrl } from './profile/hubUtils';
@@ -70,6 +71,7 @@ export default function CarDetails() {
   const wishlisted = useSelector((s) => s.wishlist.ids.includes(id));
   const { requireAuth } = useAuthGuard();
   const [driveSent, setDriveSent] = useState(false);
+  const [inCart, setInCart] = useState(() => readCart().some((row) => row.id === String(id)));
 
   const [car, setCar] = useState(null);
   const [similar, setSimilar] = useState([]);
@@ -233,6 +235,15 @@ export default function CarDetails() {
   const handleWishlist = () => {
     requireAuth(() => {
       dispatch(toggleWishlist(id));
+    });
+  };
+
+  const handleCart = () => {
+    if (!car) return;
+    requireAuth(() => {
+      const result = addToCart(car);
+      setInCart(true);
+      toast.success(result.already ? 'Already in your cart' : 'Added to cart');
     });
   };
 
@@ -494,6 +505,13 @@ export default function CarDetails() {
                 onTouchStart={onGalleryTouchStart}
                 onTouchEnd={onGalleryTouchEnd}
               >
+                <Link
+                  to="/cars"
+                  className="absolute top-2.5 left-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow"
+                  aria-label="Back to buy cars"
+                >
+                  <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
+                </Link>
                 {showVideo && car.videoUrl ? (
                   ytId && !isMp4(car.videoUrl) ? (
                     <iframe
@@ -519,7 +537,7 @@ export default function CarDetails() {
                       onClick={() => setLightboxOpen(true)}
                       className="w-full h-full object-cover cursor-zoom-in"
                     />
-                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 max-w-[70%]">
+                    <div className="absolute top-2.5 left-12 flex flex-wrap gap-1.5 max-w-[58%]">
                       {(inspection.ratingScore || car.inspectionScore) && (
                         <span className="bg-emerald-950/90 text-emerald-300 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-800/50">
                           ★ {inspection.ratingScore || car.inspectionScore}/100
@@ -548,6 +566,14 @@ export default function CarDetails() {
                         aria-label="Wishlist"
                       >
                         <Heart filled={wishlisted} className={wishlisted ? 'text-[#3083ff] w-3.5 h-3.5' : 'text-slate-500 w-3.5 h-3.5'} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCart}
+                        className="w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center"
+                        aria-label="Add to cart"
+                      >
+                        <ShoppingCart className={`w-3.5 h-3.5 ${inCart ? 'text-[#3083ff]' : 'text-slate-500'}`} />
                       </button>
                     </div>
                     {car.videoUrl && (
@@ -688,11 +714,54 @@ export default function CarDetails() {
                   </div>
                 ))}
               </div>
+
+              <div className="px-4 pb-4 pt-3">
+                <p className="text-[12px] font-semibold text-slate-900">Plan this purchase</p>
+                <div className="mt-2 space-y-2">
+                  {SHOW_TEST_DRIVE && (
+                    <button type="button" onClick={() => requireAuth(() => { setDriveMode('home'); setDriveSent(false); setShowTestDrive(true); })} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-left">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white">
+                        <CalendarCheck className="h-4 w-4" strokeWidth={2.25} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13px] font-semibold text-slate-900">Home test drive</span>
+                        <span className="block text-[11px] font-normal text-slate-500">See the car at your door</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                    </button>
+                  )}
+                  <button type="button" onClick={() => requireAuth(() => setShowFinance(true))} className="flex w-full items-center gap-3 rounded-2xl border border-[#d6e6ff] bg-[#f4f8ff] px-3 py-2.5 text-left">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3083ff] text-white">
+                      <IndianRupee className="h-4 w-4" strokeWidth={2.25} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-semibold text-slate-900">Get finance</span>
+                      <span className="block text-[11px] font-normal text-slate-500">EMI from {formatPrice(calculatedEmi)}/mo</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-[#3083ff]" />
+                  </button>
+                  <button type="button" onClick={() => requireAuth(() => setShowInsurance(true))} className="flex w-full items-center gap-3 rounded-2xl border border-[#d7f3e3] bg-[#f3fbf6] px-3 py-2.5 text-left">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white">
+                      <ShieldCheck className="h-4 w-4" strokeWidth={2.25} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-semibold text-slate-900">Get insurance</span>
+                      <span className="block text-[11px] font-normal text-slate-500">Ask for a cover quote</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-emerald-600" />
+                  </button>
+                </div>
+                {(car.city?.name || loc.area) && (
+                  <p className="mt-3 text-center text-[12px] font-normal text-slate-500">
+                    {[loc.area, car.city?.name, loc.state || car.city?.state].filter(Boolean).join(', ')}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div className="px-3 sm:px-4 lg:px-0 space-y-3 lg:space-y-6 pt-3 lg:pt-0 w-full max-w-full min-w-0 overflow-x-clip">
+            <div className="px-3 sm:px-4 lg:px-0 flex flex-col gap-3 lg:gap-6 pt-3 lg:pt-0 w-full max-w-full min-w-0 overflow-x-clip">
             {/* Why this car + market price */}
-            <section className="bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-6 shadow-sm lg:shadow-soft w-full max-w-full overflow-hidden">
+            <section className="order-5 bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-6 shadow-sm lg:shadow-soft w-full max-w-full overflow-hidden">
               <div className="flex flex-wrap items-start justify-between gap-3 mb-4 lg:mb-5">
                 <div className="min-w-0">
                   <h2 className="text-[15px] lg:font-display lg:text-xl font-black lg:font-bold text-ink">Why consider this car?</h2>
@@ -732,7 +801,7 @@ export default function CarDetails() {
             </section>
 
             {/* Quick insights */}
-            <section className="grid md:grid-cols-2 gap-3 lg:gap-4">
+            <section className="order-6 grid lg:grid-cols-2 gap-3 lg:gap-4">
               <div className="bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-5 shadow-sm lg:shadow-soft">
                 <h3 className="text-[12px] lg:text-sm font-black lg:font-bold text-ink uppercase tracking-wide mb-2.5 lg:mb-3">Fit for you</h3>
                 {insights.fitForYou ? (
@@ -770,9 +839,9 @@ export default function CarDetails() {
 
             {/* Vehicle condition */}
             {conditionChecks.length > 0 && (
-              <section className={`${glassCard} rounded-2xl p-5`}>
-                <h3 className="font-display text-lg font-bold text-ink mb-4">Vehicle condition</h3>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <section className={`order-2 ${glassCard} rounded-2xl p-3.5 lg:p-5`}>
+                <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink mb-3">Vehicle condition</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
                   {conditionChecks.map(({ label, value, ok }) => (
                     <div key={label} className={`rounded-xl p-3 border border-white/20 backdrop-blur-md ${ok ? 'bg-emerald-50/70 border-emerald-200/60' : 'bg-amber-50/70 border-amber-200/60'}`}>
                       <p className="text-[11px] font-bold text-slate2 uppercase">{label}</p>
@@ -783,9 +852,9 @@ export default function CarDetails() {
               </section>
             )}
 
-            <section className={`${glassCard} rounded-2xl p-5`}>
-              <h3 className="font-display text-lg font-bold text-ink mb-4">Compliance & documents</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
+            <section className={`order-3 ${glassCard} rounded-2xl p-3.5 lg:p-5`}>
+              <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink mb-3">Compliance & documents</h3>
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="rounded-xl p-3 bg-white/50 border border-white/20">
                   <p className="text-[11px] font-bold text-slate2 uppercase">Insurance validity</p>
                   <p className="text-sm font-bold text-ink mt-1">{compliance.insuranceValidity || car.insuranceType || 'Not listed'}</p>
@@ -799,8 +868,8 @@ export default function CarDetails() {
               </div>
             </section>
 
-            <section className={`${glassCard} rounded-2xl p-5`}>
-              <h3 className="font-display text-lg font-bold text-ink mb-4">History & verification</h3>
+            <section className={`order-7 ${glassCard} rounded-2xl p-3.5 lg:p-5`}>
+              <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink mb-3">History & verification</h3>
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-white/60 border border-white/20">
                   {/^(no|none|zero)/i.test(String(history.accidentHistory || condition.accidental || ''))
@@ -836,18 +905,18 @@ export default function CarDetails() {
             </section>
 
             {(inspection.ratingScore || inspection.categories?.length || inspection.reportPdfUrl) && (
-              <section className={`${glassCard} rounded-2xl p-5`}>
-                <div className="flex items-start justify-between gap-3 mb-4">
+              <section className={`order-1 ${glassCard} rounded-2xl p-3.5 lg:p-5`}>
+                <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
-                    <h3 className="font-display text-lg font-bold text-ink">4TYREZZ inspection report</h3>
-                    <p className="text-xs text-slate2 mt-1">140+ point digital inspection — scores shown only where recorded</p>
+                    <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink">4TYREZZ inspection report</h3>
+                    <p className="text-[12px] text-slate2 mt-1">140+ point digital inspection — scores shown only where recorded</p>
                   </div>
                   {inspection.ratingScore != null && (
                     <p className="text-2xl font-extrabold text-verify">{inspection.ratingScore}<span className="text-sm">/100</span></p>
                   )}
                 </div>
                 {inspection.categories?.length > 0 && (
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
                     {inspection.categories.map((row) => (
                       <div key={row.label} className="rounded-xl p-3 bg-white/50 border border-white/20">
                         <p className="text-[11px] font-bold text-slate2 uppercase">{row.label}</p>
@@ -870,16 +939,29 @@ export default function CarDetails() {
             )}
 
             {/* RTO card */}
-            <section className="bg-gradient-to-r from-blue-50 to-white lg:from-orange-50 lg:to-white rounded-2xl border border-blue-100 lg:border-orange-100 p-4 lg:p-6 shadow-sm lg:shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:gap-5">
-              <div>
+            <section className="order-4 bg-gradient-to-r from-blue-50 to-white lg:from-orange-50 lg:to-white rounded-2xl border border-blue-100 lg:border-orange-100 p-3.5 lg:p-6 shadow-sm lg:shadow-soft flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-5">
+              <div className="min-w-0 w-full">
                 <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink">RTO & document report</h3>
                 <p className="text-[12px] lg:text-sm text-slate2 mt-1">Registration, insurance, and compliance details for this listing</p>
-                <div className="flex flex-wrap gap-3 lg:gap-4 mt-3 lg:mt-4 text-sm">
-                  {rto.rcNumber && <span className="font-semibold text-ink">RC: {rto.rcNumber}</span>}
-                  {rto.rcStatus && (
-                    <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded uppercase">{rto.rcStatus}</span>
+                <div className="grid grid-cols-2 gap-2.5 mt-3">
+                  {rto.rcNumber && (
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">RC number</p>
+                      <p className="text-[13px] font-black text-ink mt-0.5 break-all">{rto.rcNumber}</p>
+                    </div>
                   )}
-                  {car.insuranceType && <span className="text-slate2">Insurance: {car.insuranceType}</span>}
+                  {rto.rcStatus && (
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">RC status</p>
+                      <p className="text-[13px] font-black text-emerald-700 mt-0.5">{rto.rcStatus}</p>
+                    </div>
+                  )}
+                  {car.insuranceType && (
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Insurance</p>
+                      <p className="text-[13px] font-black text-ink mt-0.5 break-words">{car.insuranceType}</p>
+                    </div>
+                  )}
                 </div>
               </div>
               <button
@@ -892,7 +974,7 @@ export default function CarDetails() {
             </section>
 
             {/* Tabs */}
-            <div className={`${glassCard} rounded-2xl overflow-hidden w-full max-w-full`}>
+            <div className={`order-8 ${glassCard} rounded-2xl overflow-hidden w-full max-w-full`}>
               <div className="flex border-b border-slate-100 px-1 lg:px-2 overflow-x-auto no-scrollbar max-w-full">
                 {[
                   ['overview', 'Overview'],
@@ -912,7 +994,7 @@ export default function CarDetails() {
 
               <div className="p-4 lg:p-6 overflow-x-clip">
                 {tab === 'overview' && (
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 lg:gap-3">
                     {overviewItems.map(({ label, value }) => (
                       <OverviewCard key={label} label={label} value={value} />
                     ))}
@@ -947,14 +1029,14 @@ export default function CarDetails() {
             </div>
 
             {car.description && (
-              <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-soft">
+              <section className="order-9 bg-white rounded-2xl border border-slate-200 p-6 shadow-soft">
                 <h3 className="font-display text-lg font-bold text-ink mb-3">Listing description</h3>
                 <p className="text-sm text-slate2 leading-relaxed whitespace-pre-line">{car.description}</p>
               </section>
             )}
 
             {/* Seller */}
-            <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-soft">
+            <section className="order-10 bg-white rounded-2xl border border-slate-200 p-5 shadow-soft">
               <h3 className="font-display text-lg font-bold text-ink mb-3">Listed by 4tyrezz</h3>
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -971,6 +1053,7 @@ export default function CarDetails() {
             </section>
 
             {/* Finance */}
+            <div className="order-11">
             <FinanceSection
               carPrice={carPrice}
               currentLoan={currentLoan}
@@ -988,6 +1071,7 @@ export default function CarDetails() {
               <PdiCta car={car} compact />
             </div>
             </div>
+            </div>
           </div>
 
           {/* RIGHT STICKY CARD — desktop only */}
@@ -1000,9 +1084,14 @@ export default function CarDetails() {
                   </h1>
                   {car.variant && <p className="text-sm text-slate2 mt-1">{car.variant}</p>}
                 </div>
-                <button type="button" onClick={handleWishlist} className="p-2.5 rounded-full border border-slate-200 hover:bg-slate-50 transition">
-                  <Heart filled={wishlisted} className={wishlisted ? 'text-ember w-5 h-5' : 'text-slate-400 w-5 h-5'} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={handleCart} className="p-2.5 rounded-full border border-slate-200 hover:bg-slate-50 transition" aria-label="Add to cart">
+                    <ShoppingCart className={`w-5 h-5 ${inCart ? 'text-[#3083ff]' : 'text-slate-400'}`} />
+                  </button>
+                  <button type="button" onClick={handleWishlist} className="p-2.5 rounded-full border border-slate-200 hover:bg-slate-50 transition">
+                    <Heart filled={wishlisted} className={wishlisted ? 'text-ember w-5 h-5' : 'text-slate-400 w-5 h-5'} />
+                  </button>
+                </div>
               </div>
 
               {priceVerdict?.label && (
@@ -1133,11 +1222,11 @@ export default function CarDetails() {
 
       {/* Mobile sticky CTA — above BottomNav */}
       <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(15,23,42,0.08)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
-        <div className="grid grid-cols-3 gap-1.5 px-2.5 py-2">
+        <div className="grid grid-cols-4 gap-1 px-2 py-2">
           <button
             type="button"
             onClick={handleCallDealer}
-            className="inline-flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl border border-[#3083ff]/25 bg-blue-50 text-[#1853ff] text-[11px] font-black"
+            className="inline-flex flex-col items-center justify-center gap-0.5 h-14 rounded-xl border border-[#3083ff]/25 bg-blue-50 text-[#1853ff] text-[10px] font-semibold"
           >
             <Phone className="w-4 h-4" strokeWidth={2.4} />
             Call
@@ -1145,18 +1234,29 @@ export default function CarDetails() {
           <button
             type="button"
             onClick={handleWhatsApp}
-            className="inline-flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-[#25D366] text-white text-[11px] font-black"
+            className="inline-flex flex-col items-center justify-center gap-0.5 h-14 rounded-xl bg-[#25D366] text-white text-[10px] font-semibold"
+            aria-label="WhatsApp chat"
           >
-            <span className="text-[13px] leading-none">WA</span>
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+              <path d="M12.012 2C6.486 2 2 6.479 2 12c0 2.152.68 4.144 1.838 5.776L2 22l4.354-1.787A9.957 9.957 0 0012.012 22c5.525 0 10.012-4.479 10.012-10s-4.487-10-10.012-10zm5.942 14.22c-.252.708-1.26 1.302-2.028 1.464-.528.11-1.218.198-3.538-.758-2.968-1.222-4.88-4.236-5.028-4.432-.148-.198-1.206-1.606-1.206-3.064 0-1.458.764-2.176 1.036-2.472.272-.296.592-.37.79-.37.198 0 .396.002.568.01.186.008.436-.07.682.52.252.604.858 2.096.932 2.246.074.148.124.322.024.52-.098.198-.148.322-.296.496-.148.174-.31.39-.444.524-.148.148-.302.31-.13.604.172.296.766 1.258 1.644 2.038 1.128 1.004 2.08 1.314 2.378 1.462.296.148.47.124.644-.074.172-.198.74-.864.938-1.16.198-.296.396-.248.666-.148.272.098 1.73.816 2.028.964.296.148.494.222.568.346.074.124.074.718-.178 1.426z" />
+            </svg>
             Chat
           </button>
           <button
             type="button"
             onClick={() => requireAuth(() => setShowContact(true))}
-            className="inline-flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-[#3083ff] text-white text-[11px] font-black shadow-sm"
+            className="inline-flex flex-col items-center justify-center gap-0.5 h-14 rounded-xl bg-[#3083ff] text-white text-[10px] font-semibold shadow-sm"
           >
-            <span className="text-[13px] leading-none">✉</span>
-            Contact
+            <Mail className="w-4 h-4" strokeWidth={2.4} />
+            Enquiry
+          </button>
+          <button
+            type="button"
+            onClick={() => requireAuth(() => setShowBook(true))}
+            className="inline-flex flex-col items-center justify-center gap-0.5 h-14 rounded-xl bg-slate-900 px-1 text-center text-[10px] font-semibold leading-tight text-white"
+          >
+            <CalendarCheck className="w-4 h-4" strokeWidth={2.4} />
+            Book vehicle
           </button>
         </div>
       </div>
@@ -1462,9 +1562,9 @@ function FinanceSection({
 
 function OverviewCard({ label, value }) {
   return (
-    <div className="rounded-xl border border-white/20 bg-white/60 backdrop-blur-md p-3.5">
-      <p className="text-[11px] font-bold text-slate2 uppercase tracking-wide">{label}</p>
-      <p className="text-sm font-bold text-ink mt-1">{value}</p>
+    <div className="rounded-xl border border-slate-100 bg-white p-3 min-w-0">
+      <p className="text-[10px] font-bold text-slate2 uppercase tracking-wide leading-tight">{label}</p>
+      <p className="text-[13px] font-bold text-ink mt-1 leading-snug break-words">{value}</p>
     </div>
   );
 }

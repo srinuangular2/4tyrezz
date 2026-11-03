@@ -315,7 +315,7 @@ export default function CarCard({ car }) {
   return (
     <Link
       to={`/cars/${car._id}`}
-      className="group relative flex flex-col h-full bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl border border-slate-200/80 lg:border-white/60 lg:bg-white/40 lg:backdrop-blur-xl shadow-[0_4px_16px_rgba(15,23,42,0.06)] lg:shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-[0_20px_40px_0_rgba(37,99,235,0.2)] hover:border-blue-500/50 transition-all duration-500 overflow-hidden"
+      className="group relative flex flex-col h-full bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl border border-slate-200/80 lg:border-white/60 lg:bg-white/40 lg:backdrop-blur-xl shadow-[0_4px_16px_rgba(15,23,42,0.06)] lg:shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:shadow-[0_20px_40px_0_rgba(37,99,235,0.2)] hover:border-blue-500/50 transition-all duration-500 overflow-hidden active:scale-[0.98] md:active:scale-100"
     >
       {/* Top Radiant Blue Gradient Beam on Hover */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-30" />
@@ -379,10 +379,12 @@ export default function CarCard({ car }) {
           {/* Spec Strip */}
           <div className="mt-2 sm:mt-3.5 py-1.5 sm:py-2.5 px-1.5 sm:px-3.5 bg-slate-50 sm:bg-white/50 backdrop-blur-sm rounded-lg sm:rounded-2xl border border-slate-100 sm:border-slate-200/60 flex flex-wrap sm:flex-nowrap items-center gap-x-1 gap-y-0.5 sm:justify-between text-[10px] sm:text-xs font-semibold text-slate-600 sm:shadow-inner group-hover:border-blue-200 transition-colors">
             <span>{formatKm(car.kmDriven)}</span>
-            <span className="text-slate-300 font-normal hidden sm:inline">•</span>
+            <span className="text-slate-300 font-normal">•</span>
             <span>{car.fuel || 'Petrol'}</span>
-            <span className="text-slate-300 font-normal hidden sm:inline">•</span>
-            <span className="hidden sm:inline">{car.transmission || 'Manual'}</span>
+            <span className="text-slate-300 font-normal">•</span>
+            <span>{car.transmission || 'Manual'}</span>
+            <span className="text-slate-300 font-normal md:hidden">•</span>
+            <span className="md:hidden">{car.ownership || 1} owner</span>
           </div>
         </div>
 

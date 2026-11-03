@@ -8,6 +8,8 @@ const customer = [protect];
 const staff = [protect, authorize('admin', 'dealer')];
 
 router.post('/seller', ...customer, uploadSellPhotos.array('photos', 8), enquiry.create);
+router.post('/seller/:id/photos', ...customer, uploadSellPhotos.array('photos', 8), enquiry.addSellerPhotos);
+router.patch('/seller/:id', ...customer, enquiry.updateMine);
 router.post('/', ...customer, enquiry.create);
 router.post('/:type', ...customer, enquiry.create);
 router.get('/', protect, enquiry.list);

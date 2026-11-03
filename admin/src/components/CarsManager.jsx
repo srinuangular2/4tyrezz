@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 import DataTable from './DataTable';
 import { formatPrice } from '../utils/format';
+import { Drawer, FilterPills } from './admin/ui';
+
+const EXECUTIVE_FILTERS = [
+  { value: 'all', label: 'All My Cars' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'available', label: 'Available' },
+  { value: 'sold', label: 'Sold' },
+  { value: 'rejected', label: 'Rejected' },
+];
 
 const PREMIUM_MIN = 1500000;
 
@@ -35,6 +45,29 @@ function carImage(c) {
   return src;
 }
 
+function approvalBadge(c) {
+  const listing = String(c.listingStatus || '').toUpperCase();
+  if (c.status === 'rejected' || listing === 'REJECTED') {
+    return {
+      label: 'Rejected',
+      cls: 'bg-rose-500/15 text-rose-300 border border-rose-500/30',
+      reason: c.moderationNotes || 'Rejected by the main admin.',
+    };
+  }
+  if (c.status === 'pending' || listing === 'PENDING_MODERATION' || listing === 'DRAFT') {
+    return { label: 'Pending Approval', cls: 'bg-amber-500/15 text-amber-300 border border-amber-500/30' };
+  }
+  return { label: 'Approved', cls: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' };
+}
+
+function inventoryBadge(c) {
+  const listing = String(c.listingStatus || '').toUpperCase();
+  if (c.status === 'sold' || listing === 'SOLD') {
+    return { label: 'Sold', cls: 'bg-rose-500/15 text-rose-300 border border-rose-500/30' };
+  }
+  return { label: 'Available', cls: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' };
+}
+
 function stockState(c) {
   const unavailable = c.status === 'sold' || c.unpublished || (c.availability && c.availability !== 'available');
   return unavailable
@@ -61,18 +94,25 @@ export default function CarsManager({ defaultStatus = '', liveOnly = false }) {
   const [availability, setAvailability] = useState('');
   const [dealers, setDealers] = useState([]);
   const [carToDelete, setCarToDelete] = useState(null);
+  const [rejectReason, setRejectReason] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const role = useSelector((state) => state.auth.user?.role);
   const isMainAdmin = role === 'admin';
+  const isExecutive = role === 'executive_agent';
+  const executiveFilter = EXECUTIVE_FILTERS.some((item) => item.value === (searchParams.get('filter') || searchParams.get('status')))
+    ? (searchParams.get('filter') || searchParams.get('status'))
+    : 'all';
   const [deleting, setDeleting] = useState(false);
 
   const load = async (page = 1) => {
     const { data } = await api.get('/cars', {
       params: {
         inventory: 1,
-        listingCleared: liveOnly ? 1 : undefined,
-        status: status || undefined,
-        owner: dealerId || undefined,
-        availability: availability || undefined,
+        listingCleared: liveOnly && !isExecutive ? 1 : undefined,
+        status: isExecutive ? undefined : (status || undefined),
+        filter: isExecutive && executiveFilter !== 'all' ? executiveFilter : undefined,
+        owner: isExecutive ? undefined : (dealerId || undefined),
+        availability: isExecutive ? undefined : (availability || undefined),
         search: search || undefined,
         page,
         limit: 10,
@@ -86,7 +126,7 @@ export default function CarsManager({ defaultStatus = '', liveOnly = false }) {
   useEffect(() => {
     load(1);
     /* eslint-disable-next-line */
-  }, [status, dealerId, availability]);
+  }, [status, dealerId, availability, executiveFilter, isExecutive]);
 
   useEffect(() => {
     if (!isMainAdmin) return;
@@ -173,22 +213,41 @@ export default function CarsManager({ defaultStatus = '', liveOnly = false }) {
       render: (c) => (
         <div>
           <p className="font-semibold text-white">{c.owner?.dealershipName || c.owner?.name || '—'}</p>
-          <p className="text-[11px] text-slate-400">{c.upload_address || c.car_location || c.location?.city || ''}</p>
+          <p className="text-[11px] text-slate-400">
+            {c.owner?.role === 'executive_agent' ? 'Executive agent' : c.owner?.role === 'field_agent' ? 'Field agent' : (c.upload_address || c.car_location || c.location?.city || '')}
+          </p>
         </div>
       ),
     },
     {
       key: 'availability',
-      label: 'Availability',
+      label: isExecutive ? 'Stock' : 'Availability',
       render: (c) => {
-        const stock = stockState(c);
+        const stock = isExecutive ? inventoryBadge(c) : stockState(c);
         return <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${stock.cls}`}>{stock.label}</span>;
       },
     },
     {
       key: 'status',
-      label: 'Status',
+      label: isExecutive ? 'Approval' : 'Status',
       render: (c) => {
+        if (isExecutive) {
+          const badge = approvalBadge(c);
+          return (
+            <div>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${badge.cls}`}>{badge.label}</span>
+              {badge.reason && (
+                <button
+                  type="button"
+                  onClick={() => setRejectReason({ title: c.title, reason: badge.reason })}
+                  className="block mt-1 text-[10px] font-bold text-rose-300 hover:underline"
+                >
+                  View reason
+                </button>
+              )}
+            </div>
+          );
+        }
         const next = marketplaceStatus(c);
         return (
           <span className={`text-xs font-bold px-2.5 py-1 rounded-md capitalize ${STATUS_COLORS[next.key] || 'bg-slate-100'}`}>
@@ -250,6 +309,19 @@ export default function CarsManager({ defaultStatus = '', liveOnly = false }) {
 
   return (
     <div className="space-y-4">
+      {isExecutive && (
+        <FilterPills
+          value={executiveFilter}
+          onChange={(value) => {
+            const next = new URLSearchParams(searchParams);
+            next.delete('status');
+            if (value === 'all') next.delete('filter');
+            else next.set('filter', value);
+            setSearchParams(next, { replace: true });
+          }}
+          options={EXECUTIVE_FILTERS}
+        />
+      )}
       <div className="flex gap-2 flex-wrap items-center">
         <input
           value={search}
@@ -272,26 +344,30 @@ export default function CarsManager({ defaultStatus = '', liveOnly = false }) {
             ))}
           </select>
         )}
-        <select
-          value={availability}
-          onChange={(e) => setAvailability(e.target.value)}
-          className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none"
-        >
-          <option value="">Available and unavailable</option>
-          <option value="available">Available</option>
-          <option value="unavailable">Unavailable</option>
-        </select>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none"
-        >
-          <option value="">{liveOnly ? 'Published' : 'All statuses'}</option>
-          {!liveOnly && <option value="pending">Pending</option>}
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="sold">Sold</option>
-        </select>
+        {!isExecutive && (
+          <select
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value)}
+            className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none"
+          >
+            <option value="">Available and unavailable</option>
+            <option value="available">Available</option>
+            <option value="unavailable">Unavailable</option>
+          </select>
+        )}
+        {!isExecutive && (
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none"
+          >
+            <option value="">{liveOnly ? 'Published' : 'All statuses'}</option>
+            {!liveOnly && <option value="pending">Pending</option>}
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="sold">Sold</option>
+          </select>
+        )}
         <span className="text-xs font-semibold text-slate-400">{meta.total} listings</span>
       </div>
 
@@ -325,6 +401,13 @@ export default function CarsManager({ defaultStatus = '', liveOnly = false }) {
             </div>
           </div>
         </div>
+      )}
+
+      {rejectReason && (
+        <Drawer title="Rejection reason" onClose={() => setRejectReason(null)}>
+          <p className="text-sm font-semibold text-white">{rejectReason.title}</p>
+          <p className="text-sm text-slate-300 mt-3 leading-relaxed">{rejectReason.reason}</p>
+        </Drawer>
       )}
     </div>
   );

@@ -91,7 +91,7 @@ const protectAdminRoute = (req, res, next) => {
   const role = req.user.role;
   if (role === 'admin' || role === 'super_admin') return next();
   const url = req.originalUrl || '';
-  if (role === 'executive_agent' && req.method === 'GET' && /\/admin\/(metrics|stats|reports|dealers)/.test(url)) {
+  if (role === 'executive_agent' && req.method === 'GET' && /\/admin\/(metrics|stats)(\?|$)/.test(url)) {
     return next();
   }
   if (role === 'field_agent') {

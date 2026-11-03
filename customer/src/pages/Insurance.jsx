@@ -148,11 +148,67 @@ export default function Insurance() {
       >
         <BannerActions>
           <BannerButton href="#quote">Get an instant estimate</BannerButton>
-          <BannerButton href="#plans" ghost>Compare plans</BannerButton>
+          <span className="lg:hidden"><BannerButton href="#plans" ghost>Compare plans</BannerButton></span>
+          <span className="hidden lg:inline-flex"><BannerButton href="#cover-plans" ghost>Compare plans</BannerButton></span>
         </BannerActions>
       </DesignedPageBanner>
 
-      <Section eyebrow="How it works" title="Cover made simple">
+      <section className="space-y-4 px-4 py-4 lg:hidden">
+        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <p className="text-[12px] font-medium text-[#3083ff]">How cover works</p>
+          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Three steps to a quote</h2>
+          <ol className="mt-3 space-y-3">
+            {[
+              ['1', 'Choose a cover', 'Third-party is the legal minimum. Comprehensive also covers your car. Zero dep is for newer cars.'],
+              ['2', 'See the yearly price', 'Set the car value and any no-claim discount. The premium updates before you share details.'],
+              ['3', 'Request firm quotes', 'Send your number. The desk returns offers from licensed insurers. This page is an estimate, not a policy.'],
+            ].map(([n, title, body]) => (
+              <li key={n} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
+                <div>
+                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
+                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div id="plans" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <p className="text-[12px] font-medium text-[#3083ff]">Step 1</p>
+          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Choose a cover</h2>
+          <div className="mt-3 space-y-2">
+            {PLANS.map((p) => {
+              const active = p.key === planKey;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPlanKey(p.key)}
+                  className={`w-full rounded-2xl border px-3.5 py-3 text-left ${active ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}`}
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className={`text-[14px] font-semibold ${active ? 'text-[#1853ff]' : 'text-slate-900'}`}>{p.name}</span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.highlight ? 'bg-[#3083ff] text-white' : 'bg-slate-100 text-slate-500'}`}>{p.tag}</span>
+                  </span>
+                  <span className="mt-1 block text-[12px] font-normal leading-snug text-slate-500">{p.blurb}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[13px] font-medium text-slate-700">Included in {plan.name}</p>
+          <ul className="mt-1.5 space-y-1">
+            {plan.covers.map((item) => (
+              <li key={item} className="text-[12px] font-normal text-slate-500">• {item}</li>
+            ))}
+          </ul>
+          <a href="#quote" className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
+            See the yearly price
+          </a>
+        </div>
+      </section>
+
+      <Section eyebrow="How it works" title="Cover made simple" className="hidden lg:block">
         <div className="grid sm:grid-cols-3 gap-5">
           {[
             ['01', 'Choose a plan', 'Third-party, comprehensive, or zero-dep. Pick the cover that matches how you drive.'],
@@ -173,7 +229,7 @@ export default function Insurance() {
         </div>
       </Section>
 
-      <div id="plans" className="scroll-mt-24">
+      <div id="cover-plans" className="scroll-mt-24 hidden lg:block">
       <Section eyebrow="Choose your cover" title="Policy types explained" bg>
         <div className="grid md:grid-cols-3 gap-5">
           {PLANS.map((p) => {
@@ -243,8 +299,9 @@ export default function Insurance() {
 
       <div id="quote" className="scroll-mt-24">
         <Section eyebrow="Instant estimate" title="Build your quote">
-          <div className="grid lg:grid-cols-[1fr_1fr] gap-6">
-            <Card className="p-6 space-y-6" highlighted>
+          <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 2. The car value is the most the insurer pays if the car is stolen or written off. A higher value means a higher premium.</p>
+          <div className="grid lg:grid-cols-[1fr_1fr] gap-4 lg:gap-6">
+            <Card className="order-2 p-4 lg:order-1 lg:p-6 space-y-5 lg:space-y-6" highlighted>
               <div>
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
@@ -277,6 +334,7 @@ export default function Insurance() {
                 </select>
               </Field>
 
+              <div className="hidden lg:block">
               <Field label="Selected plan">
                 <select className={inputClass} value={planKey} onChange={(e) => setPlanKey(e.target.value)}>
                   {PLANS.map((p) => (
@@ -286,6 +344,7 @@ export default function Insurance() {
                   ))}
                 </select>
               </Field>
+              </div>
 
               <div>
                 <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Add-ons</p>
@@ -311,8 +370,10 @@ export default function Insurance() {
               </div>
             </Card>
 
-            <Card className="p-6 flex flex-col" highlighted>
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Estimated annual premium</p>
+            <Card className="order-1 p-4 lg:order-2 lg:p-6 flex flex-col" highlighted>
+              <p className="text-[12px] font-medium text-[#3083ff] lg:hidden">Your estimate</p>
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 hidden lg:block">Estimated annual premium</p>
+              <p className="text-[13px] font-medium text-slate-700 lg:hidden">Estimated yearly premium</p>
               <p className="font-black text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">{formatINR(quote.total)}</p>
               <p className="text-xs font-semibold text-slate-400 mt-1">{plan.name} · IDV {formatINR(idv)}</p>
 
@@ -336,9 +397,11 @@ export default function Insurance() {
         </Section>
       </div>
 
+      <div id="get-quote" className="scroll-mt-24">
       <Section eyebrow="Firm quotes" title="Get quotes from our insurance desk" bg>
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
-          <Card className="p-6" highlighted>
+        <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 3. This sends the estimate to the desk. A person calls you with firm prices. Nothing is purchased on this page.</p>
+        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4 lg:gap-6">
+          <Card className="p-4 lg:p-6" highlighted>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Full name">
                 <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Your name" />
@@ -389,7 +452,7 @@ export default function Insurance() {
             </a>
           </Card>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-1 gap-4">
+          <div className="hidden lg:grid sm:grid-cols-2 lg:grid-cols-1 gap-4">
             {WHY.map(({ icon: Icon, title, body }) => (
               <Card key={title} className="p-5 flex gap-4">
                 <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
@@ -404,8 +467,9 @@ export default function Insurance() {
           </div>
         </div>
       </Section>
+      </div>
 
-      <Section eyebrow="Insurers" title="Quotes from licensed partners" bg>
+      <Section eyebrow="Insurers" title="Quotes from licensed partners" bg className="hidden lg:block">
         <div className="flex flex-wrap justify-center gap-3">
           {INSURERS.map((name) => (
             <span
@@ -442,17 +506,11 @@ export default function Insurance() {
         </div>
       </Section>
 
-      <div className="lg:hidden h-16" />
-      <div className="lg:hidden fixed bottom-16 inset-x-0 z-30 px-3 pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-900 text-white px-4 py-3 shadow-xl">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-white/60">Est. premium</p>
-            <p className="font-black text-lg leading-tight">{formatINR(quote.total)}<span className="text-xs font-bold text-white/60"> /yr</span></p>
-          </div>
-          <a href="#quote" className="shrink-0 px-4 py-2 rounded-xl bg-[#3083ff] text-xs font-black uppercase tracking-wider">
-            Get quote
-          </a>
-        </div>
+      <div className="lg:hidden h-20" />
+      <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
+        <a href="#get-quote" className="flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
+          Request quotes · {formatINR(quote.total)}/yr
+        </a>
       </div>
     </div>
   );

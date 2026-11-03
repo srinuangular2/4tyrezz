@@ -1,8 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, LineChart, Users, Store, CarFront, Library,
-  Target, Gauge, CreditCard, ClipboardCheck, Wallet, Percent,   Landmark, Shield, Repeat,
-  Megaphone, Star, LifeBuoy, FileText, Settings, LogOut,
+  Target, Gauge, CreditCard, ClipboardCheck, Wallet, Percent, Landmark, Shield, Repeat,
+  Megaphone, Star, LifeBuoy, FileText, Settings, LogOut, Plus, UserRound,
 } from 'lucide-react';
 import { SidebarCountBadge } from '../NotificationBell';
 import { useRealtimeAlerts } from '../../hooks/useRealtimeAlerts';
@@ -67,9 +67,10 @@ function groupsFor(role) {
     return [{
       label: 'Executive',
       items: [
-        { to: '/', label: 'Executive dashboard', Icon: LayoutDashboard, end: true },
-        { to: '/cars', label: 'Vehicle listings', Icon: CarFront },
-        { to: '/sold', label: 'Sold cars', Icon: Wallet },
+        { to: '/', label: 'Dashboard', Icon: LayoutDashboard, end: true },
+        { to: '/cars/add', label: 'Upload New Car', Icon: Plus },
+        { to: '/cars', label: 'My Vehicles', Icon: CarFront, end: true },
+        { to: '/profile', label: 'My Profile', Icon: UserRound },
       ],
     }];
   }

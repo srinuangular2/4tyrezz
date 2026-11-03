@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { formatPlateInput } from '../../lib/fetchVehicleDetailsByReg';
 import {
@@ -5,16 +6,27 @@ import {
   HUBS,
   KM_PRESETS,
   OWNER_OPTIONS,
+  cityFromPlate,
+  conditionMessage,
   conditionReady,
-  fileToPreview,
+  matchCityName,
   plateError,
   variantError,
 } from './sellCarState';
-import { sellChipIdle, sellFieldClass } from './ui';
+import { StepHeading, sellChipIdle, sellFieldClass } from './ui';
 
 export default function StepCondition({ state, patch, cities, onBack, onNext }) {
   const plateMsg = plateError(state.plate);
   const variantMsg = variantError(state.variant);
+
+  useEffect(() => {
+    if (state.city || !state.plate) return;
+    const guess = cityFromPlate(state.plate);
+    const name = matchCityName(guess, cities);
+    if (!name) return;
+    const hub = HUBS.find((item) => item.city === name);
+    patch({ city: name, hubId: hub?.id || state.hubId });
+  }, [cities, patch, state.city, state.hubId, state.plate]);
   const toggle = (id) => {
     const next = state.conditions.includes(id)
       ? state.conditions.filter((x) => x !== id)
@@ -22,38 +34,22 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
     patch({ conditions: next });
   };
 
-  const onPhotos = async (e) => {
-    const files = Array.from(e.target.files || []).slice(0, 8);
-    e.target.value = '';
-    if (!files.length) return;
-    const previews = await Promise.all(files.map(fileToPreview));
-    patch({ photoFiles: files, photoPreviews: previews });
-  };
-
-  const removePhoto = (idx) => {
-    patch({
-      photoFiles: (state.photoFiles || []).filter((_, i) => i !== idx),
-      photoPreviews: (state.photoPreviews || []).filter((_, i) => i !== idx),
-    });
-  };
-
-  const photoThumbs = (state.photoPreviews || []).length
-    ? state.photoPreviews.map((p) => p.dataUrl)
-    : (state.photoFiles || []).map((file) => URL.createObjectURL(file));
-
   return (
-    <div className="space-y-7">
-      <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">Step 2</p>
-        <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-900 mt-1">Condition, location & photos</h2>
-        <p className="text-sm font-medium text-slate-500 mt-2">
-          Kilometres, owners, city, registration and photos — required before we estimate value.
-        </p>
-      </div>
+    <div className="space-y-5 lg:space-y-7">
+      <StepHeading
+        step={2}
+        title="Tell us about the car"
+        desktopTitle="Condition and location"
+        hint="Kilometres, owners and city. Photos come after the price."
+        desktopHint="Kilometres, owners, city and registration. Photos are the next step."
+      />
 
       <section>
         <div className="flex items-baseline justify-between mb-2">
-          <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500">Kilometres driven</h3>
+          <h3 className="text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+            <span className="lg:hidden">How many kilometres?</span>
+            <span className="hidden lg:inline">Kilometres driven</span>
+          </h3>
           <p className="font-black text-slate-900">{Number(state.kmDriven).toLocaleString('en-IN')} km</p>
         </div>
         <input
@@ -84,7 +80,10 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
       </section>
 
       <section>
-        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Owner count</h3>
+        <h3 className="mb-2 text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+          <span className="lg:hidden">How many owners?</span>
+          <span className="hidden lg:inline">Owner count</span>
+        </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {OWNER_OPTIONS.map((o) => (
             <button
@@ -104,7 +103,10 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
       </section>
 
       <section>
-        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Vehicle condition</h3>
+        <h3 className="mb-2 text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+          <span className="lg:hidden">What is the condition?</span>
+          <span className="hidden lg:inline">Vehicle condition</span>
+        </h3>
         <div className="flex flex-wrap gap-2">
           {CONDITION_PILLS.map((p) => {
             const on = state.conditions.includes(p.id);
@@ -127,7 +129,7 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
 
       <section className="grid sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Registration number</span>
+          <span className="text-[13px] font-semibold text-slate-700 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">Registration number</span>
           <input
             value={state.plate}
             onChange={(e) => patch({ plate: formatPlateInput(e.target.value) })}
@@ -139,7 +141,7 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
           )}
         </label>
         <label className="block">
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Variant</span>
+          <span className="text-[13px] font-semibold text-slate-700 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">Variant</span>
           <input
             value={state.variant}
             onChange={(e) => patch({ variant: e.target.value })}
@@ -153,7 +155,10 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
       </section>
 
       <section>
-        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Location</h3>
+        <h3 className="mb-2 text-[14px] font-semibold text-slate-900 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">
+          <span className="lg:hidden">Which city is the car in?</span>
+          <span className="hidden lg:inline">Location</span>
+        </h3>
         <p className="text-xs font-medium text-slate-400 mb-2">
           Auto-selected from the plate prefix{state.rto ? ` · ${state.rto}` : ''}. Change if needed.
         </p>
@@ -176,31 +181,6 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
         </select>
       </section>
 
-      <section>
-        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Photos</h3>
-        <label className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white px-4 py-8 cursor-pointer hover:border-[#3083ff] transition">
-          <span className="text-sm font-black text-slate-800">Upload 1–8 photos</span>
-          <span className="text-[11px] font-semibold text-slate-400 mt-1">Front, rear, interiors and odometer help dealers inspect faster</span>
-          <input type="file" accept="image/*" multiple className="hidden" onChange={onPhotos} />
-        </label>
-        {(photoThumbs || []).length > 0 && (
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            {photoThumbs.map((src, i) => (
-              <div key={`${src.slice(-12)}-${i}`} className="relative">
-                <img src={src} alt="" className="h-20 w-full object-cover rounded-xl" />
-                <button
-                  type="button"
-                  onClick={() => removePhoto(i)}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-black"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
       <div className="flex gap-3 pt-2 hidden lg:flex">
         <button type="button" onClick={onBack} className="flex-1 rounded-xl border border-slate-200 bg-white py-3.5 text-xs font-black uppercase tracking-wider text-slate-700">
           Back
@@ -217,7 +197,7 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
               return;
             }
             if (!conditionReady(state)) {
-              toast.error('Add city, photos and a valid RC number and variant');
+              toast.error(conditionMessage(state));
               return;
             }
             onNext();

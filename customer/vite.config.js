@@ -71,6 +71,9 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    // Phone voice search is opened through an https tunnel. Vite otherwise
+    // rejects that hostname.
+    allowedHosts: ['.trycloudflare.com', 'localhost'],
     proxy: {
       '/api': 'http://localhost:5000',
       '/uploads': 'http://localhost:5000',

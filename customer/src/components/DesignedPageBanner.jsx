@@ -12,7 +12,33 @@ export default function DesignedPageBanner({
   imageClass = 'object-[78%_center] sm:object-right',
 }) {
   return (
-    <section className="relative overflow-hidden min-h-[210px] sm:min-h-[480px] lg:min-h-[540px]">
+    <>
+    <section className="relative overflow-hidden lg:hidden min-h-[300px]">
+      <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover object-[85%_center]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#061433]/90 via-[#0b2a6e]/62 to-[#0b2a6e]/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#061433]/55 via-transparent to-[#061433]/25" />
+      <div className="relative px-4 py-5">
+        {eyebrow && <p className="text-[11px] font-semibold uppercase tracking-wide text-white">{eyebrow}</p>}
+        <h1 className="mt-1 max-w-[18rem] text-[20px] font-semibold leading-snug text-white">
+          {title}{accent ? <span className="font-bold"> {accent}</span> : null}
+        </h1>
+        {subtitle && <p className="mt-1.5 max-w-[20rem] text-[13px] font-normal leading-snug text-white/90">{subtitle}</p>}
+        {points.length > 0 && (
+          <div className="mt-3 grid max-w-[22rem] grid-cols-2 gap-2">
+            {points.map(({ icon: Icon, label }) => (
+              <span key={label} className="inline-flex items-center gap-2 text-[12px] font-semibold text-white">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/15">
+                  <Icon className="h-3.5 w-3.5 text-white" strokeWidth={2.25} />
+                </span>
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+        {children}
+      </div>
+    </section>
+    <section className="relative hidden overflow-hidden min-h-[210px] sm:min-h-[480px] lg:block lg:min-h-[540px]">
       <img
         src={src}
         alt={alt}
@@ -57,17 +83,18 @@ export default function DesignedPageBanner({
         </div>
       </div>
     </section>
+    </>
   );
 }
 
 export function BannerActions({ children }) {
-  return <div className="mt-4 sm:mt-8 flex flex-wrap gap-2 sm:gap-3">{children}</div>;
+  return <div className="mt-3 flex flex-wrap gap-2 lg:mt-8 lg:gap-3">{children}</div>;
 }
 
 export function BannerButton({ to, href, children, ghost }) {
   const className = ghost
-    ? 'inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white/12 border border-white/30 text-white font-black text-xs uppercase tracking-wider backdrop-blur-md hover:bg-white/20 transition'
-    : 'inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white text-[#1853ff] font-black text-xs uppercase tracking-wider hover:bg-slate-100 transition';
+    ? 'inline-flex items-center justify-center rounded-xl border border-white/40 bg-white/15 px-3.5 py-2 text-[12px] font-semibold text-white backdrop-blur-md lg:px-6 lg:py-3 lg:text-xs lg:font-black lg:uppercase lg:tracking-wider lg:hover:bg-white/25'
+    : 'inline-flex items-center justify-center rounded-xl bg-white px-3.5 py-2 text-[12px] font-semibold text-[#1853ff] lg:px-6 lg:py-3 lg:text-xs lg:font-black lg:uppercase lg:tracking-wider lg:hover:bg-slate-100';
 
   if (to) {
     return (

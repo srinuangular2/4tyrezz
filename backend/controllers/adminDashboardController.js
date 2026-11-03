@@ -39,7 +39,31 @@ function pctChange(current, previous) {
   return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
-exports.metrics = async (_req, res) => {
+exports.metrics = async (req, res) => {
+  if (req.user?.role === 'executive_agent') {
+    const mine = { owner: req.user._id };
+    const [myUploads, pendingApproval, approvedAvailable, soldCars, rejected] = await Promise.all([
+      Car.countDocuments(mine),
+      Car.countDocuments({ ...mine, status: 'pending' }),
+      Car.countDocuments({
+        ...mine,
+        status: 'approved',
+        availability: 'available',
+        unpublished: { $ne: true },
+      }),
+      Car.countDocuments({ ...mine, status: 'sold' }),
+      Car.countDocuments({ ...mine, status: 'rejected' }),
+    ]);
+    return res.json({
+      scope: 'personal',
+      myUploads,
+      pendingApproval,
+      approvedAvailable,
+      soldCars,
+      rejected,
+    });
+  }
+
   const thisMonth = monthStart(0);
   const lastMonth = monthStart(-1);
   const sixMonthsAgo = monthStart(-5);

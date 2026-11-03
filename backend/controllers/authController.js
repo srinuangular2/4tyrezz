@@ -3,6 +3,7 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { getPermissionsForUser } = require('../utils/rbacBootstrap');
 const DealerProfile = require('../models/DealerProfile');
+const UserProfile = require('../models/UserProfile');
 const { sendOTP, sendWhatsAppTemplate } = require('../services/integrations/msg91Service');
 const {
   isOtpDevelopment,
@@ -520,5 +521,7 @@ exports.registerDealer = async (req, res) => {
 };
 
 exports.me = async (req, res) => {
+  const profile = await UserProfile.findOne({ user: req.user._id }).select('avatar').lean();
+  if (profile?.avatar) req.user.avatar = profile.avatar;
   res.json({ user: await sanitize(req.user), needsProfile: needsProfile(req.user) });
 };

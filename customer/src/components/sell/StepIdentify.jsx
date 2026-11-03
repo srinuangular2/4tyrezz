@@ -5,8 +5,10 @@ import { applyLookup } from './sellCarState';
 import BrandModelGrid from './BrandModelGrid';
 import VerifiedDetailsCard from './VerifiedDetailsCard';
 import { Skeleton } from '../PageShell';
+import { StepHeading, useIsPhone } from './ui';
 
-export default function StepIdentify({ state, setState, patch, onNext }) {
+export default function StepIdentify({ state, setState, patch, onNext, onGuide }) {
+  const phone = useIsPhone();
   const [error, setError] = useState('');
   const [cooldown, setCooldown] = useState(0);
 
@@ -27,6 +29,7 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
       return;
     }
     setError('');
+    if (phone) onGuide?.();
     setState((s) => ({ ...s, lookupStatus: 'loading', verified: false }));
     try {
       const details = await fetchVehicleDetailsByReg(state.plate);
@@ -40,18 +43,27 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">Step 1</p>
-        <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-900 mt-1">Identify your car</h2>
-        <p className="text-sm font-medium text-slate-500 mt-2">
-          Enter the RC number to get started. We fetch live RTO data — make, model, variant, year, fuel and office.
-        </p>
-      </div>
+  const openManual = () => {
+    if (phone) onGuide?.();
+    patch({
+      identifyMode: 'manual',
+      editManual: true,
+      manualPhase: state.model ? 'variant' : state.year ? 'model' : state.brand ? 'year' : 'brand',
+    });
+  };
 
-      <div className="rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
-        <label className="text-[11px] font-black uppercase tracking-wider text-slate-500">Registration number</label>
+  return (
+    <div className="space-y-5 lg:space-y-6">
+      <StepHeading
+        step={1}
+        title="Which car are you selling?"
+        desktopTitle="Identify your car"
+        hint="Enter the number on the number plate, or choose the brand yourself."
+        desktopHint="Enter the RC number to get started. We fetch live RTO data — make, model, variant, year, fuel and office."
+      />
+
+      <div className="rounded-2xl bg-white border border-slate-200 p-4 sm:rounded-3xl sm:p-5 shadow-sm">
+        <label className="text-[13px] font-semibold text-slate-700 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">Registration number</label>
         <div className="mt-2 flex flex-col sm:flex-row gap-2">
           <input
             value={state.plate}
@@ -67,7 +79,12 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
             disabled={state.lookupStatus === 'loading' || cooldown > 0}
             className="sm:w-44 bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-2xl px-5 py-4"
           >
-            {state.lookupStatus === 'loading' ? 'Checking…' : cooldown > 0 ? `Wait ${cooldown}s` : 'Check value'}
+            {state.lookupStatus === 'loading' ? 'Checking…' : cooldown > 0 ? `Wait ${cooldown}s` : (
+              <>
+                <span className="lg:hidden">Find my car</span>
+                <span className="hidden lg:inline">Check value</span>
+              </>
+            )}
           </button>
         </div>
         {error && <p className="text-sm font-semibold text-rose-600 mt-2">{error}</p>}
@@ -97,21 +114,17 @@ export default function StepIdentify({ state, setState, patch, onNext }) {
 
       <button
         type="button"
-        onClick={() =>
-          patch({
-            identifyMode: 'manual',
-            editManual: true,
-            manualPhase: state.model ? 'variant' : state.year ? 'model' : state.brand ? 'year' : 'brand',
-          })
-        }
-        className="text-sm font-extrabold text-[#3083ff] hover:underline"
+        onClick={openManual}
+        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left lg:w-auto lg:border-0 lg:bg-transparent lg:p-0"
       >
-        Or search manually by brand
+        <span className="block text-[14px] font-semibold text-[#3083ff] lg:text-sm lg:font-extrabold lg:hover:underline">Choose brand, year and model</span>
+        <span className="mt-0.5 block text-[12px] font-normal text-slate-500 lg:hidden">Use this if the RC number is not with you.</span>
       </button>
 
       {(state.identifyMode === 'manual' || state.editManual) && (
-        <div className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6">
+        <div className="lg:rounded-3xl lg:border lg:border-slate-200 lg:bg-white lg:p-6">
           <BrandModelGrid
+            mobileSheet
             state={state}
             patch={patch}
             onReady={onNext}

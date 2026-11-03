@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { formatINR } from '../../components/PageShell';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
-import { StatusPill } from './hubUtils';
+import { formatWhen, StatusPill, VehicleCard } from './hubUtils';
 
 export default function Bookings() {
   const [rows, setRows] = useState(null);
@@ -32,24 +33,20 @@ export default function Bookings() {
       {rows && rows.length === 0 && <EmptyNote>No token payments or reservations yet.</EmptyNote>}
       <div className="space-y-3">
         {(rows || []).map((b) => (
-          <article key={b.id} className="rounded-2xl border border-slate-100 px-4 py-4 flex flex-wrap justify-between gap-3">
-            <div>
-              <p className="font-black text-slate-900">{b.vehicle?.title || 'Vehicle reservation'}</p>
-              <p className="text-xs font-semibold text-slate-500 mt-1">
-                {b.bookingRef} · Token {formatINR(b.amount)}
-                {b.refunded ? ' · Refund initiated' : ''}
-              </p>
-              <p className="text-[11px] font-semibold text-slate-400 mt-1">
-                {b.createdAt ? new Date(b.createdAt).toLocaleString('en-IN') : ''}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <StatusPill value={b.status} />
-              <button type="button" onClick={() => receipt(b.id)} className="text-[11px] font-black text-[#3083ff]">
-                Download receipt
-              </button>
-            </div>
-          </article>
+          <VehicleCard
+            key={b.id}
+            image={b.vehicle?.images?.[0]}
+            title={b.vehicle?.title || 'Vehicle reservation'}
+            price={b.vehicle?.price != null ? formatINR(b.vehicle.price) : ''}
+            facts={[b.vehicle?.year, b.bookingRef, b.amount != null ? `Token ${formatINR(b.amount)}` : '', b.refunded ? 'Refund initiated' : ''].filter(Boolean).join(' · ')}
+            when={formatWhen(b.createdAt)}
+            status={<StatusPill value={b.status} />}
+          >
+            {b.vehicle?._id ? <Link to={`/cars/${b.vehicle._id}`} className="text-[12px] font-semibold text-[#3083ff]">View car</Link> : null}
+            <button type="button" onClick={() => receipt(b.id)} className="text-[12px] font-semibold text-[#3083ff]">
+              Download receipt
+            </button>
+          </VehicleCard>
         ))}
       </div>
     </ProfileCard>

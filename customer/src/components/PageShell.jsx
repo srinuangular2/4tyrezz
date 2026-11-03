@@ -61,12 +61,12 @@ export function PageHero({ eyebrow, title, subtitle, children }) {
   );
 }
 
-export function Section({ eyebrow, title, children, bg, viewAllHref, viewAllLabel = 'View All', className = '' }) {
+export function Section({ id, eyebrow, title, children, bg, viewAllHref, viewAllLabel = 'View All', className = '', headerClassName = '' }) {
   return (
-    <section className={`${bg ? 'bg-white' : ''} py-6 lg:py-12 ${className}`}>
+    <section id={id} className={`${bg ? 'bg-white' : ''} py-6 lg:py-12 ${className}`}>
       <div className="container-px mx-auto px-4 sm:px-6 lg:px-8">
         {(eyebrow || title || viewAllHref) && (
-          <div className="flex items-center lg:items-end justify-between pb-2 mb-3 lg:pb-3 lg:mb-5 border-b border-slate-100">
+          <div className={`flex items-center lg:items-end justify-between pb-2 mb-3 lg:pb-3 lg:mb-5 border-b border-slate-100 ${headerClassName}`}>
             <div>
               {eyebrow && (
                 <p className="hidden sm:block text-[14px] font-medium text-[#909294] uppercase tracking-[5px] font-display mb-3">

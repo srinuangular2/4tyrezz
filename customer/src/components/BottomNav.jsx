@@ -1,17 +1,17 @@
 import { NavLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Home, Search, Plus, Heart, User } from 'lucide-react';
+import { Home, CarFront, Tag, ClipboardCheck, Gauge } from 'lucide-react';
 
 export default function BottomNav() {
   const role = useSelector((s) => s.auth.user?.role);
   if (role === 'dealer') return null;
 
   const tabs = [
-    { to: '/', label: 'Home', icon: Home, end: true },
-    { to: '/cars', label: 'Buy', icon: Search },
-    { to: '/sell', label: 'Sell', icon: Plus, featured: true },
-    { to: '/profile/wishlist', label: 'Saved', icon: Heart },
-    { to: '/profile/settings', label: 'Account', icon: User },
+    { to: '/cars', label: 'Buy Cars', icon: CarFront },
+    { to: '/sell', label: 'Sell', icon: Tag },
+    { to: '/', label: 'Home', icon: Home, end: true, featured: true },
+    { to: '/inspection', label: 'Inspection', icon: ClipboardCheck },
+    { to: '/valuation', label: 'Valuation', icon: Gauge },
   ];
 
   return (
@@ -23,7 +23,7 @@ export default function BottomNav() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              `relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold ${
+              `relative flex flex-col items-center justify-center gap-0.5 min-h-11 text-[10px] font-bold active:scale-95 transition-transform duration-150 ${
                 isActive ? 'text-[#3083ff]' : 'text-slate-500'
               }`
             }

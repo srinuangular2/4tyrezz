@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { requestOtp, verifyOtp } from '../../app/authSlice';
 import { formatINR } from '../PageShell';
-import { HUBS, monthLabel } from './sellCarState';
-import { sellFieldClass } from './ui';
+import { HUBS } from './sellCarState';
+import { StepHeading, sellFieldClass } from './ui';
 import DevOtpHint from '../DevOtpHint';
 import toast from 'react-hot-toast';
 
@@ -61,29 +61,30 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
   const ready = state.otpVerified && state.name && state.phone;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">Step 4</p>
-        <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-900 mt-1">Confirm booking</h2>
-        <p className="text-sm font-medium text-slate-500 mt-2">Verify your mobile, then lock the inspection. Final offer comes after inspection.</p>
-      </div>
+    <div className="space-y-5 lg:space-y-6">
+      <StepHeading
+        step={5}
+        title="Confirm your mobile"
+        desktopTitle="Confirm booking"
+        hint="Check the car and the visit, then verify your number. The final offer comes after inspection."
+        desktopHint="Verify your mobile, then lock the inspection. Final offer comes after inspection."
+      />
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-3">
+      <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4">
         <Row k="Car" v={`${state.year} ${state.brand} ${state.model}${state.variant ? ` · ${state.variant}` : ''}`} />
-        <Row k="Intent" v="Sell" />
         <Row k="Plate" v={state.plate || '—'} />
         <Row k="Estimate" v={state.valuation ? `${formatINR(state.valuation.minPrice)} – ${formatINR(state.valuation.maxPrice)}` : 'Pending inspection'} />
-        <Row k="Your expectation" v={state.expectedPrice ? formatINR(Number(state.expectedPrice)) : '—'} />
+        <Row k="Your price" v={state.expectedPrice ? formatINR(Number(state.expectedPrice)) : '—'} />
         <Row
-          k="Inspection"
+          k="Visit"
           v={`${state.inspectionType === 'hub' ? hub?.name || 'Hub' : 'Home'} · ${state.inspectionDate} · ${state.inspectionSlot}`}
         />
-        <Row k="Registered" v={`${monthLabel(state.month)} ${state.year} · ${state.city || '—'}`} />
+        <Row k="City" v={state.city || '—'} />
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Full name</span>
+          <span className="text-[13px] font-medium text-slate-600">Full name</span>
           <input
             value={state.name}
             onChange={(e) => patch({ name: e.target.value })}
@@ -92,19 +93,19 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
           />
         </label>
         <label className="block">
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Mobile</span>
-          <div className="mt-1.5 flex rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm focus-within:border-[#3083ff] focus-within:ring-2 focus-within:ring-[#3083ff]/20">
-            <span className="px-3 py-3 bg-slate-50 text-sm font-black text-slate-600 border-r border-slate-200">+91</span>
+          <span className="text-[13px] font-medium text-slate-600">Mobile</span>
+          <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm focus-within:border-[#3083ff] focus-within:ring-2 focus-within:ring-[#3083ff]/20">
+            <span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-600">+91</span>
             <input
               value={state.phone}
               onChange={(e) => patch({ phone: e.target.value.replace(/\D/g, '').slice(0, 10), otpVerified: false })}
               placeholder="10-digit number"
-              className="flex-1 px-3 py-3 text-sm font-extrabold text-slate-900 placeholder:text-slate-400 outline-none bg-transparent"
+              className="flex-1 bg-transparent px-3 py-3 text-sm font-medium text-slate-900 outline-none placeholder:font-normal placeholder:text-slate-400"
             />
           </div>
         </label>
         <label className="block sm:col-span-2">
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Email (optional)</span>
+          <span className="text-[13px] font-medium text-slate-600">Email, if you want updates</span>
           <input
             type="email"
             value={state.email}
@@ -120,7 +121,7 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
           type="button"
           disabled={state.phone.length !== 10 || sending}
           onClick={send}
-          className="w-full rounded-xl border border-[#3083ff] text-[#3083ff] py-3 text-xs font-black uppercase tracking-wider disabled:opacity-50"
+          className="w-full rounded-xl border border-[#3083ff] py-3 text-[13px] font-semibold text-[#3083ff] disabled:opacity-50"
         >
           {sending ? 'Sending…' : 'Send 4-digit OTP'}
         </button>
@@ -192,9 +193,9 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
 
 function Row({ k, v }) {
   return (
-    <div className="flex justify-between gap-4 text-sm">
-      <span className="font-bold text-slate-400">{k}</span>
-      <span className="font-extrabold text-slate-900 text-right">{v}</span>
+    <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2 text-[13px] last:border-0 last:pb-0">
+      <span className="shrink-0 font-normal text-slate-500">{k}</span>
+      <span className="text-right font-medium text-slate-900">{v}</span>
     </div>
   );
 }

@@ -2,8 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../app/authSlice';
-import { Menu, Close, Chevron, Heart } from './icons';
-import { User } from 'lucide-react';
+import { Menu, Close, Heart } from './icons';
+import {
+  BadgePercent,
+  Car,
+  ChevronRight,
+  ClipboardCheck,
+  Gauge,
+  IndianRupee,
+  Landmark,
+  Phone,
+  ShieldCheck,
+  ShoppingCart,
+  Columns2,
+  UserRound,
+} from 'lucide-react';
+import { readCart, subscribeCart } from '../lib/cart';
+import { mediaUrl } from '../pages/profile/hubUtils';
 import OtpLoginModal from './OtpLoginModal';
 import HeaderSearchBar, { MobileSearchButton } from './common/HeaderSearchBar';
 import api from '../api/axios';
@@ -13,6 +28,7 @@ import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 export default function Header() {
   const { user } = useSelector((s) => s.auth);
   const wishlistCount = useSelector((s) => s.wishlist?.ids?.length || 0);
+  const [cartCount, setCartCount] = useState(() => readCart().length);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -28,12 +44,15 @@ export default function Header() {
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [mobileSearch, setMobileSearch] = useState(false);
-
   const dropdownRef = useRef(null);
   const searchPillRef = useRef(null);
 
   const isDealer = user?.role === 'dealer';
   const isUser = user && !isDealer;
+  const avatarSrc = mediaUrl(user?.avatar);
+  const avatarLetter = (user?.name || user?.mobile || 'U')[0].toUpperCase();
+
+  useEffect(() => subscribeCart((rows) => setCartCount(rows.length)), []);
 
   // Close location dropdown on click outside
   useEffect(() => {
@@ -101,17 +120,18 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { label: 'Buy Used Cars', path: '/cars' },
-    { label: 'Sell My Car', path: '/sell' },
-    { label: 'Car Valuation', path: '/valuation' },
-    { label: 'Car Inspection', path: '/inspection' },
-    { label: 'Compare', path: '/compare' },
-    { label: 'Finance', path: '/finance' },
-    { label: 'Insurance', path: '/insurance' },
-    // { label: 'Dealers', path: '/dealers' },
-    { label: 'Offers', path: '/offers', badge: 'HOT' },
-    { label: 'Contact', path: '/contact' },
+    { label: 'Buy Used Cars', path: '/cars', icon: Car, primary: true },
+    { label: 'Sell My Car', path: '/sell', icon: IndianRupee, primary: true },
+    { label: 'Car Valuation', path: '/valuation', icon: Gauge, primary: true },
+    { label: 'Car Inspection', path: '/inspection', icon: ClipboardCheck, primary: true },
+    { label: 'Compare', path: '/compare', icon: Columns2 },
+    { label: 'Finance', path: '/finance', icon: Landmark },
+    { label: 'Insurance', path: '/insurance', icon: ShieldCheck },
+    { label: 'Offers', path: '/offers', icon: BadgePercent, badge: 'HOT' },
+    { label: 'Contact', path: '/contact', icon: Phone },
   ];
+  const primaryLinks = navLinks.filter((item) => item.primary);
+  const moreLinks = navLinks.filter((item) => !item.primary);
 
   const isNavActive = (path) => {
     if (path === '/cars') {
@@ -225,19 +245,29 @@ export default function Header() {
                 </div>
               </a>
 
+              <Link to="/profile/cart" className="relative text-slate-700 hover:text-[#3083ff] transition p-1" aria-label="Cart">
+                <ShoppingCart className="w-6 h-6" strokeWidth={2} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#3083ff] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
               {isUser && <NotificationBell variant="customer" />}
 
               {user ? (
                 <div className="relative">
                   <button
                     onClick={() => setUserMenu((v) => !v)}
-                    className="flex items-center gap-2 text-xs font-bold bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl hover:border-slate-300 transition cursor-pointer"
+                    className="w-9 h-9 rounded-full overflow-hidden bg-[#3083ff] text-white flex items-center justify-center text-sm font-black cursor-pointer"
+                    aria-label="Account"
                   >
-                    <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold">
-                      {(user.name || user.mobile || 'U')[0].toUpperCase()}
-                    </span>
-                    <span className="max-w-[90px] truncate">{user.name || user.mobile}</span>
-                    <Chevron className="w-3 h-3" />
+                    {avatarSrc ? (
+                      <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      avatarLetter
+                    )}
                   </button>
 
                   {userMenu && (
@@ -245,6 +275,11 @@ export default function Header() {
                       {isUser && (
                         <>
                           <Link to="/profile/settings" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Profile</Link>
+                          <Link to="/profile/orders" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Orders</Link>
+                          <Link to="/profile/my-vehicles" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Vehicles</Link>
+                          <Link to="/profile/cart" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                            My Cart {cartCount > 0 ? `(${cartCount})` : ''}
+                          </Link>
                           <Link to="/profile/enquiries" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Enquiries</Link>
                           <Link to="/profile/wishlist" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
                             Wishlist {wishlistCount > 0 ? `(${wishlistCount})` : ''}
@@ -254,7 +289,6 @@ export default function Header() {
                           {SHOW_TEST_DRIVE && (
                             <Link to="/profile/test-drives" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Test Drives</Link>
                           )}
-                          <Link to="/profile/bookings" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Bookings</Link>
                           <Link to="/profile/finance-applications" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Finance Applications</Link>
                           <Link to="/profile/insurance-enquiries" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Insurance Enquiries</Link>
                           <Link to="/profile/notifications" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Notifications</Link>
@@ -286,27 +320,49 @@ export default function Header() {
 
             <div className="lg:hidden ml-auto flex items-center gap-0.5">
               <MobileSearchButton onClick={() => setMobileSearch(true)} />
-              {isUser && <NotificationBell variant="customer" />}
-              {user ? (
-                <Link
-                  to={isUser ? '/profile/settings' : '/'}
-                  className="p-2 text-slate-800"
-                  aria-label="Account"
-                >
-                  <span className="w-8 h-8 rounded-full bg-[#3083ff] text-white flex items-center justify-center text-xs font-black">
-                    {(user.name || user.mobile || 'U')[0].toUpperCase()}
+              <Link
+                to={user ? '/profile/wishlist' : '#'}
+                onClick={(e) => {
+                  if (!user) {
+                    e.preventDefault();
+                    setShowLogin(true);
+                  }
+                }}
+                className="relative min-w-11 min-h-11 flex items-center justify-center text-slate-800 active:scale-95 transition-transform"
+                aria-label="Wishlist"
+              >
+                <Heart className="w-5 h-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-[#3083ff] text-white text-[9px] font-black min-w-4 h-4 px-1 rounded-full flex items-center justify-center">
+                    {wishlistCount}
                   </span>
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowLogin(true)}
-                  className="p-2 text-slate-800"
-                  aria-label="Login"
-                >
-                  <User className="w-5 h-5" strokeWidth={2.2} />
-                </button>
-              )}
+                )}
+              </Link>
+              <Link to="/profile/cart" className="relative min-w-11 min-h-11 flex items-center justify-center text-slate-800" aria-label="Cart">
+                <ShoppingCart className="w-5 h-5" strokeWidth={2.2} />
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-[#3083ff] text-white text-[9px] font-black min-w-4 h-4 px-1 rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to={user ? '/profile' : '#'}
+                onClick={(e) => {
+                  if (!user) {
+                    e.preventDefault();
+                    setShowLogin(true);
+                  }
+                }}
+                className="min-w-11 min-h-11 flex items-center justify-center text-slate-800"
+                aria-label="Profile"
+              >
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="" className="h-7 w-7 rounded-full object-cover" />
+                ) : (
+                  <UserRound className="h-5 w-5" strokeWidth={2.2} />
+                )}
+              </Link>
             </div>
           </div>
         </div>
@@ -345,101 +401,127 @@ export default function Header() {
 
       {/* ================= MOBILE DRAWER ================= */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[90] bg-white p-6 lg:hidden animate-fadeUp overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <img src="/blue-logo.png" alt="4TYREZZ" className="h-10 w-auto" />
-            <button onClick={() => setMobileOpen(false)} className="p-2">
+        <div className="fixed inset-0 z-[90] flex flex-col bg-[#f6f8fb] lg:hidden">
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+            <img src="/blue-logo.png" alt="4TYREZZ" className="h-9 w-auto" />
+            <button type="button" onClick={() => setMobileOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600" aria-label="Close menu">
               <Close />
             </button>
           </div>
 
-          <div className="mb-6 space-y-3">
-            <select
-              value={selectedLocation}
-              onChange={(e) => {
-                setSelectedLocation(e.target.value);
-                const hit = locationsList.find((row) => row.label === e.target.value);
-                if (hit) localStorage.setItem(PLACE_KEY, JSON.stringify(hit));
-              }}
-              className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-800"
-            >
-              {locationsList.map((loc) => (
-                <option key={loc.label} value={loc.label}>
-                  📍 {loc.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileOpen(false);
-                setMobileSearch(true);
-              }}
-              className="w-full bg-[#3083ff] text-white font-black py-3 rounded-xl text-xs uppercase"
-            >
-              Search cars
-            </button>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            <p className="text-[12px] font-medium text-slate-500">What do you want to do?</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {primaryLinks.map((item) => {
+                const active = isNavActive(item.path);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex items-center gap-2.5 rounded-2xl border px-3 py-3 ${
+                      active ? 'border-[#3083ff] bg-[#f4f8ff]' : 'border-slate-200 bg-white'
+                    }`}
+                  >
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${active ? 'bg-[#3083ff] text-white' : 'bg-[#eaf2ff] text-[#3083ff]'}`}>
+                      <Icon className="h-4 w-4" strokeWidth={1.75} />
+                    </span>
+                    <span className={`text-[13px] leading-tight ${active ? 'font-semibold text-[#1853ff]' : 'font-medium text-slate-800'}`}>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <p className="mt-5 text-[12px] font-medium text-slate-500">More</p>
+            <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              {moreLinks.map((item, index) => {
+                const active = isNavActive(item.path);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex items-center gap-3 px-3 py-3 ${index ? 'border-t border-slate-100' : ''} ${active ? 'bg-[#f4f8ff]' : ''}`}
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eaf2ff] text-[#3083ff]">
+                      <Icon className="h-4 w-4" strokeWidth={1.75} />
+                    </span>
+                    <span className={`flex-1 text-[14px] ${active ? 'font-semibold text-[#1853ff]' : 'font-medium text-slate-800'}`}>{item.label}</span>
+                    {item.badge && (
+                      <span className="rounded-full bg-[#3083ff] px-2 py-0.5 text-[10px] font-semibold text-white">{item.badge}</span>
+                    )}
+                    <ChevronRight className="h-4 w-4 text-slate-300" />
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
-          <nav className="flex flex-col gap-1 text-base font-bold">
-            {navLinks.map((item) => {
-              const active = isNavActive(item.path);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileOpen(false)}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex items-center justify-between py-2.5 px-3 rounded-xl ${
-                    active ? 'bg-blue-50 text-[#3083ff]' : 'text-slate-800 hover:text-[#3083ff] hover:bg-slate-50'
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="bg-[#3083ff] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-
-            <div className="border-t border-slate-100 pt-4 mt-2">
-              {user ? (
-                <>
-                  {isUser && (
-                    <Link
-                      to="/profile/settings"
-                      onClick={() => setMobileOpen(false)}
-                      className="block text-slate-800 font-black py-2"
-                    >
-                      My Account
+          <div className="shrink-0 border-t border-slate-200 bg-white px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+            {user && !isUser ? (
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch(logout());
+                  setMobileOpen(false);
+                  navigate('/');
+                }}
+                className="h-11 w-full rounded-xl border border-slate-200 text-[14px] font-semibold text-[#3083ff]"
+              >
+                Log out
+              </button>
+            ) : user && isUser ? (
+              <>
+                <div className="mb-2 flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#3083ff] text-[13px] font-semibold text-white">
+                    {avatarSrc ? <img src={avatarSrc} alt="" className="h-full w-full object-cover" /> : avatarLetter}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px] font-semibold text-slate-900">{user.name || 'My account'}</span>
+                    <span className="block text-[12px] font-normal text-slate-500">{user.mobile ? `+91 ${user.mobile}` : 'Signed in'}</span>
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    ['Account', '/profile', UserRound],
+                    ['Orders', '/profile/orders', ClipboardCheck],
+                    ['Cart', '/profile/cart', ShoppingCart],
+                  ].map(([label, path, Icon]) => (
+                    <Link key={path} to={path} onClick={() => setMobileOpen(false)} className="rounded-xl border border-slate-200 py-2 text-center">
+                      <Icon className="mx-auto h-4 w-4 text-[#3083ff]" strokeWidth={1.75} />
+                      <span className="mt-1 block text-[12px] font-medium text-slate-700">{label}{label === 'Cart' && cartCount > 0 ? ` ${cartCount}` : ''}</span>
                     </Link>
-                  )}
-                  <button
-                    onClick={() => {
-                      dispatch(logout());
-                      setMobileOpen(false);
-                      navigate('/');
-                    }}
-                    className="text-left text-[#3083ff] font-black py-2 w-full"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
+                  ))}
+                </div>
                 <button
+                  type="button"
                   onClick={() => {
+                    dispatch(logout());
                     setMobileOpen(false);
-                    setShowLogin(true);
+                    navigate('/');
                   }}
-                  className="w-full bg-[#3083ff] text-white text-center font-black py-3 rounded-xl"
+                  className="mt-2 w-full py-2 text-center text-[13px] font-medium text-[#3083ff]"
                 >
-                  Login / Register
+                  Log out
                 </button>
-              )}
-            </div>
-          </nav>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setShowLogin(true);
+                }}
+                className="h-11 w-full rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white"
+              >
+                Login / Register
+              </button>
+            )}
+          </div>
         </div>
       )}
 

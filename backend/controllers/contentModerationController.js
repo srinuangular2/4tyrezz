@@ -1,6 +1,6 @@
 const Car = require('../models/Car');
-const Notification = require('../models/Notification');
 const Review = require('../models/Review');
+const { notifyListingDecision } = require('../services/notifyService');
 const { syncFromListingStatus } = require('../utils/listingStatus');
 
 let Report;
@@ -48,15 +48,11 @@ exports.approve = async (req, res) => {
   car.listingCleared = true;
   car.moderationNotes = '';
   await car.save();
-  if (car.owner) {
-    await Notification.create({
-      user: car.owner,
-      title: 'Listing approved',
-      body: `${car.title} is now live on 4TYREZZ`,
-      type: 'approval',
-      link: `/cars/${car._id}`,
-    });
-  }
+  await notifyListingDecision({
+    car,
+    title: 'Listing approved',
+    message: `${car.title} is now live on 4TYREZZ`,
+  });
   res.json({ success: true, data: serialize(car) });
 };
 
@@ -68,15 +64,11 @@ exports.reject = async (req, res) => {
   car.listingCleared = false;
   car.moderationNotes = notes;
   await car.save();
-  if (car.owner) {
-    await Notification.create({
-      user: car.owner,
-      title: 'Listing needs changes',
-      body: notes,
-      type: 'approval',
-      link: `/cars/${car._id}`,
-    });
-  }
+  await notifyListingDecision({
+    car,
+    title: 'Listing needs changes',
+    message: `${car.title} was not approved. ${notes}`,
+  });
   res.json({ success: true, data: serialize(car) });
 };
 

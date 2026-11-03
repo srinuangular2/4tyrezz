@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import RequireAdmin from './components/RequireAdmin';
 import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
@@ -31,7 +31,13 @@ import Support from './pages/Support';
 import Settings from './pages/Settings';
 import Moderation from './pages/Moderation';
 import PdiAdmin from './pages/PdiAdmin';
+import ExecutiveProfile from './pages/ExecutiveProfile';
 import { Toaster } from 'react-hot-toast';
+
+function PreserveSearch({ to }) {
+  const { search } = useLocation();
+  return <Navigate to={{ pathname: to, search }} replace />;
+}
 
 export default function App() {
   return (
@@ -46,7 +52,13 @@ export default function App() {
           <Route path="users" element={<Users />} />
           <Route path="dealers" element={<Dealers />} />
           <Route path="cars" element={<Cars />} />
-          <Route path="sold" element={<CarsManager defaultStatus="sold" />} />
+          <Route path="sold" element={<Navigate to="/cars?filter=sold" replace />} />
+          <Route path="profile" element={<ExecutiveProfile />} />
+          <Route path="executive/dashboard" element={<Navigate to="/" replace />} />
+          <Route path="executive/vehicles/new" element={<Navigate to="/cars/add" replace />} />
+          <Route path="executive/sold-cars" element={<Navigate to="/cars?filter=sold" replace />} />
+          <Route path="executive/profile" element={<Navigate to="/profile" replace />} />
+          <Route path="executive/vehicles" element={<PreserveSearch to="/cars" />} />
           <Route path="uploads" element={<CarsManager />} />
           <Route path="cars/add" element={<CarForm />} />
           <Route path="add-car" element={<CarForm />} />

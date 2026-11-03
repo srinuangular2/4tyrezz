@@ -105,8 +105,8 @@ export default function Compare() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <CompareBanner>
-        <nav className="mt-6 text-sm text-white/75 flex flex-wrap items-center gap-1.5">
+      <CompareBanner hideMobile={ids.length >= 2}>
+        <nav className="mt-6 hidden text-sm text-white/75 lg:flex lg:flex-wrap lg:items-center lg:gap-1.5">
           <Link to="/" className="hover:text-white transition">Home</Link>
           <span>/</span>
           <Link to="/compare" className="hover:text-white transition">Compare</Link>
@@ -119,7 +119,7 @@ export default function Compare() {
             </>
           )}
         </nav>
-        <div className="flex flex-wrap gap-3 mt-6">
+        <div className="mt-6 hidden flex-wrap gap-3 lg:flex">
           <PrimaryButton onClick={() => setPickerOpen(true)}>
             {ids.length ? 'Add another listing' : 'Build a matchup'}
           </PrimaryButton>
@@ -145,7 +145,56 @@ export default function Compare() {
       </CompareBanner>
 
       {ids.length < 2 && (
-        <Section eyebrow="Build a matchup" title={<>Compare <span className="font-black"> cars</span></>}>
+        <section className="space-y-4 px-4 py-4 lg:hidden">
+          {ids.length === 0 && (
+          <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+            <p className="text-[12px] font-medium text-[#3083ff]">How to compare</p>
+            <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Two cars, side by side</h2>
+            <ol className="mt-3 space-y-3">
+              {[
+                ['1', 'Choose the first car', 'Search by brand or model, or start from a popular pair below.'],
+                ['2', 'Add a second car', 'The comparison opens as soon as two cars are selected. You can add up to four.'],
+                ['3', 'Read the differences', 'Price, kilometres and features sit in columns. Hide the rows that match.'],
+              ].map(([n, title, body]) => (
+                <li key={n} className="flex gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
+                  <div>
+                    <p className="text-[14px] font-semibold text-slate-900">{title}</p>
+                    <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+          )}
+
+          <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+            <p className="text-[12px] font-medium text-[#3083ff]">{ids.length === 0 ? 'Step 1' : 'Step 2'}</p>
+            <h2 className="mt-1 text-[18px] font-semibold text-slate-900">
+              {ids.length === 0 ? 'Choose the first car' : 'Add the second car'}
+            </h2>
+            {loading && ids.length === 1 && <p className="mt-3 text-[13px] font-normal text-slate-500">Loading the car…</p>}
+            {cars[0] && (
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 p-2.5">
+                <img src={cars[0].images?.[0] || '/pwa-192.png'} alt="" className="h-14 w-20 rounded-xl bg-slate-50 object-contain" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-semibold text-slate-900">{cars[0].brand} {cars[0].model || cars[0].title}</p>
+                  <p className="text-[13px] font-semibold text-[#1853ff]">{formatINR(cars[0].price)}</p>
+                </div>
+                <button type="button" onClick={() => removeCar(cars[0].id)} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200" aria-label="Remove car">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+            <button type="button" onClick={() => setPickerOpen(true)} className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
+              {ids.length === 0 ? 'Choose a car' : 'Choose the second car'}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {ids.length < 2 && (
+        <Section eyebrow="Build a matchup" title={<>Compare <span className="font-black"> cars</span></>} className="hidden lg:block">
           {loading && ids.length === 1 ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -223,9 +272,11 @@ export default function Compare() {
             </div>
           ) : (
             <>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="flex gap-3 overflow-x-auto snap-x pb-1 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:pb-0">
                 {pairs.map((pair) => (
-                  <CompareVsCard key={pair.id} pair={pair} onOpen={() => setIds(pair.ids)} />
+                  <div key={pair.id} className="w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-auto">
+                    <CompareVsCard pair={pair} onOpen={() => setIds(pair.ids)} />
+                  </div>
                 ))}
               </div>
               {pairsHasMore && <div ref={sentinelRef} className="h-10" />}
@@ -238,7 +289,7 @@ export default function Compare() {
       )}
 
       {ids.length >= 2 && (
-        <div className="px-4 sm:px-6 lg:px-8 py-6">
+        <div className="px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
           {loading ? (
             <div className="max-w-6xl mx-auto grid grid-cols-2 gap-4">
               <Skeleton className="h-72" />
@@ -254,6 +305,15 @@ export default function Compare() {
           )}
         </div>
       )}
+
+      {ids.length < 2 && (
+        <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
+          <button type="button" onClick={() => setPickerOpen(true)} className="flex h-11 w-full items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
+            {ids.length === 0 ? 'Choose the first car' : ids.length === 1 ? 'Add the second car' : 'Add another car'}
+          </button>
+        </div>
+      )}
+      {ids.length < 2 && <div className="h-20 lg:hidden" />}
 
       {pickerOpen && (
         <CompareCarPicker selectedIds={ids} max={COMPARE_MAX} onAdd={addCar} onRemove={removeCar} onClose={() => setPickerOpen(false)} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { EmptyNote, ProfileCard } from './ProfileLayout';
+import { DataCard, formatWhen } from './hubUtils';
 
 export default function Notifications() {
   const [rows, setRows] = useState(null);
@@ -53,15 +54,38 @@ export default function Notifications() {
     >
       {rows === null && <p className="text-sm font-semibold text-slate-500">Loading notifications…</p>}
       {rows && rows.length === 0 && <EmptyNote>No price-drop, search-match or system alerts yet.</EmptyNote>}
-      <ol className="space-y-3">
+      <div className="space-y-3 lg:hidden">
+        {(rows || []).map((n, index) => (
+          <DataCard
+            key={n._id}
+            index={index}
+            emoji={n.read ? '🔔' : '🔵'}
+            title={n.title}
+            meta={[n.type || 'Update', formatWhen(n.createdAt)].filter(Boolean).join(' · ')}
+            detail={n.body || n.message}
+          >
+            <div className="flex items-center gap-3">
+              {n.link ? (
+                <a href={n.link} className="text-[12px] font-semibold text-[#3083ff]">Open</a>
+              ) : null}
+              {!n.read && (
+                <button type="button" onClick={() => markOne(n._id)} className="text-[12px] font-semibold text-[#3083ff]">
+                  Mark read
+                </button>
+              )}
+            </div>
+          </DataCard>
+        ))}
+      </div>
+      <ol className="hidden lg:block space-y-3">
         {(rows || []).map((n) => (
           <li
             key={n._id}
             className={`rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border px-4 py-3 ${n.read ? 'border-white/20 dark:border-slate-800/80' : 'border-blue-200 bg-blue-50/40'}`}
           >
-            <p className="text-[10px] font-black uppercase tracking-wider text-[#3083ff]">{n.type || 'Update'}</p>
-            <p className="font-black text-slate-900 text-sm mt-0.5">{n.title}</p>
-            {n.body || n.message ? <p className="text-xs font-semibold text-slate-500 mt-1">{n.body || n.message}</p> : null}
+            <p className="text-[11px] font-medium text-[#3083ff]">{n.type || 'Update'}</p>
+            <p className="font-semibold text-slate-900 text-[13px] mt-0.5">{n.title}</p>
+            {n.body || n.message ? <p className="text-[12px] font-normal text-slate-600 mt-1">{n.body || n.message}</p> : null}
             {n.link ? (
               <a href={n.link} className="inline-block text-[11px] font-black text-[#3083ff] mt-2">
                 Open
@@ -69,7 +93,7 @@ export default function Notifications() {
             ) : null}
             <div className="flex justify-between mt-2">
               <p className="text-[11px] font-semibold text-slate-400">
-                {n.createdAt ? new Date(n.createdAt).toLocaleString('en-IN') : ''}
+                {formatWhen(n.createdAt)}
               </p>
               {!n.read && (
                 <button type="button" onClick={() => markOne(n._id)} className="text-[11px] font-black text-[#3083ff]">
