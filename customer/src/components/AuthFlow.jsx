@@ -14,6 +14,11 @@ import toast from 'react-hot-toast';
 
 const OTP_LEN = 4;
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const AUTH_STEPS = [
+  { id: 'mobile', label: 'Number' },
+  { id: 'otp', label: 'Code' },
+  { id: 'profile', label: 'Name' },
+];
 
 export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showClose }) {
   const dispatch = useDispatch();
@@ -91,7 +96,7 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
       setOtpDigits(Array(OTP_LEN).fill(''));
       const code = res.payload.devOtp;
       if (code) {
-        toast.success(`Dev Mode: Your OTP for +91 ${res.payload.mobile || mobile} is ${code}`, { duration: 8000 });
+        toast.success(`Code for +91 ${res.payload.mobile || mobile}: ${code}`, { duration: 8000 });
       }
       setTimeout(() => otpRefs.current[0]?.focus(), 80);
     }
@@ -152,10 +157,11 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
   };
 
   const titles = {
-    mobile: ['Sign in to continue', 'Enter your 10-digit mobile number. We will send a 4-digit OTP.'],
-    otp: ['Enter OTP', `4-digit code sent to +91 ${mobile}`],
-    profile: ['Almost done', 'Name and email help us reach you. You can skip this.'],
+    mobile: ['Enter your mobile number', 'We send a 4-digit code by SMS. It expires in 5 minutes.'],
+    otp: ['Enter the code', `Sent to +91 ${mobile}`],
+    profile: ['Add your name', 'Optional. We use it when we contact you about a car.'],
   };
+  const stepIndex = Math.max(0, AUTH_STEPS.findIndex((item) => item.id === view));
 
   const shellClass = variant === 'embed' || variant === 'page'
     ? 'relative w-full text-slate-900'
@@ -179,12 +185,25 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
       )}
 
       {variant !== 'embed' && (
-        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3083ff] mb-2">Welcome</p>
+        <div className="mb-4 flex items-center gap-2 pr-10">
+          {AUTH_STEPS.map((item, index) => {
+            const on = index === stepIndex;
+            const done = index < stepIndex;
+            return (
+              <div key={item.id} className="flex min-w-0 items-center gap-1.5">
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${on || done ? 'bg-[#3083ff] text-white' : 'bg-slate-100 text-slate-400'}`}>
+                  {index + 1}
+                </span>
+                <span className={`truncate text-[12px] font-medium ${on ? 'text-slate-900' : 'text-slate-400'}`}>{item.label}</span>
+              </div>
+            );
+          })}
+        </div>
       )}
-      <h2 id="customer-login-title" className="font-display text-2xl font-black text-slate-900 tracking-tight">
+      <h2 id="customer-login-title" className="pr-10 font-display text-[22px] font-semibold tracking-tight text-slate-900">
         {titles[view][0]}
       </h2>
-      <p className="text-sm font-medium text-slate-500 mt-2 leading-relaxed">{titles[view][1]}</p>
+      <p className="mt-1.5 text-[13px] font-normal leading-relaxed text-slate-500">{titles[view][1]}</p>
 
       {view === 'mobile' && (
         <form onSubmit={sendOtp} className="mt-7 space-y-5">
@@ -223,18 +242,20 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
       {view === 'otp' && (
         <form onSubmit={confirmOtp} className="mt-7 space-y-5">
           <DevOtpHint code={devOtp} mobile={mobile} />
-          <div onPaste={handleOtpPaste} className="flex justify-center gap-3">
+          <div onPaste={handleOtpPaste} className="flex justify-center gap-2.5">
             {otpDigits.map((digit, i) => (
               <input
                 key={i}
                 ref={(el) => { otpRefs.current[i] = el; }}
                 type="tel"
                 inputMode="numeric"
+                autoComplete={i === 0 ? 'one-time-code' : 'off'}
                 maxLength={1}
                 value={digit}
                 onChange={(e) => handleOtpChange(i, e.target.value)}
                 onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                className="w-14 h-16 text-center text-2xl font-black border border-slate-200 rounded-2xl bg-white focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10 outline-none transition"
+                onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+                className="h-14 w-12 rounded-2xl border border-slate-200 bg-white text-center text-[22px] font-semibold outline-none transition focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
               />
             ))}
           </div>
@@ -270,29 +291,37 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
             </div>
           )}
           <form onSubmit={submitProfile} className="space-y-4">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Full name"
-              className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
-            />
+            <label className="block">
+              <span className="text-[12px] font-medium text-slate-600">Full name</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+                className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[12px] font-medium text-slate-600">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@email.com"
+                onFocus={(e) => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+                className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#3083ff] focus:ring-4 focus:ring-[#3083ff]/10"
+              />
+            </label>
             {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white font-black py-3.5 rounded-2xl transition"
+              className="w-full bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white font-semibold py-3.5 rounded-2xl transition"
             >
-              {loading ? 'Saving…' : 'Continue'}
+              {loading ? 'Saving…' : 'Save and continue'}
             </button>
           </form>
-          <button type="button" onClick={handleSkip} disabled={loading} className="w-full text-sm font-bold text-slate-500 hover:text-slate-900 py-2">
+          <button type="button" onClick={handleSkip} disabled={loading} className="w-full py-2 text-[13px] font-semibold text-slate-500">
             Skip for now
           </button>
         </div>
@@ -303,14 +332,14 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
   if (variant === 'page' || variant === 'embed') return content;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center sm:p-4">
       <div
         role="presentation"
         className="absolute inset-0"
         style={{ backgroundColor: 'rgba(15, 23, 42, 0.52)' }}
         onClick={onClose}
       />
-      <div className="relative z-10 w-full sm:w-auto pb-[env(safe-area-inset-bottom)] sm:pb-0" onClick={(e) => e.stopPropagation()}>{content}</div>
+      <div className="relative z-10 max-h-[100dvh] w-full overflow-y-auto sm:w-auto" onClick={(e) => e.stopPropagation()}>{content}</div>
     </div>
   );
 }

@@ -5,28 +5,31 @@ const SEEN_KEY = '4tyrezz:onboarding-seen';
 
 const SLIDES = [
   {
-    title: 'Discover your next inspected car',
-    body: 'Browse certified used cars with a clear price, kilometres, and an EMI before you visit.',
+    kicker: 'Browse',
+    title: 'Find a car with a clear price',
+    body: 'See kilometres, fuel and the monthly EMI before you visit.',
     screen: 'list',
   },
   {
-    title: 'Check a car before you pay',
-    body: 'Book a 300-point inspection and get the report in about 60 minutes.',
+    kicker: 'Inspect',
+    title: 'Check the car before you pay',
+    body: 'Book a 300-point inspection. The report is ready in about 60 minutes.',
     screen: 'detail',
   },
   {
-    title: 'Get exclusive offers and finance',
-    body: 'See live offers, EMI plans, and insurance on cars that are already inspected.',
+    kicker: 'Decide',
+    title: 'Then finance or take an offer',
+    body: 'EMI, insurance and offers are on cars we have already inspected.',
     screen: 'offers',
-    cta: "Let's Get Started",
+    cta: 'Get started',
   },
 ];
 
 function Phone({ children }) {
   return (
-    <div className="w-[180px] h-[286px] rounded-[28px] bg-[#0c2e68] p-[6px] shadow-[0_18px_40px_rgba(7,24,51,0.28)]">
-      <div className="relative h-full rounded-[22px] bg-white overflow-hidden">
-        <span className="absolute top-1.5 left-1/2 -translate-x-1/2 w-14 h-3.5 bg-[#0c2e68] rounded-b-xl z-10" />
+    <div className="h-[372px] w-[252px] rounded-[34px] bg-[#0c2e68] p-[7px] shadow-[0_22px_48px_rgba(7,24,51,0.35)]">
+      <div className="relative h-full overflow-hidden rounded-[26px] bg-white">
+        <span className="absolute left-1/2 top-1.5 z-10 h-4 w-16 -translate-x-1/2 rounded-b-xl bg-[#0c2e68]" />
         {children}
       </div>
     </div>
@@ -35,30 +38,30 @@ function Phone({ children }) {
 
 function ListScreen() {
   const rows = [
-    { title: 'Certified sedan', meta: 'Petrol · Automatic', price: '₹8.4 Lakh', image: '/used-cars.png' },
-    { title: 'Family SUV', meta: 'Diesel · Manual', price: '₹12.6 Lakh', image: '/sell-my-car.png' },
+    { title: 'Certified sedan', meta: 'Petrol · Automatic', price: '₹8.4 Lakh', image: '/onboarding/browse-sedan.jpg' },
+    { title: 'Family SUV', meta: 'Diesel · Manual', price: '₹12.6 Lakh', image: '/onboarding/browse-suv.jpg' },
   ];
   return (
-    <div className="h-full bg-white pt-5 flex flex-col">
-      <p className="text-[11px] font-black text-slate-900 text-center">Cars available</p>
-      <div className="flex gap-1 px-2 mt-2">
+    <div className="flex h-full flex-col bg-white px-2.5 pt-7">
+      <p className="text-center text-[13px] font-bold text-slate-900">1 · Browse</p>
+      <div className="mt-2.5 flex gap-1">
         {['All', 'Hatch', 'Sedan', 'SUV'].map((chip, index) => (
           <span
             key={chip}
-            className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${index === 0 ? 'bg-[#3083ff] text-white' : 'bg-slate-100 text-slate-600'}`}
+            className={`rounded-full px-2 py-1 text-[8px] font-semibold ${index === 0 ? 'bg-[#3083ff] text-white' : 'bg-slate-100 text-slate-500'}`}
           >
             {chip}
           </span>
         ))}
       </div>
-      <div className="mt-2 px-2 space-y-1.5">
+      <div className="mt-2.5 space-y-2">
         {rows.map((row) => (
-          <div key={row.title} className="flex gap-2 items-center rounded-xl border border-slate-100 p-1.5">
-            <img src={row.image} alt="" className="w-14 h-10 rounded-lg object-cover object-right bg-slate-100" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-black text-slate-900 truncate">{row.title}</p>
-              <p className="text-[8px] font-semibold text-slate-500">{row.meta}</p>
-              <p className="text-[9px] font-black text-[#3083ff]">{row.price}</p>
+          <div key={row.title} className="flex items-center gap-2 rounded-2xl border border-slate-200 p-1.5">
+            <img src={row.image} alt="" className="h-[70px] w-[94px] shrink-0 rounded-xl object-cover" />
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-bold leading-tight text-slate-900">{row.title}</p>
+              <p className="mt-0.5 truncate text-[9px] text-slate-500">{row.meta}</p>
+              <p className="mt-1 text-[11px] font-bold text-[#3083ff]">{row.price}</p>
             </div>
           </div>
         ))}
@@ -70,9 +73,9 @@ function ListScreen() {
 function DetailScreen() {
   return (
     <div className="h-full bg-white pt-5 flex flex-col">
-      <p className="text-[11px] font-black text-slate-900 text-center">Car details</p>
-      <div className="mx-3 mt-2 h-[92px] rounded-2xl overflow-hidden bg-slate-100">
-        <img src="/used-cars.png" alt="" className="w-full h-full object-cover object-right" />
+      <p className="text-[11px] font-semibold text-slate-900 text-center">2 · Inspect</p>
+      <div className="mx-3 mt-3 h-[150px] overflow-hidden rounded-2xl bg-slate-100">
+        <img src="/onboarding/browse-sedan.jpg" alt="" className="h-full w-full object-cover" />
       </div>
       <div className="px-3 mt-2">
         <p className="text-[11px] font-black text-slate-900">Certified sedan</p>
@@ -95,12 +98,12 @@ function DetailScreen() {
 function OffersScreen() {
   return (
     <div className="h-full bg-white pt-5 flex flex-col">
-      <p className="text-[11px] font-black text-slate-900 text-center">Offers</p>
+      <p className="text-[11px] font-semibold text-slate-900 text-center">3 · Decide</p>
       <div className="mx-3 mt-2 h-7 rounded-full border border-slate-200 px-2 flex items-center text-[8px] font-semibold text-slate-400">
         Have a promo code?
       </div>
-      <div className="mx-3 mt-2 h-[108px] rounded-xl overflow-hidden">
-        <img src="/offers.png" alt="" className="w-full h-full object-cover object-right" />
+      <div className="mx-3 mt-3 h-[150px] overflow-hidden rounded-xl">
+        <img src="/onboarding/decide.jpg" alt="" className="h-full w-full object-cover object-[center_42%]" />
       </div>
       <p className="px-3 mt-2 text-[9px] font-black text-slate-900">Best deals on inspected cars</p>
       <p className="px-3 text-[8px] font-semibold text-slate-500">EMI from 8.5% · Insurance renewal</p>
@@ -150,42 +153,49 @@ export default function MobileOnboarding() {
   const Screen = SCREENS[slide.screen];
 
   return (
-    <div className="fixed inset-0 z-[80] lg:hidden bg-white flex flex-col overflow-hidden">
-      <div className="relative bg-[#3083ff] h-[52%] min-h-[250px] flex items-end justify-center overflow-hidden">
-        <div className="absolute inset-x-0 -bottom-px h-12 bg-white rounded-t-[40px]" />
-        <div className="relative z-10 mb-1">
-          <Phone>
-            <Screen />
-          </Phone>
-        </div>
+    <div className="fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[#3083ff] lg:hidden">
+      <div className="relative z-20 flex min-h-0 flex-1 items-end justify-center px-6 pt-[max(12px,env(safe-area-inset-top))]">
+        <Phone>
+          <Screen />
+        </Phone>
       </div>
 
-      <div className="flex-1 min-h-0 min-w-0 w-full flex flex-col px-5 pt-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-        <h1 className="text-[20px] font-black text-slate-900 text-center leading-snug break-words">{slide.title}</h1>
-        <p className="mt-2 text-[13px] font-medium text-slate-500 text-center leading-relaxed break-words">{slide.body}</p>
-        <div className="flex items-center justify-center gap-1.5 mt-5">
-          {SLIDES.map((item, index) => (
-            <span
-              key={item.title}
-              className={`h-1.5 rounded-full transition-all ${index === step - 1 ? 'w-5 bg-[#3083ff]' : 'w-1.5 bg-slate-300'}`}
-            />
-          ))}
-        </div>
-        <div className="mt-auto grid grid-cols-2 gap-3 w-full">
-          <button
-            type="button"
-            onClick={finish}
-            className="h-12 w-full rounded-full border-2 border-[#3083ff] text-[#3083ff] text-sm font-black"
-          >
-            Skip
-          </button>
-          <button
-            type="button"
-            onClick={() => (step === SLIDES.length ? finish() : setStep(step + 1))}
-            className="h-12 w-full rounded-full bg-[#3083ff] text-white text-sm font-black"
-          >
-            {slide.cta || 'Continue'}
-          </button>
+      <div className="relative z-10 -mt-8 w-full shrink-0">
+        <svg
+          viewBox="0 0 390 56"
+          preserveAspectRatio="none"
+          className="block h-14 w-full text-white"
+          aria-hidden="true"
+        >
+          <path fill="currentColor" d="M0 56Q195 0 390 56V56H0Z" />
+        </svg>
+        <div className="flex w-full min-w-0 flex-col bg-white px-5 pb-[max(1.15rem,env(safe-area-inset-bottom))] pt-1">
+          <h1 className="min-w-0 text-balance text-center text-[24px] font-bold leading-tight text-slate-900">{slide.title}</h1>
+          <p className="mx-auto mt-2 min-w-0 max-w-[320px] text-balance text-center text-[13px] font-normal leading-relaxed text-slate-500">{slide.body}</p>
+          <div className="mt-4 flex items-center justify-center gap-1.5">
+            {SLIDES.map((item, index) => (
+              <span
+                key={item.kicker}
+                className={`h-1.5 rounded-full transition-all ${index === step - 1 ? 'w-6 bg-[#3083ff]' : 'w-1.5 bg-slate-300'}`}
+              />
+            ))}
+          </div>
+          <div className="mt-5 grid w-full grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={finish}
+              className="h-[52px] w-full rounded-full bg-[#e8f1ff] text-[15px] font-semibold text-[#3083ff]"
+            >
+              Skip
+            </button>
+            <button
+              type="button"
+              onClick={() => (step === SLIDES.length ? finish() : setStep(step + 1))}
+              className="h-[52px] w-full rounded-full bg-[#3083ff] text-[15px] font-semibold text-white shadow-[0_8px_18px_rgba(48,131,255,0.28)]"
+            >
+              {slide.cta || 'Continue'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
