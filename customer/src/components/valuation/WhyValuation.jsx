@@ -31,12 +31,13 @@ export default function WhyValuation() {
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#3083ff]" />
           Why 4tyrezz
         </span>
-        <h2 className="text-base font-semibold text-slate-800 sm:text-lg">How does it work?</h2>
-        <p className="mt-1 hidden max-w-lg text-sm font-medium leading-relaxed text-slate-500 lg:block">
-          The number on screen is a guide. The real offer comes after inspection.
+        <h2 className="text-base font-semibold text-slate-800 sm:text-lg lg:hidden">How does it work?</h2>
+        <h2 className="hidden text-slate-800 lg:block lg:font-display lg:text-4xl lg:uppercase">How does it work?</h2>
+        <p className="mt-2 hidden max-w-lg text-sm font-medium leading-relaxed text-slate-500 lg:block">
+          Check what the market may pay before you sell. The number on screen is a guide. The real offer comes after inspection.
         </p>
 
-        <ol className="mt-4 grid grid-cols-2 gap-3 md:gap-6">
+        <ol className="mt-4 grid grid-cols-2 gap-3 md:gap-6 lg:hidden">
           {STEPS.map(({ icon: Icon, title, body }, i) => (
             <li key={title} className="rounded-2xl bg-white p-3 shadow-md shadow-slate-200/60">
               <div className="flex items-center justify-between">
@@ -47,6 +48,24 @@ export default function WhyValuation() {
               </div>
               <h3 className="mt-3 text-sm font-semibold leading-snug text-slate-800">{title}</h3>
               <p className="mt-1 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+            </li>
+          ))}
+        </ol>
+        <ol className="mt-8 hidden space-y-5 lg:block">
+          {STEPS.map(({ icon: Icon, title, body }, i) => (
+            <li key={`${title}-desktop`} className="flex gap-4">
+              <div className="relative shrink-0">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#3083ff]/20 bg-[#3083ff]/10">
+                  <Icon className="h-5 w-5 text-[#3083ff]" strokeWidth={2.25} />
+                </span>
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#3083ff] text-[10px] font-black text-white">
+                  {i + 1}
+                </span>
+              </div>
+              <div className="pt-0.5">
+                <h3 className="text-base font-extrabold leading-snug text-slate-900">{title}</h3>
+                <p className="mt-0.5 text-sm font-medium leading-snug text-slate-500">{body}</p>
+              </div>
             </li>
           ))}
         </ol>

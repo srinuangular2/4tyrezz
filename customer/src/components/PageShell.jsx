@@ -15,8 +15,8 @@ function FormattedTitle({ children }) {
 
   const lastWord = words.pop();
   return (
-    <span className="font-medium text-slate-700">
-      {words.join(' ')} <span className="font-semibold text-slate-900">{lastWord}</span>
+    <span className="font-medium text-slate-700 lg:font-normal lg:text-slate-800">
+      {words.join(' ')} <span className="font-semibold text-slate-900 lg:font-black">{lastWord}</span>
     </span>
   );
 }
@@ -40,11 +40,11 @@ export function PageHero({ eyebrow, title, subtitle, children }) {
             {eyebrow}
           </p>
         )}
-        <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
+        <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl lg:text-5xl lg:uppercase lg:font-display">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-1.5 max-w-2xl text-xs font-light leading-relaxed text-white/80 sm:text-sm">
+          <p className="mt-1.5 max-w-2xl text-xs font-light leading-relaxed text-white/80 sm:text-sm lg:mt-4 lg:text-base lg:font-medium">
             {subtitle}
           </p>
         )}
@@ -67,7 +67,7 @@ export function Section({ id, eyebrow, title, children, bg, viewAllHref, viewAll
                 </p>
               )}
               {title && (
-                <h2 className="text-[16px] font-medium tracking-tight lg:text-3xl lg:normal-case">
+                <h2 className="text-[16px] font-medium tracking-tight lg:font-display lg:text-4xl lg:uppercase">
                   <FormattedTitle>{title}</FormattedTitle>
                 </h2>
               )}

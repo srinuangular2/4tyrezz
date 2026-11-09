@@ -17,15 +17,15 @@ export default function PriceFactors() {
           <span className="w-1.5 h-1.5 rounded-full bg-[#3083ff] animate-pulse" />
           Price factors
         </span>
-        <h2 className="text-base font-semibold tracking-tight text-slate-800 sm:text-3xl">
-          What decides your car’s value
+        <h2 className="text-base font-semibold tracking-tight text-slate-800 sm:text-3xl lg:font-display lg:text-4xl lg:uppercase">
+          What decides your car’s <span className="lg:font-black">value</span>
         </h2>
         <p className="text-slate-500 text-sm font-medium mt-3 leading-relaxed">
           SmartPrice uses simple facts you already know. No jargon — just what buyers actually pay for.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 lg:gap-4">
         {FACTORS.map(({ icon: Icon, title, body }) => (
           <div
             key={title}

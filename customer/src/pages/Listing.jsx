@@ -354,7 +354,7 @@ export default function Listing() {
 
       <div className="bg-slate-50 lg:bg-slate-50 min-h-screen">
       <div className="lg:container-px lg:py-8 pb-6 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">
-        <aside className="hidden lg:sticky lg:top-20 lg:z-30 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+        <aside className="hidden lg:sticky lg:top-[5.5rem] lg:z-20 lg:block lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto lg:pr-1">
           {sidebar(false)}
         </aside>
 
@@ -408,7 +408,7 @@ export default function Listing() {
             )}
           </div>
 
-          <div className="sticky top-20 z-30 mb-4 hidden flex-wrap items-center justify-between gap-3 bg-white/95 py-2 shadow-sm backdrop-blur-md lg:flex">
+          <div className="sticky top-[5.5rem] z-20 mb-4 hidden flex-wrap items-center justify-between gap-3 bg-slate-50/95 py-2 backdrop-blur lg:flex">
             <strong className="font-display font-semibold text-xl">
               {loading ? '...' : `${meta.total} cars found`}
             </strong>
