@@ -22,7 +22,7 @@
       "destination": "/admin/index.html"
     },
     {
-      "source": "/admin/(?!assets/).+",
+      "source": "/admin/:path*",
       "destination": "/admin/index.html"
     },
     {
@@ -30,11 +30,15 @@
       "destination": "/d/index.html"
     },
     {
+      "source": "/dealer/",
+      "destination": "/d/index.html"
+    },
+    {
       "source": "/dealer/:path*",
       "destination": "/d/index.html"
     },
     {
-      "source": "/((?!assets/|admin(?:/|$)|dealer(?:/|$)|d/).*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
   ]
