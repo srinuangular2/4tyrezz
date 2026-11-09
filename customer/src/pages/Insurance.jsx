@@ -4,6 +4,7 @@ import { BadgeCheck, CarFront, Clock, LifeBuoy, ShieldCheck, Wrench } from 'luci
 import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
+import AmountPicker, { PartnerCard } from '../components/mobile/AmountPicker';
 import { digitsOnly, isIndianMobile, whatsappUrl } from '../lib/companyContact';
 import {
   BRAND,
@@ -53,7 +54,13 @@ const WHY = [
   { icon: CarFront, title: 'Inspection-linked pricing', body: 'A verified 4tyrezz inspection score can improve your quote.' },
 ];
 
-const INSURERS = ['HDFC ERGO', 'ICICI Lombard', 'Bajaj Allianz', 'TATA AIG', 'New India'];
+const INSURERS = [
+  { name: 'New India', factor: 0.92 },
+  { name: 'Bajaj Allianz', factor: 0.96 },
+  { name: 'HDFC ERGO', factor: 1 },
+  { name: 'ICICI Lombard', factor: 1.06 },
+  { name: 'TATA AIG', factor: 1.08 },
+];
 
 const FAQS = [
   {
@@ -79,7 +86,7 @@ export default function Insurance() {
   const [planKey, setPlanKey] = useState('comprehensive');
   const [ncb, setNcb] = useState(0);
   const [addons, setAddons] = useState({ rsa: true, engine: false });
-  const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', regNumber: '', expiry: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', regNumber: '', expiry: '', insurer: '' });
   const [submitting, setSubmitting] = useState(false);
   const { requireAuth } = useAuthGuard();
 
@@ -117,11 +124,11 @@ export default function Insurance() {
           ...form,
           insuranceType: plan.name,
           leadSource: 'insurance_page',
-          message: `${plan.name} · IDV ${formatINR(idv)} · NCB ${ncb}% · RSA ${addons.rsa ? 'yes' : 'no'} · Engine ${addons.engine ? 'yes' : 'no'} · est. ${formatINR(quote.total)}`,
+          message: `${form.insurer ? `${form.insurer} · ` : ''}${plan.name} · IDV ${formatINR(idv)} · NCB ${ncb}% · RSA ${addons.rsa ? 'yes' : 'no'} · Engine ${addons.engine ? 'yes' : 'no'} · est. ${formatINR(quote.total)}`,
           meta: { plan: plan.key, idv, ncb, addons, estimatedPremium: quote.total },
         });
         toast.success('Insurance enquiry submitted. Our desk will share firm quotes shortly.');
-        setForm({ name: '', phone: '', email: '', city: '', regNumber: '', expiry: '' });
+        setForm({ name: '', phone: '', email: '', city: '', regNumber: '', expiry: '', insurer: '' });
       } catch (e) {
         toast.error(e.response?.data?.message || 'Could not submit enquiry');
       } finally {
@@ -147,66 +154,52 @@ export default function Insurance() {
         ]}
       >
         <BannerActions>
-          <BannerButton href="#quote">Get an instant estimate</BannerButton>
-          <span className="lg:hidden"><BannerButton href="#plans" ghost>Compare plans</BannerButton></span>
+          <span className="lg:hidden"><BannerButton href="#cover-picker">Compare plans</BannerButton></span>
+          <span className="hidden lg:inline-flex"><BannerButton href="#quote">Get an instant estimate</BannerButton></span>
           <span className="hidden lg:inline-flex"><BannerButton href="#cover-plans" ghost>Compare plans</BannerButton></span>
         </BannerActions>
       </DesignedPageBanner>
 
-      <section className="space-y-4 px-4 py-4 lg:hidden">
-        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <p className="text-[12px] font-medium text-[#3083ff]">How cover works</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Three steps to a quote</h2>
-          <ol className="mt-3 space-y-3">
-            {[
-              ['1', 'Choose a cover', 'Third-party is the legal minimum. Comprehensive also covers your car. Zero dep is for newer cars.'],
-              ['2', 'See the yearly price', 'Set the car value and any no-claim discount. The premium updates before you share details.'],
-              ['3', 'Request firm quotes', 'Send your number. The desk returns offers from licensed insurers. This page is an estimate, not a policy.'],
-            ].map(([n, title, body]) => (
-              <li key={n} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
-                <div>
-                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
-                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
-                </div>
-              </li>
+      <div id="cover-picker" className="scroll-mt-24 lg:hidden">
+        <AmountPicker
+          label="Select car value"
+          value={idv}
+          min={100000}
+          max={5000000}
+          step={25000}
+          onChange={setIdv}
+          minLabel="₹1,00,000"
+          maxLabel="₹50,00,000"
+          chipLabel="Select cover"
+          chips={PLANS.map((item) => item.key)}
+          chipValue={planKey}
+          onChip={setPlanKey}
+          chipText={(key) => (key === 'third-party' ? 'Third-party' : key === 'comprehensive' ? 'Comprehensive' : 'Zero dep')}
+        />
+        <section className="space-y-3 bg-[#f6f7fb] px-4 py-4">
+          {[...INSURERS]
+            .map((insurer) => ({ ...insurer, premium: Math.round(quote.total * insurer.factor) }))
+            .sort((a, b) => a.premium - b.premium)
+            .map((insurer, index) => (
+              <PartnerCard
+                key={insurer.name}
+                recommended={index === 0}
+                name={insurer.name}
+                onApply={() => {
+                  setForm((current) => ({ ...current, insurer: insurer.name }));
+                  document.getElementById('get-quote')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                leftLabel="Yearly premium"
+                leftValue={formatINR(insurer.premium)}
+                rightLabel="Cover"
+                rightValue={plan.name.replace('Comprehensive + ', '')}
+              />
             ))}
-          </ol>
-        </div>
-
-        <div id="plans" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <p className="text-[12px] font-medium text-[#3083ff]">Step 1</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Choose a cover</h2>
-          <div className="mt-3 space-y-2">
-            {PLANS.map((p) => {
-              const active = p.key === planKey;
-              return (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => setPlanKey(p.key)}
-                  className={`w-full rounded-2xl border px-3.5 py-3 text-left ${active ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}`}
-                >
-                  <span className="flex items-center justify-between gap-2">
-                    <span className={`text-[14px] font-semibold ${active ? 'text-[#1853ff]' : 'text-slate-900'}`}>{p.name}</span>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.highlight ? 'bg-[#3083ff] text-white' : 'bg-slate-100 text-slate-500'}`}>{p.tag}</span>
-                  </span>
-                  <span className="mt-1 block text-[12px] font-normal leading-snug text-slate-500">{p.blurb}</span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-3 text-[13px] font-medium text-slate-700">Included in {plan.name}</p>
-          <ul className="mt-1.5 space-y-1">
-            {plan.covers.map((item) => (
-              <li key={item} className="text-[12px] font-normal text-slate-500">• {item}</li>
-            ))}
-          </ul>
-          <a href="#quote" className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
-            See the yearly price
-          </a>
-        </div>
-      </section>
+          <p className="px-1 text-[12px] font-normal leading-snug text-slate-500">
+            Estimates only. The insurer confirms the price from the car, city and claim history.
+          </p>
+        </section>
+      </div>
 
       <Section eyebrow="How it works" title="Cover made simple" className="hidden lg:block">
         <div className="grid sm:grid-cols-3 gap-5">
@@ -297,7 +290,7 @@ export default function Insurance() {
       </Section>
       </div>
 
-      <div id="quote" className="scroll-mt-24">
+      <div id="quote" className="hidden scroll-mt-24 lg:block">
         <Section eyebrow="Instant estimate" title="Build your quote">
           <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 2. The car value is the most the insurer pays if the car is stolen or written off. A higher value means a higher premium.</p>
           <div className="grid lg:grid-cols-[1fr_1fr] gap-4 lg:gap-6">
@@ -399,7 +392,7 @@ export default function Insurance() {
 
       <div id="get-quote" className="scroll-mt-24">
       <Section eyebrow="Firm quotes" title="Get quotes from our insurance desk" bg>
-        <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 3. This sends the estimate to the desk. A person calls you with firm prices. Nothing is purchased on this page.</p>
+        <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Name and mobile are enough. We call you with firm prices. Nothing is purchased here.</p>
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4 lg:gap-6">
           <Card className="p-4 lg:p-6" highlighted>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -416,6 +409,7 @@ export default function Insurance() {
                   placeholder="10-digit mobile"
                 />
               </Field>
+              <div className="hidden lg:contents">
               <Field label="Email">
                 <input className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" />
               </Field>
@@ -428,12 +422,13 @@ export default function Insurance() {
               <Field label="Current policy expiry" hint="Optional">
                 <input type="date" className={inputClass} value={form.expiry} onChange={(e) => set('expiry', e.target.value)} />
               </Field>
+              </div>
             </div>
 
             <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4">
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Your estimate</p>
               <p className="text-sm font-extrabold text-slate-800 mt-1">
-                {plan.name} · IDV {formatINR(idv)} · NCB {ncb}% · ~{formatINR(quote.total)}/year
+                {form.insurer ? `${form.insurer} · ` : ''}{plan.name} · IDV {formatINR(idv)} · ~{formatINR(quote.total)}/year
               </p>
             </div>
 
@@ -485,7 +480,7 @@ export default function Insurance() {
         </p>
       </Section>
 
-      <Section eyebrow="Help Center" title="Insurance questions, answered">
+      <Section eyebrow="Help Center" title="Insurance questions, answered" className="hidden lg:block">
         <div className="max-w-3xl space-y-3">
           {FAQS.map((f) => (
             <details
@@ -506,12 +501,7 @@ export default function Insurance() {
         </div>
       </Section>
 
-      <div className="lg:hidden h-20" />
-      <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
-        <a href="#get-quote" className="flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
-          Request quotes · {formatINR(quote.total)}/yr
-        </a>
-      </div>
+      <div className="h-6 lg:hidden" />
     </div>
   );
 }

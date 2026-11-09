@@ -10,10 +10,11 @@ export default function DesignedPageBanner({
   points = [],
   children,
   imageClass = 'object-[78%_center] sm:object-right',
+  hideOnMobile = false,
 }) {
   return (
     <>
-    <section className="relative overflow-hidden lg:hidden min-h-[300px]">
+    <section className={`relative min-h-[300px] overflow-hidden lg:hidden ${hideOnMobile ? 'hidden' : ''}`}>
       <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover object-[85%_center]" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#061433]/90 via-[#0b2a6e]/62 to-[#0b2a6e]/10" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#061433]/55 via-transparent to-[#061433]/25" />

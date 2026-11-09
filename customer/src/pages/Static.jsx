@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BadgeCheck, Clock, Mail, MapPin, MessageCircle, Phone, PhoneOff, ShieldCheck, Users } from 'lucide-react';
+import HowItWorks from '../components/mobile/HowItWorks';
 import api from '../api/axios';
 import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
 import { Card, Field, PrimaryButton, Section, inputClass } from '../components/PageShell';
@@ -386,28 +387,19 @@ export const Contact = () => {
       </DesignedPageBanner>
 
       <section className="space-y-3 px-4 py-4 lg:hidden">
-        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <p className="text-[12px] font-medium text-[#3083ff]">How to reach the desk</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Call for a car. Write if it can wait.</h2>
-          <ol className="mt-3 space-y-3">
-            {[
-              ['1', 'Call or WhatsApp', 'Use this when you are looking at a car today. A person answers, not a seller.'],
-              ['2', 'Or send a message', 'Use the form for payment, a complaint, or a dealer partnership.'],
-              ['3', 'We reply in desk hours', 'Monday to Saturday, 9 AM to 7 PM. Later messages are answered the next morning.'],
-            ].map(([n, title, body]) => (
-              <li key={n} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
-                <div>
-                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
-                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <a href="#write" className="mt-3 flex h-11 items-center justify-center rounded-xl border border-[#3083ff]/30 text-[14px] font-semibold text-[#3083ff]">
-            Write a message
-          </a>
-        </div>
+        <HowItWorks
+          title="How does it work?"
+          steps={[
+            { icon: Phone, title: 'Call or WhatsApp', body: 'Use this when you are looking at a car today. A person answers, not a seller.' },
+            { icon: MessageCircle, title: 'Or send a message', body: 'Use the form for payment, a complaint, or a dealer partnership.' },
+            { icon: Clock, title: 'We reply in desk hours', body: 'Monday to Saturday, 9 AM to 7 PM. Later messages are answered the next morning.' },
+          ]}
+          action={(
+            <a href="#write" className="flex h-11 items-center justify-center rounded-xl border border-[#3083ff]/30 text-[15px] font-semibold text-[#3083ff]">
+              Write a message
+            </a>
+          )}
+        />
         <div className="grid grid-cols-2 gap-3">
           <a href={`tel:+91${COMPANY_PHONE_DIGITS}`} className="flex h-14 flex-col items-center justify-center rounded-2xl bg-[#3083ff] px-2 text-white">
             <span className="inline-flex items-center gap-1.5 text-[14px] font-semibold"><Phone className="h-4 w-4" strokeWidth={2.25} /> Call</span>
