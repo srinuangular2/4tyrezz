@@ -2,7 +2,8 @@
   "name": "4tyrezz",
   "private": true,
   "scripts": {
-    "build": "npm run build --prefix customer",
+    "install:apps": "npm install --prefix customer && npm install --prefix admin && npm install --prefix dealer",
+    "build": "VITE_API_URL=/api npm run build --prefix customer && VITE_API_URL=/api npm run build --prefix admin && VITE_API_URL=/api npm run build --prefix dealer && rm -rf customer/dist/admin customer/dist/d && cp -R admin/dist customer/dist/admin && cp -R dealer/dist customer/dist/d",
     "dev:customer": "npm run dev --prefix customer",
     "dev:admin": "npm run dev --prefix admin",
     "dev:dealer": "npm run dev --prefix dealer"
