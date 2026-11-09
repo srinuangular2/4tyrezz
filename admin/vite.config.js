@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // Live site serves this app at /admin so it can sit beside the customer app.
+  base: command === 'build' ? '/admin/' : '/',
   plugins: [react()],
   server: {
     port: 5174,
@@ -11,7 +13,7 @@ export default defineConfig({
       '/socket.io': { target: 'http://localhost:5000', ws: true },
     },
   },
-});
+}));
 
 
 // export default defineConfig({

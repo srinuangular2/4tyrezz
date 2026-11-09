@@ -20,7 +20,7 @@ export default function ValuationBanner() {
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/55 to-slate-950/20" />
       <div className="relative px-4 py-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">4tyrezz SmartPrice</p>
-        <h1 className="mt-1 max-w-[18rem] text-[15px] font-medium leading-snug text-white">Know your car’s market price</h1>
+        <h1 className="mt-1 max-w-[18rem] text-[15px] font-normal leading-snug text-white">Know your car’s market price</h1>
         <p className="mt-1 text-xs font-light leading-snug text-white/90">Free, instant, and based on live catalogue data.</p>
         <div className="mt-3 grid max-w-[20rem] grid-cols-3 gap-2">
           {POINTS.map(({ icon: Icon, label }) => (
@@ -49,7 +49,7 @@ export default function ValuationBanner() {
           </span>
 
           <h1 className="text-xl sm:text-5xl sm:uppercase tracking-tight font-display text-white leading-tight">
-            Know your car’s <span className="font-black">market price</span>
+            Know your car’s <span className="font-bold">market price</span>
           </h1>
           <p className="text-white/85 text-xs sm:text-base font-medium mt-2 sm:mt-4 max-w-md leading-relaxed line-clamp-2 sm:line-clamp-none">
             Free · Instant · Based on live catalogue data

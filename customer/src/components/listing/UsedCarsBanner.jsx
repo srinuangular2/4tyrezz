@@ -26,7 +26,7 @@ export default function UsedCarsBanner() {
           </span>
 
           <h1 className="text-3xl sm:text-5xl uppercase tracking-tight font-display text-white leading-tight">
-            Used cars <span className="font-black">near you</span>
+            Used cars <span className="font-bold">near you</span>
           </h1>
           <p className="text-white/85 text-sm sm:text-base font-medium mt-4 max-w-md leading-relaxed">
             Inspected listings · Clear price · You talk to 4tyrezz, not random sellers

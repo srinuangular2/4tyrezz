@@ -25,8 +25,8 @@ export default function BrandsBanner({ children }) {
             All brands
           </span>
 
-          <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl lg:font-display lg:text-5xl lg:uppercase">
-            Find cars by <span className="font-medium lg:font-black">the brand you trust</span>
+          <h1 className="text-xl font-normal leading-snug tracking-tight text-white sm:text-2xl lg:font-display lg:text-5xl lg:uppercase">
+            Find cars by <span className="font-normal lg:font-bold">the brand you trust</span>
           </h1>
           <p className="mt-1.5 max-w-md text-xs font-light leading-relaxed text-white/85 sm:text-sm lg:mt-4 lg:text-base lg:font-medium">
             Search or tap a logo. You will see live, inspected used cars for that make on 4tyrezz.

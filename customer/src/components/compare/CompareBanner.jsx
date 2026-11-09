@@ -15,8 +15,8 @@ export default function CompareBanner({ children, hideMobile = false }) {
       <div className="absolute inset-0 bg-gradient-to-r from-[#061433]/90 via-[#061433]/68 to-[#061433]/42" />
       <div className="relative px-4 py-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">Compare cars</p>
-        <h1 className="mt-1 max-w-[16rem] text-[15px] font-medium leading-snug text-white">
-          Find your <span className="font-medium">perfect ride</span>
+        <h1 className="mt-1 max-w-[16rem] text-[15px] font-normal leading-snug text-white">
+          Find your <span className="font-normal">perfect ride</span>
         </h1>
         <p className="mt-1 max-w-[18rem] text-xs font-light leading-snug text-white/90">Compare features, specs, and prices to choose the car that fits your lifestyle.</p>
         <div className="mt-3 grid max-w-[22rem] grid-cols-2 gap-x-2 gap-y-2.5">
@@ -49,7 +49,7 @@ export default function CompareBanner({ children, hideMobile = false }) {
           </span>
 
           <h1 className="text-3xl sm:text-5xl uppercase tracking-tight font-display text-white leading-tight">
-            Find your <span className="font-black">perfect ride</span>
+            Find your <span className="font-bold">perfect ride</span>
           </h1>
           <p className="text-white/85 text-sm sm:text-base font-medium mt-4 max-w-md leading-relaxed">
             Compare features, specs, and prices to choose the car that fits your lifestyle.
