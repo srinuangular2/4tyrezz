@@ -54,7 +54,7 @@ configured_url() {
   python3 - <<'PY'
 import re
 text = open("/Users/mac/Desktop/Projects/srinivas/4tyrezz/vercel.json", errors="replace").read()
-match = re.search(r"https://[a-z0-9-]+\.trycloudflare\.com", text)
+match = re.search(r"https://[a-z0-9]+(?:-[a-z0-9]+)+\.trycloudflare\.com", text)
 print(match.group(0) if match else "")
 PY
 }
@@ -75,7 +75,7 @@ start_tunnel() {
     url=$(python3 - <<'PY'
 import re
 text = open("/tmp/4tyrezz-cloudflared.log", errors="replace").read()
-found = re.findall(r"https://[a-z0-9-]+\.trycloudflare\.com", text)
+found = re.findall(r"https://[a-z0-9]+(?:-[a-z0-9]+)+\.trycloudflare\.com", text)
 print(found[-1] if found else "")
 PY
 )
