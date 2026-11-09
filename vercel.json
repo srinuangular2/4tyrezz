@@ -2,16 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm install --prefix customer",
-  "buildCommand": "VITE_API_URL=/api VITE_API_ORIGIN=https://fourtyrezz-backend.onrender.com npm run build --prefix customer",
+  "buildCommand": "VITE_API_URL=/api npm run build --prefix customer",
   "outputDirectory": "customer/dist",
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://fourtyrezz-backend.onrender.com/api/:path*"
+      "destination": "https://medium-tail-campaigns-medium.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://fourtyrezz-backend.onrender.com/uploads/:path*"
+      "destination": "https://medium-tail-campaigns-medium.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/((?!assets/).*)",
