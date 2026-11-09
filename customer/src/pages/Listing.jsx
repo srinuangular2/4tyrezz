@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -75,12 +74,10 @@ export default function Listing() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const filterBarRef = useRef(null);
   const sentinelRef = useRef(null);
   const pageRef = useRef(1);
   const loadingMoreRef = useRef(false);
   const listGen = useRef(0);
-  const [filterBarHeight, setFilterBarHeight] = useState(52);
 
   const currentParamsObj = Object.fromEntries([...params.entries()]);
   const [filters, setFilters] = useState(currentParamsObj);
@@ -341,16 +338,6 @@ export default function Listing() {
   );
 
   useEffect(() => {
-    const bar = filterBarRef.current;
-    if (!bar) return undefined;
-    const sync = () => setFilterBarHeight(bar.offsetHeight);
-    sync();
-    const observer = new ResizeObserver(sync);
-    observer.observe(bar);
-    return () => observer.disconnect();
-  }, [chips.length, loading]);
-
-  useEffect(() => {
     if (!mobileOpen) return undefined;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -367,34 +354,33 @@ export default function Listing() {
 
       <div className="bg-slate-50 lg:bg-slate-50 min-h-screen">
       <div className="lg:container-px lg:py-8 pb-6 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">
-        <aside className="hidden lg:block lg:sticky lg:top-[5.5rem] lg:z-20 max-h-[calc(100vh-6.5rem)] overflow-y-auto pr-1">
+        <aside className="hidden lg:sticky lg:top-20 lg:z-30 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
           {sidebar(false)}
         </aside>
 
         <div>
-          {createPortal(
-          <div ref={filterBarRef} className="lg:hidden fixed top-14 inset-x-0 z-40 bg-white border-b border-slate-200 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          <div className="sticky top-14 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md lg:hidden">
             <div className="flex items-center gap-2 px-3 py-2">
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="inline-flex items-center gap-1.5 bg-[#3083ff] text-white rounded-full px-3 h-9 text-[12px] font-black shrink-0"
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[#3083ff] px-3 text-[12px] font-bold text-white"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <SlidersHorizontal className="h-3.5 w-3.5" />
                 Filters
                 {chips.length > 0 && (
-                  <span className="min-w-[16px] h-4 px-1 rounded-full bg-white text-[#3083ff] text-[10px] leading-4 text-center">
+                  <span className="min-w-[16px] h-4 rounded-full bg-white px-1 text-center text-[10px] leading-4 text-[#3083ff]">
                     {chips.length}
                   </span>
                 )}
               </button>
-              <p className="flex-1 text-[13px] font-bold text-slate-800 truncate">
+              <p className="flex-1 truncate text-[13px] font-bold text-slate-800">
                 {loading ? 'Finding cars…' : `${meta.total} cars`}
               </p>
               <select
                 value={filters.sort || '-createdAt'}
                 onChange={(e) => set('sort', e.target.value)}
-                className="border border-slate-200 rounded-full px-2.5 h-9 text-[12px] font-bold bg-white max-w-[132px]"
+                className="h-9 max-w-[132px] rounded-full border border-slate-200 bg-white px-2.5 text-[12px] font-bold"
               >
                 <option value="-createdAt">Newest</option>
                 <option value="price">Price ↑</option>
@@ -403,29 +389,26 @@ export default function Listing() {
               </select>
             </div>
             {chips.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto px-3 pb-2 no-scrollbar">
+              <div className="no-scrollbar flex gap-2 overflow-x-auto px-3 pb-2">
                 {chips.map((chip) => (
                   <button
                     key={chip.key}
                     type="button"
                     onClick={() => apply(chip.next)}
-                    className="inline-flex shrink-0 items-center gap-1 pl-2.5 pr-1.5 h-7 rounded-full bg-blue-50 text-[#1853ff] text-[11px] font-bold border border-blue-100"
+                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-blue-100 bg-blue-50 pl-2.5 pr-1.5 text-[11px] font-bold text-[#1853ff]"
                   >
                     {chip.label}
-                    <X className="w-3 h-3" />
+                    <X className="h-3 w-3" />
                   </button>
                 ))}
-                <button type="button" onClick={clearAll} className="shrink-0 text-[11px] font-bold text-slate-500 px-1">
+                <button type="button" onClick={clearAll} className="shrink-0 px-1 text-[11px] font-bold text-slate-500">
                   Clear
                 </button>
               </div>
             )}
-          </div>,
-          document.body
-          )}
-          <div className="lg:hidden" style={{ height: filterBarHeight }} />
+          </div>
 
-          <div className="hidden lg:flex sticky top-[5.5rem] z-20 bg-slate-50/95 backdrop-blur flex-wrap justify-between items-center gap-3 mb-4 py-2">
+          <div className="sticky top-20 z-30 mb-4 hidden flex-wrap items-center justify-between gap-3 bg-white/95 py-2 shadow-sm backdrop-blur-md lg:flex">
             <strong className="font-display font-semibold text-xl">
               {loading ? '...' : `${meta.total} cars found`}
             </strong>
@@ -528,6 +511,27 @@ export default function Listing() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-3 pb-24">
+              <div className="mb-3 rounded-2xl bg-white p-3 shadow-sm">
+                <p className="text-[12px] font-semibold text-slate-500">Recommended filters</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {[
+                    ['Under ₹5 Lakh', { minPrice: '', maxPrice: '500000' }],
+                    ['Under ₹10 Lakh', { minPrice: '', maxPrice: '1000000' }],
+                    ['Petrol', { fuel: 'Petrol' }],
+                    ['Automatic', { transmission: 'Automatic' }],
+                    ['1st owner', { ownership: '1' }],
+                  ].map(([label, patch]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => apply({ ...filters, ...patch, page: 1 })}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-semibold text-slate-700"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {sidebar(true)}
             </div>
             <div className="absolute bottom-0 inset-x-0 p-3 bg-white border-t border-slate-200">

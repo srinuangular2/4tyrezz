@@ -579,7 +579,7 @@ export default function Home() {
      
 
       {/* ---- FAQS ---- */}
-      <Section className='bg-gradient-to-b from-blue-50/70'>
+      <Section className="hidden bg-gradient-to-b from-blue-50/70 lg:block">
         <FaqsSection/>
       </Section>
 

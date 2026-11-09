@@ -57,7 +57,7 @@ export default function SellCar() {
         <SellBenefits />
       </Section>
 
-      <Section className="bg-gradient-to-b from-blue-50/70 !py-6 lg:!py-12">
+      <Section className="hidden bg-gradient-to-b from-blue-50/70 !py-6 lg:block lg:!py-12">
         <FaqsSection
           faqs={SELL_FAQS}
           subtitle="Everything you need to know about selling your car with 4tyrezz."

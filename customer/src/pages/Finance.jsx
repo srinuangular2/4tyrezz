@@ -7,6 +7,7 @@ import { useAuthGuard } from '../components/AuthGuardModal';
 import CarCard from '../components/CarCard';
 import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
 import AmountPicker, { PartnerCard } from '../components/mobile/AmountPicker';
+import StepSheet from '../components/mobile/StepSheet';
 import { isIndianMobile, digitsOnly, whatsappUrl } from '../lib/companyContact';
 import {
   BRAND,
@@ -86,6 +87,8 @@ export default function Finance() {
     bankName: '', cibilBracket: '650-750',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [applyStep, setApplyStep] = useState(1);
   const { requireAuth } = useAuthGuard();
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -155,27 +158,40 @@ export default function Finance() {
   };
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-slate-50 pb-24 lg:pb-0">
       <DesignedPageBanner
         src="/car-finance.png"
         alt="Car finance on 4tyrezz"
         eyebrow="Car Finance"
         title="Easy vehicle loans on every"
         accent="inspected car"
-        subtitle={`Indicative rates from ${meta.defaultInterestRate}% p.a. with tenures up to 84 months. Calculate EMI, then get a callback from our finance desk.`}
+        subtitle="Compare partner banks, see a monthly EMI, and apply once. Our desk calls you back with the papers."
         points={[
-          { icon: Clock, label: '24–48 hr approval' },
-          { icon: Banknote, label: 'Up to 90% funding' },
-          { icon: ShieldCheck, label: 'No hidden charges' },
-          { icon: FileText, label: 'Minimal documents' },
+          { icon: Clock, label: 'Fast approval' },
+          { icon: Banknote, label: 'High funding' },
+          { icon: ShieldCheck, label: 'Clear charges' },
+          { icon: FileText, label: 'Few documents' },
         ]}
       >
-        <BannerActions>
-          <span className="lg:hidden"><BannerButton href="#loan-picker">Compare EMI</BannerButton></span>
-          <span className="hidden lg:inline-flex"><BannerButton href="#emi-calculator">Calculate EMI</BannerButton></span>
-          <BannerButton href="#apply" ghost>Apply for a loan</BannerButton>
-        </BannerActions>
+        <div className="hidden lg:block">
+          <BannerActions>
+            <BannerButton href="#emi-calculator">Calculate EMI</BannerButton>
+            <BannerButton href="#apply" ghost>Apply for a loan</BannerButton>
+          </BannerActions>
+        </div>
       </DesignedPageBanner>
+
+      <section className="grid grid-cols-2 gap-3 px-4 py-4 lg:hidden">
+        {BENEFITS.map(({ icon: Icon, title, body }, index) => (
+          <article key={title} className={`rounded-2xl p-3 shadow-md shadow-slate-200/50 ${['bg-[#e8f1ff]', 'bg-[#e7f8ee]', 'bg-[#fff4e8]', 'bg-[#f3e8ff]'][index % 4]}`}>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#1853ff] shadow-sm">
+              <Icon className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <h3 className="mt-2 text-sm font-semibold text-slate-900">{title}</h3>
+            <p className="mt-1 text-[12px] font-normal leading-snug text-slate-600">{body}</p>
+          </article>
+        ))}
+      </section>
 
       <div id="loan-picker" className="scroll-mt-24 lg:hidden">
         <AmountPicker
@@ -194,7 +210,8 @@ export default function Finance() {
           chips={TENURES}
           chipValue={months}
           onChip={setMonths}
-          chipText={(monthsValue) => `${monthsValue} months`}
+          chipSuffix="months"
+          prominent
         />
         <section className="space-y-3 bg-[#f6f7fb] px-4 py-4">
           {[...LENDERS].sort((a, b) => a.rate - b.rate).map((lender, index) => (
@@ -205,7 +222,8 @@ export default function Finance() {
               onApply={() => {
                 setRate(lender.rate);
                 set('bankName', lender.name);
-                document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setApplyStep(1);
+                setApplyOpen(true);
               }}
               leftLabel="EMI"
               leftValue={formatINR(Math.round(calcEmi(loanAmount, lender.rate, months)))}
@@ -374,7 +392,7 @@ export default function Finance() {
         </Section>
       </div>
 
-      <div id="apply" className="scroll-mt-24">
+      <div id="apply" className="hidden scroll-mt-24 lg:block">
         <Section eyebrow="Get started" title="Apply for car finance" bg>
           <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Name and mobile are enough. We call you with the bank and the papers to keep ready.</p>
           <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4 lg:gap-6">
@@ -534,6 +552,83 @@ export default function Finance() {
       </Section>
 
       <div className="h-6 lg:hidden" />
+
+      <div className="fixed inset-x-0 bottom-[calc(62px+env(safe-area-inset-bottom))] z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] lg:hidden">
+        <button
+          type="button"
+          onClick={() => { setApplyStep(1); setApplyOpen(true); }}
+          className="flex h-11 w-full items-center justify-center rounded-xl bg-[#3083ff] text-sm font-semibold text-white"
+        >
+          Apply for Finance
+        </button>
+      </div>
+
+      <StepSheet
+        open={applyOpen}
+        title={applyStep === 1 ? 'Your contact' : applyStep === 2 ? 'About you' : 'Confirm and apply'}
+        step={applyStep}
+        onClose={() => setApplyOpen(false)}
+        onBack={() => setApplyStep((step) => Math.max(1, step - 1))}
+        nextLabel={applyStep === 3 ? 'Submit application' : 'Continue'}
+        busy={submitting}
+        onNext={() => {
+          if (applyStep === 1) {
+            if (!form.name.trim()) {
+              toast.error('Please enter your name');
+              return;
+            }
+            if (!isIndianMobile(form.phone)) {
+              toast.error('Enter a valid 10-digit mobile number');
+              return;
+            }
+            setApplyStep(2);
+            return;
+          }
+          if (applyStep === 2) {
+            setApplyStep(3);
+            return;
+          }
+          submit();
+          setApplyOpen(false);
+        }}
+      >
+        {applyStep === 1 && (
+          <div className="space-y-3">
+            <Field label="Full name">
+              <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Your name" />
+            </Field>
+            <Field label="Mobile number">
+              <input className={inputClass} inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => set('phone', digitsOnly(e.target.value))} placeholder="10-digit mobile" />
+            </Field>
+          </div>
+        )}
+        {applyStep === 2 && (
+          <div className="space-y-3">
+            <Field label="City">
+              <input className={inputClass} value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="Hyderabad" />
+            </Field>
+            <Field label="Employment type">
+              <select className={inputClass} value={form.employment} onChange={(e) => set('employment', e.target.value)}>
+                <option>Salaried</option>
+                <option>Self-employed</option>
+                <option>Business owner</option>
+                <option>Other</option>
+              </select>
+            </Field>
+            <Field label="Monthly income">
+              <input className={inputClass} value={form.monthlyIncome} onChange={(e) => set('monthlyIncome', e.target.value)} placeholder="₹ per month" />
+            </Field>
+          </div>
+        )}
+        {applyStep === 3 && (
+          <div className="rounded-2xl bg-gradient-to-br from-[#12306f] to-[#3083ff] p-4 text-white">
+            <p className="text-[12px] font-medium text-white/80">Loan request</p>
+            <p className="mt-1 text-2xl font-bold">{formatINR(loanAmount)}</p>
+            <p className="mt-1 text-sm font-medium text-white/90">{months} months · EMI {formatINR(emi)}{form.bankName ? ` · ${form.bankName}` : ''}</p>
+            <p className="mt-3 text-[12px] font-normal text-white/80">{form.name} · {form.phone}</p>
+          </div>
+        )}
+      </StepSheet>
     </div>
   );
 }

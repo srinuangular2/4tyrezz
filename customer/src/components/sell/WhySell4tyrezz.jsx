@@ -4,22 +4,22 @@ const STEPS = [
   {
     icon: ClipboardList,
     title: 'Enter RC or car details',
-    body: 'Start with your registration number or pick brand, model and variant. We use that to identify the car quickly.',
+    body: 'Share the number plate, or pick brand and model.',
   },
   {
     icon: IndianRupee,
     title: 'See an indicative estimate',
-    body: 'Get a market range based on year, kilometres, condition and brand. This is a guide — not the final payout.',
+    body: 'A market range. The final offer comes after inspection.',
   },
   {
     icon: SearchCheck,
     title: 'Book a doorstep inspection',
-    body: 'Choose a slot. Our team checks the car in person so the offer matches real condition, not just photos.',
+    body: 'We check the car at your door before quoting.',
   },
   {
     icon: FileCheck2,
     title: 'Accept the offer. We handle paperwork',
-    body: 'Once you agree, 4tyrezz manages RC transfer, NOC and insurance handover. You stay in control until you accept.',
+    body: 'Agree, and we handle RC, NOC and insurance.',
   },
 ];
 
@@ -31,28 +31,22 @@ export default function WhySell4tyrezz() {
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#3083ff]" />
           Why 4tyrezz
         </span>
-        <h2 className="text-[20px] font-bold tracking-tight text-slate-900 lg:font-display lg:text-4xl lg:uppercase lg:text-slate-800">
-          How does it work?
-        </h2>
-        <p className="mt-2 hidden max-w-lg text-sm font-medium leading-relaxed text-slate-500 lg:block">
-          We buy through inspection, not through random buyer chats. You share the car, we evaluate, then you choose the offer.
+        <h2 className="text-base font-semibold text-slate-800 sm:text-lg">How does it work?</h2>
+        <p className="mt-1 hidden max-w-lg text-sm font-medium leading-relaxed text-slate-500 lg:block">
+          We buy through inspection, not through random buyer chats.
         </p>
 
-        <ol className="mt-8 space-y-5">
+        <ol className="mt-4 grid grid-cols-2 gap-3 md:gap-6">
           {STEPS.map(({ icon: Icon, title, body }, i) => (
-            <li key={title} className="flex gap-4">
-              <div className="relative shrink-0">
-                <span className="w-12 h-12 rounded-2xl bg-[#3083ff]/10 border border-[#3083ff]/20 flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-[#3083ff]" strokeWidth={2.25} />
+            <li key={title} className="rounded-2xl bg-white p-3 shadow-md shadow-slate-200/60">
+              <div className="flex items-center justify-between">
+                <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${['bg-[#e8f1ff] text-[#3083ff]', 'bg-[#fff4e8] text-[#e07a12]', 'bg-[#f3e8ff] text-[#7c3aed]', 'bg-[#e8f8ef] text-[#178a45]'][i % 4]}`}>
+                  <Icon className="h-5 w-5" strokeWidth={2.25} />
                 </span>
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#3083ff] text-white text-[10px] font-black flex items-center justify-center">
-                  {i + 1}
-                </span>
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#3083ff] px-1.5 text-[11px] font-bold text-white">{i + 1}</span>
               </div>
-              <div className="pt-0.5">
-                <h3 className="text-[15px] font-semibold leading-snug text-slate-900 lg:text-base lg:font-extrabold">{title}</h3>
-                <p className="mt-0.5 text-[13px] font-normal leading-snug text-slate-500 lg:text-sm lg:font-medium">{body}</p>
-              </div>
+              <h3 className="mt-3 text-sm font-semibold leading-snug text-slate-800">{title}</h3>
+              <p className="mt-1 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
             </li>
           ))}
         </ol>

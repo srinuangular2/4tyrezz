@@ -33,7 +33,7 @@ export default function FAQSection({
   layout = 'grid',
 }) {
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <section className="hidden max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:block lg:px-8">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-12 flex flex-col items-center gap-2">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full bg-[#3083ff]/10 text-[#3083ff] border border-[#3083ff]/20">

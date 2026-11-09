@@ -139,7 +139,7 @@ export default function Brands() {
         <WhyBrands />
       </Section>
 
-      <Section className="bg-gradient-to-b from-blue-50/70">
+      <Section className="hidden bg-gradient-to-b from-blue-50/70 lg:block">
         <FaqsSection
           faqs={BRAND_FAQS}
           subtitle="Simple answers about brands, buying, and selling on 4tyrezz."

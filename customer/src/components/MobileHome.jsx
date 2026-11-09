@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { BadgeCheck, BadgeIndianRupee, Banknote, CarFront, ChevronRight, ClipboardCheck, Gem, KeyRound, Scale, ShieldCheck, Wallet } from 'lucide-react';
+import { BadgeCheck, BadgeIndianRupee, Banknote, Bus, Car, CarFront, ChevronRight, ClipboardCheck, Cloud, Cog, Fuel, Gem, KeyRound, RefreshCw, Scale, ShieldCheck, Truck, Wallet, Zap } from 'lucide-react';
+import HowItWorks from './mobile/HowItWorks';
 import api from '../api/axios';
 import { Heart } from './icons';
 import { toggleWishlist } from '../app/wishlistSlice';
@@ -54,28 +55,28 @@ const CATEGORIES = [
     title: 'By fuel type',
     param: 'fuel',
     items: [
-      { name: 'Petrol', icon: '⛽' },
-      { name: 'Diesel', icon: '🛢️' },
-      { name: 'CNG', icon: '💨' },
-      { name: 'Electric', icon: '⚡' },
+      { name: 'Petrol', icon: Fuel, tone: 'bg-[#fff4e8] text-[#e07a12]' },
+      { name: 'Diesel', icon: Fuel, tone: 'bg-[#e8f1ff] text-[#3083ff]' },
+      { name: 'CNG', icon: Cloud, tone: 'bg-[#e7f8ee] text-[#178a45]' },
+      { name: 'Electric', icon: Zap, tone: 'bg-[#f3e8ff] text-[#7c3aed]' },
     ],
   },
   {
     title: 'By body style',
     param: 'bodyType',
     items: [
-      { name: 'Hatchback', icon: '🚗' },
-      { name: 'Sedan', icon: '🚘' },
-      { name: 'SUV', icon: '🚙' },
-      { name: 'MUV', icon: '🚐' },
+      { name: 'Hatchback', icon: Car, tone: 'bg-[#e8f1ff] text-[#3083ff]' },
+      { name: 'Sedan', icon: CarFront, tone: 'bg-[#fff4e8] text-[#e07a12]' },
+      { name: 'SUV', icon: Truck, tone: 'bg-[#f3e8ff] text-[#7c3aed]' },
+      { name: 'MUV', icon: Bus, tone: 'bg-[#e7f8ee] text-[#178a45]' },
     ],
   },
   {
     title: 'By transmission',
     param: 'transmission',
     items: [
-      { name: 'Manual', icon: '⚙️' },
-      { name: 'Automatic', icon: '🔄' },
+      { name: 'Manual', icon: Cog, tone: 'bg-[#fff4e8] text-[#e07a12]' },
+      { name: 'Automatic', icon: RefreshCw, tone: 'bg-[#e8f1ff] text-[#3083ff]' },
     ],
   },
 ];
@@ -108,7 +109,7 @@ function bannerHref(banner) {
 function SectionHead({ title, href, action = 'See all' }) {
   return (
     <div className="flex items-end justify-between gap-3 mb-3 px-4">
-      <h2 className="text-[18px] font-black text-slate-900 tracking-tight">{title}</h2>
+      <h2 className="text-[15px] font-semibold text-slate-900 tracking-tight">{title}</h2>
       {href && (
         <Link to={href} className="text-[13px] font-bold text-[#1853ff] inline-flex items-center gap-0.5 min-h-11">
           {action} <ChevronRight className="w-4 h-4" />
@@ -259,11 +260,12 @@ function BannerCta({ href, children }) {
 
 function BannerSlide({ slide }) {
   return (
-    <div className="snap-start shrink-0 w-full h-[220px] relative bg-slate-200">
-      <img src={slide.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#071833]/85 via-[#071833]/55 to-[#071833]/20 p-5 flex flex-col justify-end">
-        <p className="text-[22px] font-black text-white leading-tight max-w-[16rem]">{slide.title}</p>
-        {slide.subtitle ? <p className="text-[13px] font-semibold text-white/90 mt-1">{slide.subtitle}</p> : null}
+    <div className="relative h-[210px] w-full shrink-0 snap-start bg-slate-900">
+      <img src={slide.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-slate-950/72 to-slate-950/20" />
+      <div className="relative flex h-full flex-col justify-center px-4">
+        <p className="max-w-[15rem] text-[18px] font-semibold leading-snug text-white">{slide.title}</p>
+        {slide.subtitle ? <p className="mt-1 max-w-[15rem] text-[13px] font-normal leading-snug text-white">{slide.subtitle}</p> : null}
         <BannerCta href={slide.href}>{slide.cta || 'Explore cars'} →</BannerCta>
       </div>
     </div>
@@ -385,7 +387,7 @@ export default function MobileHome() {
       </section>
 
       <section className="mt-5 px-4">
-        <h2 className="text-[20px] font-black text-slate-900 tracking-tight">Find your right car</h2>
+        <h2 className="text-base font-semibold tracking-tight text-slate-800 sm:text-lg">4tyrezz Provide Services</h2>
         <div className="grid grid-cols-2 gap-3 mt-3">
           {SERVICES.map((item) => (
             <Link
@@ -398,7 +400,7 @@ export default function MobileHome() {
                   {item.badge}
                 </span>
               ) : null}
-              <p className="text-[13px] font-black text-slate-900 leading-none whitespace-nowrap tracking-tight">{item.title}</p>
+              <p className="whitespace-nowrap text-[13px] font-bold leading-none tracking-tight text-slate-900">{item.title}</p>
               <p className="text-[12px] font-medium text-slate-500 mt-1">{item.hint}</p>
               <span className="mt-auto flex justify-center overflow-hidden">
                 <ServiceArt kind={item.art} />
@@ -423,8 +425,8 @@ export default function MobileHome() {
                   {car.thumb ? <img src={mediaUrl(car.thumb)} alt="" className="w-full h-full object-cover" /> : null}
                 </div>
                 <div className="p-2.5">
-                  <p className="text-[12px] font-black text-slate-900 line-clamp-1">{car.title}</p>
-                  <p className="text-[12px] font-black text-[#1853ff] mt-0.5">{formatPrice(car.price)}</p>
+                  <p className="text-[12px] font-semibold text-slate-900 line-clamp-1">{car.title}</p>
+                  <p className="text-[12px] font-semibold text-[#1853ff] mt-0.5">{formatPrice(car.price)}</p>
                 </div>
               </Link>
             ))}
@@ -464,22 +466,27 @@ export default function MobileHome() {
       </section>
 
       <section className="mt-7 px-4">
-        <h2 className="text-[18px] font-black text-slate-900 tracking-tight mb-3">Browse by category</h2>
+        <h2 className="text-[15px] font-semibold text-slate-900 tracking-tight mb-3">Browse by category</h2>
         <div className="space-y-4">
           {CATEGORIES.map((group) => (
             <div key={group.title}>
-              <p className="text-[13px] font-black text-slate-900 mb-2">{group.title}</p>
+              <p className="text-[12px] font-semibold text-slate-700 mb-2">{group.title}</p>
               <div className="grid grid-cols-4 gap-2">
-                {group.items.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={`/cars?${group.param}=${encodeURIComponent(item.name)}`}
-                    className={`group min-w-0 ${GLASS} h-[92px] flex flex-col items-center justify-center gap-1.5 px-1 active:scale-95`}
-                  >
-                    <span className="text-2xl leading-none transition-transform group-hover:scale-105">{item.icon}</span>
-                    <span className="text-xs font-bold text-slate-800 text-center leading-tight">{item.name}</span>
-                  </Link>
-                ))}
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={`/cars?${group.param}=${encodeURIComponent(item.name)}`}
+                      className="flex min-w-0 flex-col items-center gap-2 rounded-2xl bg-white px-1 py-3 shadow-md shadow-slate-200/60 transition-all hover:-translate-y-1 active:scale-95"
+                    >
+                      <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${item.tone}`}>
+                        <Icon className="h-5 w-5" strokeWidth={2.25} />
+                      </span>
+                      <span className="text-center text-[11px] font-semibold leading-tight text-slate-800">{item.name}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -512,24 +519,12 @@ export default function MobileHome() {
         <CarRail cars={premium} />
       </section>
 
-      <section className="mt-7 px-4">
-        <h2 className="text-[17px] font-bold tracking-tight text-slate-900">How 4tyrezz works</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2.5">
-          {WORK_STEPS.map(({ icon: Icon, title, body, tone }, index) => (
-            <div key={title} className="rounded-2xl bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.10)] ring-1 ring-slate-100">
-              <span className={`relative flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}>
-                <Icon className="h-[18px] w-[18px]" strokeWidth={2.25} />
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#3083ff] text-[9px] font-bold text-white">{index + 1}</span>
-              </span>
-              <p className="mt-2 text-[13px] font-semibold leading-tight text-slate-900">{title}</p>
-              <p className="mt-0.5 text-[12px] font-medium leading-snug text-slate-500">{body}</p>
-            </div>
-          ))}
-        </div>
+      <section className="mt-7 overflow-hidden rounded-t-3xl">
+        <HowItWorks title="How does it work?" steps={WORK_STEPS} />
       </section>
 
       <section className="mt-7 px-4">
-        <h2 className="text-[17px] font-bold tracking-tight text-slate-900">Why buyers start here</h2>
+        <h2 className="text-[15px] font-semibold tracking-tight text-slate-900">Why buyers start here</h2>
         <div className="mt-3 grid grid-cols-3 gap-2.5">
           {WHY_START.map(({ icon: Icon, title, body, tone }) => (
             <div key={title} className="rounded-2xl bg-white px-2 py-3.5 text-center shadow-[0_8px_20px_rgba(15,23,42,0.10)] ring-1 ring-slate-100">
@@ -544,7 +539,7 @@ export default function MobileHome() {
       </section>
 
       <section className="mt-7">
-        <h2 className="px-4 text-[17px] font-bold tracking-tight text-slate-900">Reviews</h2>
+        <h2 className="px-4 text-[15px] font-semibold tracking-tight text-slate-900">Reviews</h2>
         <div className="mt-3 flex gap-2.5 overflow-x-auto px-4 pb-3 snap-x">
           {DEFAULT_TESTIMONIALS.map((item) => (
             <article key={item.name} className="flex w-[240px] shrink-0 snap-start items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_8px_20px_rgba(15,23,42,0.10)] ring-1 ring-slate-100">

@@ -618,7 +618,7 @@ export default function Valuation() {
           />
         ) : gate === 'form' ? (
           <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-4 lg:gap-6 items-start">
-          <Card id="valuation-form" className="p-4 sm:p-7 rounded-2xl lg:rounded-3xl" highlighted>
+          <Card id="valuation-form" className={`rounded-2xl p-4 sm:p-7 lg:rounded-3xl ${phone ? 'bg-gradient-to-br from-white via-sky-50 to-blue-100 shadow-[0_16px_40px_rgba(48,131,255,0.16)] ring-1 ring-[#3083ff]/20' : ''}`} highlighted>
             {phone && !guided && (
               <div className="space-y-4">
                 <p className="text-[12px] font-medium text-[#3083ff]">Check your car’s price</p>
@@ -627,7 +627,7 @@ export default function Valuation() {
                 <label className="block">
                   <span className="text-[13px] font-medium text-slate-700">Registration number</span>
                   <input
-                    className={`${inputClass} mt-1.5`}
+                    className={`${inputClass} mt-1.5 h-12 text-base`}
                     value={form.plate}
                     onChange={(e) => set('plate', formatPlateInput(e.target.value))}
                     placeholder="TS 09 AB 1234"
@@ -1037,7 +1037,7 @@ export default function Valuation() {
         </Section>
       )}
 
-      <Section className="bg-gradient-to-b from-blue-50/70">
+      <Section className="hidden bg-gradient-to-b from-blue-50/70 lg:block">
         <FaqsSection
           faqs={VALUATION_FAQS}
           subtitle="Everything you need to know about checking your car’s price on 4tyrezz."

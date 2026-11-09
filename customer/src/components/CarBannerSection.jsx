@@ -42,7 +42,7 @@ export default function CarBannerSection() {
         </span>
 
         {/* Main Title */}
-        <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
+        <h2 className="mb-2 text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
           Exclusive 4Tyrezz <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3083ff] via-sky-300 to-cyan-300">
             Offers & Deals
@@ -50,7 +50,7 @@ export default function CarBannerSection() {
         </h2>
 
         {/* Subtitle / Description */}
-        <p className="text-slate-300 text-sm sm:text-base font-medium leading-relaxed mb-8">
+        <p className="mb-6 text-xs font-light leading-relaxed text-slate-200 sm:text-sm">
           Get top-brand tyres at unbeatable prices with free installation, 3D wheel alignment, and instant doorstep fitting across Hyderabad.
         </p>
 

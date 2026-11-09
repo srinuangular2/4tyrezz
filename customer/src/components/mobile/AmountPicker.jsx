@@ -14,26 +14,28 @@ export default function AmountPicker({
   chipValue,
   onChip,
   chipText,
+  chipSuffix,
+  prominent = false,
 }) {
   const clamp = (next) => onChange(Math.min(max, Math.max(min, next)));
 
   return (
     <section className="bg-white px-4 pb-4 pt-3">
-      <p className="text-center text-[12px] font-medium text-slate-500">{label}</p>
-      <div className="mt-1.5 flex items-center justify-center gap-3">
+      <p className="text-center text-[13px] font-medium text-slate-500">{label}</p>
+      <div className="mt-1.5 flex items-center justify-center gap-4">
         <button
           type="button"
           onClick={() => clamp(value - step)}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-[16px] leading-none text-slate-600"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-[18px] font-medium leading-none text-slate-700"
           aria-label="Decrease"
         >
           −
         </button>
-        <p className="min-w-[8rem] text-center text-[22px] font-semibold tracking-tight text-slate-900">{formatINR(value)}</p>
+        <p className={`min-w-[9rem] text-center tracking-tight text-slate-900 ${prominent ? 'text-[28px] font-bold' : 'text-[22px] font-semibold'}`}>{formatINR(value)}</p>
         <button
           type="button"
           onClick={() => clamp(value + step)}
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-[16px] leading-none text-slate-600"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-[18px] font-medium leading-none text-slate-700"
           aria-label="Increase"
         >
           +
@@ -54,20 +56,28 @@ export default function AmountPicker({
       </div>
       {chips.length > 0 && (
         <>
-          <p className="mt-4 text-center text-[12px] font-medium text-slate-500">{chipLabel}</p>
-          <div className="no-scrollbar -mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          <p className="mt-5 text-center text-[13px] font-medium text-slate-500">{chipLabel}</p>
+          <div className="no-scrollbar -mx-1 mt-2.5 flex gap-2 overflow-x-auto px-1 pb-1">
             {chips.map((chip) => {
               const active = chip === chipValue;
+              const text = chipText ? chipText(chip) : chip;
               return (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => onChip(chip)}
-                  className={`shrink-0 rounded-lg px-3 py-1.5 text-[12px] font-semibold ${
-                    active ? 'bg-[#eaf2ff] text-[#1853ff] ring-1 ring-[#3083ff]/40' : 'bg-[#f4f6f8] text-slate-700'
+                  className={`shrink-0 rounded-xl px-3.5 py-2 text-center ${
+                    active ? 'bg-[#e7f8ee] text-[#178a45]' : 'bg-[#f4f6f8] text-slate-800'
                   }`}
                 >
-                  {chipText ? chipText(chip) : chip}
+                  {chipSuffix ? (
+                    <>
+                      <span className="block text-[16px] font-semibold leading-none">{text}</span>
+                      <span className={`mt-1 block text-[11px] font-normal leading-none ${active ? 'text-[#178a45]' : 'text-slate-500'}`}>{chipSuffix}</span>
+                    </>
+                  ) : (
+                    <span className="block text-[13px] font-medium leading-none">{text}</span>
+                  )}
                 </button>
               );
             })}

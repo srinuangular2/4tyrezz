@@ -14,23 +14,20 @@ export default function DesignedPageBanner({
 }) {
   return (
     <>
-    <section className={`relative min-h-[300px] overflow-hidden lg:hidden ${hideOnMobile ? 'hidden' : ''}`}>
-      <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover object-[85%_center]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061433]/90 via-[#0b2a6e]/62 to-[#0b2a6e]/10" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#061433]/55 via-transparent to-[#061433]/25" />
-      <div className="relative px-4 py-5">
-        {eyebrow && <p className="text-[11px] font-semibold uppercase tracking-wide text-white">{eyebrow}</p>}
-        <h1 className="mt-1 max-w-[18rem] text-[20px] font-semibold leading-snug text-white">
-          {title}{accent ? <span className="font-bold"> {accent}</span> : null}
+    <section className={`relative overflow-hidden lg:hidden ${hideOnMobile ? 'hidden' : ''}`}>
+      <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover object-[82%_center]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/55 to-slate-950/25" />
+      <div className="relative px-4 py-4">
+        {eyebrow && <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">{eyebrow}</p>}
+        <h1 className="mt-1 max-w-[18rem] text-[15px] font-medium leading-snug text-white">
+          {title}{accent ? <span> {accent}</span> : null}
         </h1>
-        {subtitle && <p className="mt-1.5 max-w-[20rem] text-[13px] font-normal leading-snug text-white/90">{subtitle}</p>}
+        {subtitle && <p className="mt-1 max-w-[18rem] text-xs font-light leading-snug text-white/90 line-clamp-2">{subtitle}</p>}
         {points.length > 0 && (
-          <div className="mt-3 grid max-w-[22rem] grid-cols-2 gap-2">
+          <div className="mt-2.5 grid max-w-[16rem] grid-cols-2 gap-x-2 gap-y-1.5">
             {points.map(({ icon: Icon, label }) => (
-              <span key={label} className="inline-flex items-center gap-2 text-[12px] font-semibold text-white">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/15">
-                  <Icon className="h-3.5 w-3.5 text-white" strokeWidth={2.25} />
-                </span>
+              <span key={label} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white">
+                <Icon className="h-3.5 w-3.5 shrink-0 text-white/80" strokeWidth={2} />
                 {label}
               </span>
             ))}
@@ -39,30 +36,29 @@ export default function DesignedPageBanner({
         {children}
       </div>
     </section>
-    <section className="relative hidden overflow-hidden min-h-[210px] sm:min-h-[480px] lg:block lg:min-h-[540px]">
+    <section className="relative hidden overflow-hidden lg:block">
       <img
         src={src}
         alt={alt}
         className={`absolute inset-0 w-full h-full object-cover ${imageClass}`}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061a4a]/92 via-[#1853ff]/42 to-transparent sm:via-[#1853ff]/22" />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-slate-950/10 sm:hidden" />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-transparent" />
 
-      <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-14 lg:py-16">
+      <div className="relative mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="max-w-xl">
           {eyebrow && (
-            <span className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-white/15 text-white border border-white/25 backdrop-blur-md mb-2 sm:mb-5">
+            <span className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-white/80 backdrop-blur-md sm:mb-5 sm:px-4 sm:py-1.5">
               <span className="w-2 h-2 rounded-full bg-[#7ec4ff] animate-pulse" />
               {eyebrow}
             </span>
           )}
 
-          <h1 className="text-xl sm:text-5xl sm:uppercase tracking-tight font-display text-white leading-tight">
-            {title} {accent ? <span className="font-black">{accent}</span> : null}
+          <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
+            {title} {accent ? <span className="font-medium">{accent}</span> : null}
           </h1>
 
           {subtitle && (
-            <p className="text-white/85 text-xs sm:text-base font-medium mt-2 sm:mt-4 max-w-md leading-relaxed line-clamp-2 sm:line-clamp-none">
+            <p className="mt-1.5 max-w-md text-xs font-light leading-relaxed text-white/85 line-clamp-2 sm:text-sm">
               {subtitle}
             </p>
           )}
