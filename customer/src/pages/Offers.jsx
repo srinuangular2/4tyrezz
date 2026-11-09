@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { BadgeCheck, Scale, Tag, TicketPercent } from 'lucide-react';
+import { BadgeCheck, Phone, Scale, Tag, TicketPercent } from 'lucide-react';
+import HowItWorks from '../components/mobile/HowItWorks';
 import api from '../api/axios';
 import CarCard from '../components/CarCard';
 import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
@@ -130,29 +131,19 @@ export default function Offers() {
         </BannerActions>
       </DesignedPageBanner>
 
-      <section className="space-y-4 px-4 py-4 lg:hidden">
-        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <p className="text-[12px] font-medium text-[#3083ff]">How an offer works</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Three steps to the price</h2>
-          <ol className="mt-3 space-y-3">
-            {[
-              ['1', 'Pick a live deal', 'Only offers published by 4tyrezz are listed here.'],
-              ['2', 'Copy the code', 'If a code is shown, copy it. You will give it to the desk.'],
-              ['3', 'Ask us to apply it', 'Enquire as usual. The desk adds the offer. A seller cannot.'],
-            ].map(([n, title, body]) => (
-              <li key={n} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
-                <div>
-                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
-                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <a href="#live-offers" className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
-            See live offers
-          </a>
-        </div>
+      <section className="lg:hidden">
+        <HowItWorks
+          steps={[
+            { icon: Tag, title: 'Pick a live deal', body: 'Only offers published by 4tyrezz are listed here.' },
+            { icon: TicketPercent, title: 'Copy the code', body: 'If a code is shown, copy it and give it to the desk.' },
+            { icon: Phone, title: 'Ask us to apply it', body: 'Enquire as usual. The desk adds the offer. A seller cannot.' },
+          ]}
+          action={(
+            <a href="#live-offers" className="flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[15px] font-semibold text-white">
+              See live offers
+            </a>
+          )}
+        />
       </section>
 
       <Section eyebrow="How to save" title="Claim your offer" className="hidden lg:block">

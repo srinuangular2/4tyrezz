@@ -3,16 +3,19 @@ import { Link } from 'react-router-dom';
 import {
   BadgeCheck,
   BatteryCharging,
+  CalendarCheck,
+  Camera,
   ChevronDown,
+  CircleDot,
   FileCheck2,
   Gauge,
-  Camera,
-  CircleDot,
+  Phone,
   ScanLine,
   ShieldCheck,
   Thermometer,
   X,
 } from 'lucide-react';
+import HowItWorks from '../components/mobile/HowItWorks';
 import useReferenceData from '../hooks/useReferenceData';
 import InspectionPriceFields from '../components/pdi/InspectionPriceFields';
 import { ENGINE_PRICE, PRIMARY_CITIES, bookPath, inr, quoteInspection } from '../lib/pdiPricing';
@@ -281,21 +284,15 @@ export default function Inspection() {
           <p className="mt-2 text-center text-[12px] font-normal text-slate-500">Next you pick the car, a time and pay. The report arrives within 60 minutes.</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <p className="text-[12px] font-medium text-[#3083ff]">After you book</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">What happens next</h2>
-          <ol className="mt-3 space-y-3">
-            {STEPS.map(([n, title, body], index) => (
-              <li key={n} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{index + 1}</span>
-                <div>
-                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
-                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+        <HowItWorks
+          title="How does it work?"
+          steps={[
+            { icon: CalendarCheck, title: 'Book a time', body: 'Pick a dealer yard or your home, then choose a date and a time slot.' },
+            { icon: ShieldCheck, title: 'Engineer checks the car', body: 'A certified engineer runs the checklist and photographs anything that fails.' },
+            { icon: Phone, title: 'Hear the findings', body: 'You get a call on the important issues before you sign anything.' },
+            { icon: FileCheck2, title: 'Get the report', body: 'Scores, defect photos and paint readings arrive within 60 minutes.' },
+          ]}
+        />
 
         <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
           <p className="text-[12px] font-medium text-[#3083ff]">300+ points</p>

@@ -6,6 +6,7 @@ import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import CarCard from '../components/CarCard';
 import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
+import AmountPicker, { PartnerCard } from '../components/mobile/AmountPicker';
 import { isIndianMobile, digitsOnly, whatsappUrl } from '../lib/companyContact';
 import {
   BRAND,
@@ -33,7 +34,15 @@ const BENEFITS = [
   { icon: FileText, title: 'Minimal documents', body: 'PAN, Aadhaar, 3 months bank statement and income proof.' },
 ];
 
-const BANKS = ['HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank', 'Bajaj Finserv', 'IDFC First'];
+const LENDERS = [
+  { name: 'SBI', rate: 9.5 },
+  { name: 'HDFC Bank', rate: 10.5 },
+  { name: 'ICICI Bank', rate: 10.75 },
+  { name: 'Axis Bank', rate: 11.25 },
+  { name: 'IDFC First', rate: 11.5 },
+  { name: 'Bajaj Finserv', rate: 12.5 },
+];
+const BANKS = LENDERS.map((lender) => lender.name);
 const TENURES = [12, 24, 36, 48, 60, 72, 84];
 const FINANCE_FAQS = [
   {
@@ -162,35 +171,53 @@ export default function Finance() {
         ]}
       >
         <BannerActions>
-          <BannerButton href="#emi-calculator">Calculate EMI</BannerButton>
+          <span className="lg:hidden"><BannerButton href="#loan-picker">Compare EMI</BannerButton></span>
+          <span className="hidden lg:inline-flex"><BannerButton href="#emi-calculator">Calculate EMI</BannerButton></span>
           <BannerButton href="#apply" ghost>Apply for a loan</BannerButton>
         </BannerActions>
       </DesignedPageBanner>
 
-      <section className="space-y-4 px-4 py-4 lg:hidden">
-        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <p className="text-[12px] font-medium text-[#3083ff]">How a loan works</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Three steps, then a callback</h2>
-          <ol className="mt-3 space-y-3">
-            {[
-              ['1', 'Set the price', 'Car price, down payment and tenure. The EMI updates as you move the sliders.'],
-              ['2', 'Check the monthly amount', 'You see the loan, the interest and the total before you share any details.'],
-              ['3', 'Send your number', 'The finance desk matches a partner bank and calls you. This form does not affect your CIBIL score.'],
-            ].map(([n, title, body]) => (
-              <li key={n} className="flex gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
-                <div>
-                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
-                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <a href="#emi-calculator" className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
-            Start with the EMI
-          </a>
-        </div>
-      </section>
+      <div id="loan-picker" className="scroll-mt-24 lg:hidden">
+        <AmountPicker
+          label="Select loan amount"
+          value={loanAmount}
+          min={100000}
+          max={5000000}
+          step={50000}
+          onChange={(value) => {
+            setPrice(value);
+            setDownPayment(0);
+          }}
+          minLabel="₹1,00,000"
+          maxLabel="₹50,00,000"
+          chipLabel="Select loan duration"
+          chips={TENURES}
+          chipValue={months}
+          onChip={setMonths}
+          chipText={(monthsValue) => `${monthsValue} months`}
+        />
+        <section className="space-y-3 bg-[#f6f7fb] px-4 py-4">
+          {[...LENDERS].sort((a, b) => a.rate - b.rate).map((lender, index) => (
+            <PartnerCard
+              key={lender.name}
+              recommended={index === 0}
+              name={lender.name}
+              onApply={() => {
+                setRate(lender.rate);
+                set('bankName', lender.name);
+                document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              leftLabel="EMI"
+              leftValue={formatINR(Math.round(calcEmi(loanAmount, lender.rate, months)))}
+              rightLabel="Yearly interest"
+              rightValue={`${lender.rate}%`}
+            />
+          ))}
+          <p className="px-1 text-[12px] font-normal leading-snug text-slate-500">
+            These are indicative rates. The bank confirms the final EMI after it checks your documents.
+          </p>
+        </section>
+      </div>
 
       <Section eyebrow="How it works" title="Three simple steps" className="hidden lg:block">
         <div className="grid sm:grid-cols-3 gap-5">
@@ -230,7 +257,7 @@ export default function Finance() {
         </div>
       </Section>
 
-      <div id="emi-calculator" className="scroll-mt-24">
+      <div id="emi-calculator" className="hidden scroll-mt-24 lg:block">
         <Section eyebrow="Plan your budget" title="Car EMI Calculator">
           <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 1. Move the sliders. The monthly amount is on the next card and in the bar below.</p>
           <div className="grid lg:grid-cols-[1.1fr_1fr] gap-4 lg:gap-6">
@@ -349,7 +376,7 @@ export default function Finance() {
 
       <div id="apply" className="scroll-mt-24">
         <Section eyebrow="Get started" title="Apply for car finance" bg>
-          <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Step 3. Name and mobile are enough to start. The desk calls you with the bank and the documents.</p>
+          <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Name and mobile are enough. We call you with the bank and the papers to keep ready.</p>
           <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4 lg:gap-6">
             <Card className="p-4 lg:p-6" highlighted>
               <div className="grid sm:grid-cols-2 gap-4">
@@ -366,6 +393,7 @@ export default function Finance() {
                     placeholder="10-digit mobile"
                   />
                 </Field>
+                <div className="hidden lg:contents">
                 <Field label="Email">
                   <input className={inputClass} value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" />
                 </Field>
@@ -400,6 +428,7 @@ export default function Finance() {
                 <Field label="Monthly income" hint="Helps us match the right lender">
                   <input className={inputClass} value={form.monthlyIncome} onChange={(e) => set('monthlyIncome', e.target.value)} placeholder="₹ per month" />
                 </Field>
+                </div>
               </div>
 
               <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4">
@@ -407,15 +436,6 @@ export default function Finance() {
                 <p className="text-sm font-extrabold text-slate-800 mt-1">
                   {formatINR(loanAmount)} over {months} months · EMI {formatINR(emi)} @ {rate}% p.a.
                 </p>
-              </div>
-
-              <div className="mt-4 lg:hidden">
-                <p className="text-[13px] font-medium text-slate-700">Keep these ready for the call</p>
-                <ul className="mt-2 space-y-1.5">
-                  {DOCUMENTS.map((d) => (
-                    <li key={d} className="text-[12px] font-normal text-slate-500">• {d}</li>
-                  ))}
-                </ul>
               </div>
 
               <PrimaryButton className="w-full mt-5" disabled={submitting} onClick={submit}>
@@ -495,7 +515,7 @@ export default function Finance() {
         </p>
       </Section>
 
-      <Section eyebrow="Help" title="Finance questions">
+      <Section eyebrow="Help" title="Finance questions" className="hidden lg:block">
         <div className="max-w-3xl space-y-3">
           {FINANCE_FAQS.map((f) => (
             <details key={f.q} className="bg-white border border-slate-200 rounded-xl p-5 group cursor-pointer shadow-xs">
@@ -513,12 +533,7 @@ export default function Finance() {
         </div>
       </Section>
 
-      <div className="lg:hidden h-20" />
-      <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
-        <a href="#apply" className="flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
-          Apply for this EMI · {formatINR(emi)}/mo
-        </a>
-      </div>
+      <div className="h-6 lg:hidden" />
     </div>
   );
 }

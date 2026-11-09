@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { Plus, X } from 'lucide-react';
+import { CarFront, Columns3, Plus, Search, X } from 'lucide-react';
+import HowItWorks from '../components/mobile/HowItWorks';
 import api from '../api/axios';
 import { GhostButton, PrimaryButton, Section, Skeleton, formatINR } from '../components/PageShell';
 import CompareBanner from '../components/compare/CompareBanner';
@@ -147,25 +148,13 @@ export default function Compare() {
       {ids.length < 2 && (
         <section className="space-y-4 px-4 py-4 lg:hidden">
           {ids.length === 0 && (
-          <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-            <p className="text-[12px] font-medium text-[#3083ff]">How to compare</p>
-            <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Two cars, side by side</h2>
-            <ol className="mt-3 space-y-3">
-              {[
-                ['1', 'Choose the first car', 'Search by brand or model, or start from a popular pair below.'],
-                ['2', 'Add a second car', 'The comparison opens as soon as two cars are selected. You can add up to four.'],
-                ['3', 'Read the differences', 'Price, kilometres and features sit in columns. Hide the rows that match.'],
-              ].map(([n, title, body]) => (
-                <li key={n} className="flex gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
-                  <div>
-                    <p className="text-[14px] font-semibold text-slate-900">{title}</p>
-                    <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
+            <HowItWorks
+              steps={[
+                { icon: Search, title: 'Choose the first car', body: 'Search by brand or model, or start from a popular pair below.' },
+                { icon: CarFront, title: 'Add a second car', body: 'The comparison opens as soon as two cars are selected. You can add up to four.' },
+                { icon: Columns3, title: 'Read the differences', body: 'Price, kilometres and features sit side by side. Hide the rows that match.' },
+              ]}
+            />
           )}
 
           <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">

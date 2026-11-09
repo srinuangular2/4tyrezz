@@ -27,14 +27,14 @@ export default function WhyValuation() {
   return (
     <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-14 items-center">
       <div>
-        <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-[#3083ff]/10 text-[#3083ff] border border-[#3083ff]/20 mb-4">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#3083ff] animate-pulse" />
+        <span className="mb-4 hidden items-center gap-2 rounded-full border border-[#3083ff]/20 bg-[#3083ff]/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#3083ff] lg:inline-flex">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#3083ff]" />
           Why 4tyrezz
         </span>
-        <h2 className="text-3xl sm:text-4xl uppercase tracking-tight font-display text-slate-800">
-          How <span className="font-black text-slate-900">SmartPrice</span> works
+        <h2 className="text-[20px] font-bold tracking-tight text-slate-900 lg:font-display lg:text-4xl lg:uppercase lg:text-slate-800">
+          How does it work?
         </h2>
-        <p className="text-slate-500 text-sm font-medium mt-3 max-w-lg leading-relaxed">
+        <p className="mt-2 hidden max-w-lg text-sm font-medium leading-relaxed text-slate-500 lg:block">
           Check what the market may pay before you sell. The number on screen is a guide. The real offer comes after inspection.
         </p>
 
@@ -50,19 +50,19 @@ export default function WhyValuation() {
                 </span>
               </div>
               <div className="pt-0.5">
-                <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">{title}</h3>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 leading-relaxed">{body}</p>
+                <h3 className="text-[15px] font-semibold leading-snug text-slate-900 lg:text-base lg:font-extrabold">{title}</h3>
+                <p className="mt-0.5 text-[13px] font-normal leading-snug text-slate-500 lg:text-sm lg:font-medium">{body}</p>
               </div>
             </li>
           ))}
         </ol>
 
-        <p className="mt-8 text-sm font-bold text-slate-800">
+        <p className="mt-6 hidden text-sm font-bold text-slate-800 lg:block">
           4tyrezz prices the same way our listing desk does — then confirms it on the ground.
         </p>
       </div>
 
-      <div className="relative">
+      <div className="relative hidden lg:block">
         <div className="absolute -inset-3 rounded-[2rem] bg-[#3083ff]/10 blur-xl" aria-hidden />
         <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 shadow-[0_20px_50px_rgba(15,23,42,0.12)] aspect-[4/3] lg:aspect-[5/4]">
           <img
