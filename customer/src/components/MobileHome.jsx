@@ -28,10 +28,11 @@ const WHY_START = [
 ];
 
 const PROMO_BANNERS = [
-  { id: 'used', image: '/used-cars.png', title: 'Drive your dream car today', subtitle: '100% inspected | Clear price', cta: 'Explore cars', href: '/cars' },
-  { id: 'offers', image: '/offers.png', title: 'Offers on cars you can trust', subtitle: 'Deals on live, inspected stock', cta: 'View offers', href: '/offers' },
-  { id: 'sell', image: '/sell-my-car.png', title: 'Sell from your doorstep', subtitle: 'Free estimate, then a real offer', cta: 'Get a price', href: '/sell' },
-  { id: 'finance', image: '/car-finance.png', title: 'EMI that matches the car', subtitle: 'Finance on inspected used cars', cta: 'Check finance', href: '/finance' },
+  { id: 'used', image: '/used-cars.png', title: 'Drive your dream car today', subtitle: '100% inspected | Clear price', href: '/cars', cta: 'Explore cars' },
+  { id: 'offers', image: '/offers.png', title: 'Offers on cars you can trust', subtitle: 'Deals on live, inspected stock', href: '/offers', cta: 'View offers' },
+  { id: 'sell', image: '/sell-my-car.png', title: 'Sell from your doorstep', subtitle: 'Free estimate, then a real offer', href: '/sell', cta: 'Get a price' },
+  { id: 'finance', image: '/car-finance.png', title: 'EMI that matches the car', subtitle: 'Finance on inspected used cars', href: '/finance', cta: 'Check finance' },
+  { id: 'inspect', image: '/car-pdi.png', title: 'Inspect before you buy', subtitle: 'Certified report in 60 minutes', href: '/inspection', cta: 'Book inspection' },
 ];
 
 const SERVICES = [
@@ -250,26 +251,25 @@ function CarRail({ cars }) {
   );
 }
 
-function BannerCta({ href, children }) {
-  const className = 'mt-3 inline-flex items-center h-10 px-4 rounded-full bg-white text-[#1853ff] text-[13px] font-black shadow-sm w-fit';
-  if (/^https?:/i.test(href || '')) {
-    return <a href={href} className={className}>{children}</a>;
-  }
-  return <Link to={href || '/cars'} className={className}>{children}</Link>;
-}
-
 function BannerSlide({ slide }) {
-  return (
-    <div className="relative h-[210px] w-full shrink-0 snap-start bg-slate-900">
-      <img src={slide.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-slate-950/72 to-slate-950/20" />
+  const className = 'relative block h-[200px] w-full shrink-0 snap-start bg-[#06215c]';
+  const body = (
+    <>
+      <img src={slide.image} alt="" className="absolute inset-0 h-full w-full object-cover object-[78%_center]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,#041533_0%,#08307a_38%,rgba(12,78,196,0.82)_58%,rgba(24,83,255,0.18)_78%,rgba(24,83,255,0)_100%)]" />
       <div className="relative flex h-full flex-col justify-center px-4">
-        <p className="max-w-[15rem] text-[18px] font-semibold leading-snug text-white">{slide.title}</p>
-        {slide.subtitle ? <p className="mt-1 max-w-[15rem] text-[13px] font-normal leading-snug text-white">{slide.subtitle}</p> : null}
-        <BannerCta href={slide.href}>{slide.cta || 'Explore cars'} →</BannerCta>
+        <p className="max-w-[13.5rem] text-[18px] font-semibold leading-snug text-white">{slide.title}</p>
+        {slide.subtitle ? <p className="mt-1 max-w-[13.5rem] text-[13px] font-normal leading-snug text-white">{slide.subtitle}</p> : null}
+        <span className="mt-3 inline-flex h-8 w-fit items-center rounded-full bg-white px-3 text-[12px] font-semibold text-[#1853ff]">
+          {slide.cta || 'Open'} →
+        </span>
       </div>
-    </div>
+    </>
   );
+  if (/^https?:/i.test(slide.href || '')) {
+    return <a href={slide.href} className={className} aria-label={slide.title}>{body}</a>;
+  }
+  return <Link to={slide.href || '/cars'} className={className} aria-label={slide.title}>{body}</Link>;
 }
 
 export default function MobileHome() {
@@ -297,14 +297,14 @@ export default function MobileHome() {
       setLatest(l.data?.cars || []);
       setPremium(p.data?.cars || []);
       const rows = Array.isArray(b.data) ? b.data : [];
-      if (rows.length) {
-        setBanners(rows.map((row) => ({
+      if (rows.length >= 4) {
+        setBanners(rows.slice(0, 5).map((row) => ({
           id: row._id,
           image: mediaUrl(row.image),
           href: bannerHref(row),
           title: row.titleLine1 || row.title || 'Drive your dream car today',
-          subtitle: row.subtitle || row.titleLine2 || '100% inspected | 1-year support',
-          cta: row.ctaLabel || 'Explore cars',
+          subtitle: row.subtitle || row.titleLine2 || '100% inspected | Clear price',
+          cta: row.ctaLabel || 'Open',
         })));
       }
     });
