@@ -15,7 +15,7 @@ export default function SellBenefits() {
           <span className="w-1.5 h-1.5 rounded-full bg-[#3083ff] animate-pulse" />
           Why sell here
         </span>
-        <h2 className="text-base font-semibold tracking-tight text-slate-800 sm:text-lg">
+        <h2 className="text-base font-semibold tracking-tight text-slate-800 sm:text-lg lg:font-display lg:text-4xl lg:uppercase">
           Benefits of selling with 4tyrezz
         </h2>
         <p className="text-slate-500 text-sm font-medium mt-3 leading-relaxed px-1">
@@ -23,7 +23,7 @@ export default function SellBenefits() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-6">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:gap-4">
         {BENEFITS.map(({ icon: Icon, title, body }) => (
           <div
             key={title}

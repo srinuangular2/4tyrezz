@@ -32,7 +32,7 @@ export default function CompareBanner({ children, hideMobile = false }) {
         {children}
       </div>
     </section>
-    <section className="relative hidden overflow-hidden lg:block">
+    <section className="relative hidden overflow-hidden min-h-[420px] sm:min-h-[480px] lg:block lg:min-h-[540px]">
       <img
         src="/compare-cars.png"
         alt="Compare used cars on 4tyrezz"
@@ -41,17 +41,17 @@ export default function CompareBanner({ children, hideMobile = false }) {
       <div className="absolute inset-0 bg-gradient-to-r from-[#0b2a6e]/92 via-[#1853ff]/55 to-transparent sm:via-[#1853ff]/35" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-slate-950/10 sm:hidden" />
 
-      <div className="relative container-px mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         <div className="max-w-xl">
           <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-white/15 text-white border border-white/25 backdrop-blur-md mb-5">
             <span className="w-2 h-2 rounded-full bg-[#7ec4ff] animate-pulse" />
             Compare cars
           </span>
 
-          <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
-            Find your <span className="font-medium">perfect ride</span>
+          <h1 className="text-3xl sm:text-5xl uppercase tracking-tight font-display text-white leading-tight">
+            Find your <span className="font-black">perfect ride</span>
           </h1>
-          <p className="mt-1.5 max-w-md text-xs font-light leading-relaxed text-white/85 sm:text-sm">
+          <p className="text-white/85 text-sm sm:text-base font-medium mt-4 max-w-md leading-relaxed">
             Compare features, specs, and prices to choose the car that fits your lifestyle.
           </p>
 

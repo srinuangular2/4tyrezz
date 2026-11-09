@@ -32,7 +32,7 @@ export default function SellBanner() {
         </div>
       </div>
     </section>
-    <section className="relative hidden overflow-hidden lg:block">
+    <section className="relative hidden overflow-hidden min-h-[200px] sm:min-h-[420px] lg:block lg:min-h-[540px]">
       <img
         src="/sell-my-car.png"
         alt="Sell your car with 4tyrezz"
@@ -41,17 +41,17 @@ export default function SellBanner() {
       <div className="absolute inset-0 bg-gradient-to-r from-[#0b2a6e]/92 via-[#1853ff]/55 to-transparent sm:via-[#1853ff]/35" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-950/10 sm:hidden" />
 
-      <div className="relative container-px mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-16 lg:py-20">
         <div className="max-w-xl">
           <span className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-white/15 text-white border border-white/25 backdrop-blur-md mb-2.5 sm:mb-5">
             <span className="w-2 h-2 rounded-full bg-[#7ec4ff] animate-pulse" />
             Sell with 4tyrezz
           </span>
 
-          <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
-            Sell your car the <span className="font-medium">smart way</span>
+          <h1 className="text-xl sm:text-5xl sm:uppercase tracking-tight font-display text-white leading-tight">
+            Sell your car the <span className="font-black">smart way</span>
           </h1>
-          <p className="mt-1.5 max-w-md text-xs font-light leading-relaxed text-white/85 sm:text-sm">
+          <p className="text-white/85 text-xs sm:text-base font-medium mt-2 sm:mt-4 max-w-md leading-relaxed line-clamp-2 sm:line-clamp-none">
             Instant estimate · Doorstep inspection · Fair final offer
           </p>
 

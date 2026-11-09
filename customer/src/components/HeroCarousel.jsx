@@ -194,7 +194,7 @@ export default function HeroCarousel() {
 
   if (!loaded) {
     return (
-      <div className="w-full bg-slate-900 py-6 md:py-8">
+      <div className="w-full h-[200px] md:h-[620px] bg-slate-900 animate-pulse flex items-center">
         <div className="max-w-8xl mx-auto px-6 sm:px-12 w-full space-y-4">
           <div className="h-4 w-28 bg-slate-800 rounded-md" />
           <div className="h-12 w-2/5 bg-slate-800 rounded-lg" />
@@ -217,7 +217,7 @@ export default function HeroCarousel() {
         if (Math.abs(dx) > 50) (dx > 0 ? prev() : next());
       }}
     >
-      <div className="relative w-full overflow-hidden px-0 pb-8 pt-4 md:py-8">
+      <div className="relative h-[200px] md:h-[600px] lg:h-[690px] w-full flex flex-col justify-end md:justify-between pb-5 md:pb-8 overflow-hidden md:overflow-visible">
         <div className="absolute inset-0 overflow-hidden">
           {slides.map((slide, i) => (
             <div
@@ -246,7 +246,7 @@ export default function HeroCarousel() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent md:hidden" />
 
         {/* Main Banner Content */}
-        <div className="relative z-40 max-w-7xl mx-auto px-4 sm:px-8 lg:px-8 w-full">
+        <div className="relative z-40 max-w-7xl mx-auto px-4 sm:px-8 lg:px-8 w-full md:my-auto">
           <div key={active} className="max-w-4xl text-left animate-heroCopyIn space-y-1.5 md:space-y-3">
             
             {/* Eyebrow Badges — desktop only */}
@@ -262,12 +262,12 @@ export default function HeroCarousel() {
               Used cars
             </span>
 
-            <h1 className="font-medium tracking-tight leading-snug">
-              <span className="block text-[15px] font-medium text-white md:text-2xl md:text-[#0e172a]">
+            <h1 className="font-extrabold tracking-tight leading-[1.1] font-display">
+              <span className="block text-[22px] md:text-6xl lg:text-6xl font-extrabold text-white md:text-[#0e172a]">
                 {line1}
               </span>
               {line2 && (
-                <span className="block text-base font-medium text-[#7ec4ff] md:text-3xl md:text-[#1853ff]">
+                <span className="block text-[26px] md:text-7xl lg:text-8xl font-black text-[#7ec4ff] md:text-[#1853ff]">
                   {line2.startsWith('M') ? (
                     <>
                       <span className="md:bg-clip-text md:text-transparent md:bg-gradient-to-r md:from-[#1853ff] md:via-[#0072ff] md:to-[#00bfff]">
@@ -283,7 +283,7 @@ export default function HeroCarousel() {
             </h1>
 
             {current.subtitle && (
-              <h6 className="max-w-[280px] pt-0.5 text-xs font-light leading-snug text-white/85 line-clamp-2 md:max-w-md md:text-sm md:font-light md:text-slate-600">
+              <h6 className="font-medium text-[12px] md:text-base max-w-[280px] md:max-w-md leading-snug md:leading-relaxed pt-0.5 md:pt-1 pb-0 md:pb-5 line-clamp-2 md:line-clamp-none text-white/85 md:text-black md:font-semibold">
                 {current.subtitle}
               </h6>
             )}

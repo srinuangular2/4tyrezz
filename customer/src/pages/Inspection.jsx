@@ -183,7 +183,7 @@ export default function Inspection() {
           </ul>
         </div>
       </section>
-      <section className="relative hidden overflow-hidden lg:block">
+      <section className="relative hidden overflow-hidden min-h-[280px] sm:min-h-[420px] lg:block lg:min-h-[520px]">
         <img
           src="/car-pdi.png"
           alt="4tyrezz engineer inspecting a car before delivery"
@@ -191,18 +191,26 @@ export default function Inspection() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0b2a6e]/92 via-[#1853ff]/55 to-transparent sm:via-[#1853ff]/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent sm:hidden" />
-        <div className="relative container-px mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-20">
           <div className="max-w-xl">
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Pre-delivery inspection</p>
-            <h1 className="mt-1 text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
-              Planning to buy a <span className="font-medium">new or used car</span>?
+            <h1 className="mt-2 text-2xl sm:text-5xl tracking-tight font-display text-white leading-tight">
+              Planning to buy a <span className="font-black"> new or used car</span>?
             </h1>
-            <p className="mt-1.5 max-w-md text-xs font-light leading-snug text-white/85 sm:text-sm">
-              A certified engineer checks the car and sends a digital report before you decide.
+            <p className="mt-3 text-sm sm:text-lg font-bold text-white leading-snug">
+              Make a confident decision with 4tyrezz’s comprehensive car inspection and pre-delivery inspection (PDI) services.
             </p>
-            <a href="#pdi-price" className="mt-5 inline-flex rounded-xl bg-white px-5 py-3 text-center text-sm font-semibold text-[#1853ff]">
-              See inspection price
-            </a>
+            <p className="text-white/85 text-xs sm:text-base font-medium mt-3 leading-relaxed">
+              Get a detailed inspection report and know what you’re buying before you drive away.
+            </p>
+            <div className="mt-5 flex flex-col sm:flex-row gap-3">
+              <Link to={bookPath({ pdiType: 'NEW_CAR', city, engineBand, obdScan, serviceHistory: false })} className="rounded-xl bg-white text-[#1853ff] font-black text-sm px-5 py-3 text-center">
+                Book new car PDI (from {inr(ENGINE_PRICE.UPTO_1249)})
+              </Link>
+              <Link to={bookPath({ pdiType: 'USED_CAR', city, engineBand, obdScan, serviceHistory })} className="rounded-xl border border-white/40 text-white font-black text-sm px-5 py-3 text-center">
+                Book used car inspection (from {inr(ENGINE_PRICE.UPTO_1249)})
+              </Link>
+            </div>
             <ul className="mt-5 flex gap-2 overflow-x-auto pb-1">
               {TRUST.map(([label, Icon]) => (
                 <li key={label} className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1.5 text-[11px] font-bold text-white">

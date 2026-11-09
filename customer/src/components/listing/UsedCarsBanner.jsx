@@ -9,7 +9,7 @@ const POINTS = [
 
 export default function UsedCarsBanner() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden min-h-[320px] sm:min-h-[380px] lg:min-h-[420px]">
       <img
         src="/used-cars.png"
         alt="Buy inspected used cars on 4tyrezz"
@@ -18,17 +18,17 @@ export default function UsedCarsBanner() {
       <div className="absolute inset-0 bg-gradient-to-r from-[#061a4a]/88 via-[#1853ff]/40 to-transparent sm:via-[#1853ff]/20" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-slate-950/10 sm:hidden" />
 
-      <div className="relative container-px mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16">
         <div className="max-w-xl">
           <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-white/15 text-white border border-white/25 backdrop-blur-md mb-5">
             <span className="w-2 h-2 rounded-full bg-[#7ec4ff] animate-pulse" />
             Buy used cars
           </span>
 
-          <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
-            Used cars <span className="font-medium">near you</span>
+          <h1 className="text-3xl sm:text-5xl uppercase tracking-tight font-display text-white leading-tight">
+            Used cars <span className="font-black">near you</span>
           </h1>
-          <p className="mt-1.5 max-w-md text-xs font-light leading-relaxed text-white/85 sm:text-sm">
+          <p className="text-white/85 text-sm sm:text-base font-medium mt-4 max-w-md leading-relaxed">
             Inspected listings · Clear price · You talk to 4tyrezz, not random sellers
           </p>
 
