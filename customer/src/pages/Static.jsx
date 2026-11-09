@@ -23,11 +23,11 @@ function PageShell({ title, subtitle, badge, children }) {
                 {badge}
               </span>
             )}
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+            <h1 className="text-xl font-medium leading-snug tracking-tight sm:text-2xl">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-slate-300 text-sm sm:text-base font-normal leading-relaxed max-w-2xl">
+              <p className="max-w-2xl text-xs font-light leading-relaxed text-slate-300 sm:text-sm">
                 {subtitle}
               </p>
             )}

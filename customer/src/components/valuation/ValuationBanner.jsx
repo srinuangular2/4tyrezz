@@ -15,35 +15,24 @@ const STEPS = [
 export default function ValuationBanner() {
   return (
     <>
-    <section className="relative min-h-[320px] overflow-hidden lg:hidden">
+    <section className="relative overflow-hidden lg:hidden">
       <img src="/car-valution.png" alt="" className="absolute inset-0 h-full w-full object-cover object-[85%_center]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061433]/90 via-[#0b2a6e]/62 to-[#0b2a6e]/10" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#061433]/55 via-transparent to-[#061433]/25" />
-      <div className="relative px-4 py-5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-white">4tyrezz SmartPrice</p>
-        <h1 className="mt-1 max-w-[16rem] text-[20px] font-semibold leading-snug text-white">
-          Know your car’s <span className="font-bold">market price</span>
-        </h1>
-        <p className="mt-1.5 text-[13px] font-normal leading-snug text-white/90">Free · Instant · Based on live catalogue data</p>
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/55 to-slate-950/20" />
+      <div className="relative px-4 py-4">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">4tyrezz SmartPrice</p>
+        <h1 className="mt-1 max-w-[18rem] text-[15px] font-medium leading-snug text-white">Know your car’s market price</h1>
+        <p className="mt-1 text-xs font-light leading-snug text-white/90">Free, instant, and based on live catalogue data.</p>
         <div className="mt-3 grid max-w-[20rem] grid-cols-3 gap-2">
           {POINTS.map(({ icon: Icon, label }) => (
-            <div key={label} className="rounded-xl border border-white/25 bg-white/12 px-1.5 py-2 text-center">
+            <div key={label} className="rounded-xl border border-white/25 bg-white/10 px-1.5 py-2 text-center">
               <Icon className="mx-auto h-4 w-4 text-white" strokeWidth={2.25} />
-              <p className="mt-1 text-[11px] font-semibold leading-tight text-white">{label}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-2 overflow-x-auto">
-          {STEPS.map(({ n, title }) => (
-            <div key={n} className="flex shrink-0 items-center gap-2 rounded-full bg-white px-2.5 py-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#3083ff] text-[10px] font-bold text-white">{n}</span>
-              <p className="whitespace-nowrap text-[12px] font-medium text-slate-800">{title}</p>
+              <p className="mt-1 text-[10px] font-semibold leading-tight text-white">{label}</p>
             </div>
           ))}
         </div>
       </div>
     </section>
-    <section className="relative hidden overflow-hidden min-h-[200px] sm:min-h-[420px] lg:block lg:min-h-[540px]">
+    <section className="relative hidden overflow-hidden lg:block">
       <img
         src="/car-valution.png"
         alt="Get your used car valued with 4tyrezz"
@@ -52,17 +41,17 @@ export default function ValuationBanner() {
       <div className="absolute inset-0 bg-gradient-to-r from-[#0b2a6e]/92 via-[#1853ff]/55 to-transparent sm:via-[#1853ff]/35" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-slate-950/10 sm:hidden" />
 
-      <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-16 lg:py-20">
+      <div className="relative container-px mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="max-w-xl">
           <span className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-white/15 text-white border border-white/25 backdrop-blur-md mb-2.5 sm:mb-5">
             <span className="w-2 h-2 rounded-full bg-[#7ec4ff] animate-pulse" />
             4tyrezz SmartPrice
           </span>
 
-          <h1 className="text-xl sm:text-5xl sm:uppercase tracking-tight font-display text-white leading-tight">
-            Know your car’s <span className="font-black">market price</span>
+          <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">
+            Know your car’s <span className="font-medium">market price</span>
           </h1>
-          <p className="text-white/85 text-xs sm:text-base font-medium mt-2 sm:mt-4 max-w-md leading-relaxed line-clamp-2 sm:line-clamp-none">
+          <p className="mt-1.5 max-w-md text-xs font-light leading-relaxed text-white/85 sm:text-sm">
             Free · Instant · Based on live catalogue data
           </p>
 

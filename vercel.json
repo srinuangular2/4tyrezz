@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://northeast-excel-dealtime-arbor.trycloudflare.com/api/:path*"
+      "destination": "https://lou-honest-cloudy-techniques.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://northeast-excel-dealtime-arbor.trycloudflare.com/uploads/:path*"
+      "destination": "https://lou-honest-cloudy-techniques.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/((?!assets/).*)",

@@ -3,8 +3,9 @@ import toast from 'react-hot-toast';
 import { BadgeCheck, CarFront, Clock, LifeBuoy, ShieldCheck, Wrench } from 'lucide-react';
 import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
-import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
+import DesignedPageBanner from '../components/DesignedPageBanner';
 import AmountPicker, { PartnerCard } from '../components/mobile/AmountPicker';
+import StepSheet from '../components/mobile/StepSheet';
 import { digitsOnly, isIndianMobile, whatsappUrl } from '../lib/companyContact';
 import {
   BRAND,
@@ -88,6 +89,8 @@ export default function Insurance() {
   const [addons, setAddons] = useState({ rsa: true, engine: false });
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', regNumber: '', expiry: '', insurer: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteStep, setQuoteStep] = useState(1);
   const { requireAuth } = useAuthGuard();
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -138,27 +141,34 @@ export default function Insurance() {
   };
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-slate-50 pb-24 lg:pb-0">
       <DesignedPageBanner
         src="/car-insurance.png"
         alt="Car insurance on 4tyrezz"
         eyebrow="Car Insurance"
         title="Cover your car in minutes,"
         accent="not days"
-        subtitle="Compare third-party, comprehensive and zero-dep cover, get an indicative premium instantly, and let our desk fetch firm quotes from IRDAI-registered insurers."
+        subtitle="Compare third-party, comprehensive and zero-dep cover, then let our desk fetch firm quotes."
         points={[
-          { icon: ShieldCheck, label: 'IRDAI partners' },
+          { icon: ShieldCheck, label: 'Licensed partners' },
           { icon: Clock, label: 'Quotes in hours' },
           { icon: Wrench, label: 'Cashless garages' },
           { icon: LifeBuoy, label: 'Claim desk help' },
         ]}
-      >
-        <BannerActions>
-          <span className="lg:hidden"><BannerButton href="#cover-picker">Compare plans</BannerButton></span>
-          <span className="hidden lg:inline-flex"><BannerButton href="#quote">Get an instant estimate</BannerButton></span>
-          <span className="hidden lg:inline-flex"><BannerButton href="#cover-plans" ghost>Compare plans</BannerButton></span>
-        </BannerActions>
-      </DesignedPageBanner>
+      />
+
+      <section className="grid grid-cols-2 gap-3 px-4 py-4 lg:hidden">
+        {WHY.map(({ icon: Icon, title, body }, index) => (
+          <article key={title} className={`rounded-2xl p-3 shadow-md shadow-slate-200/50 ${['bg-[#e8f1ff]', 'bg-[#e7f8ee]', 'bg-[#fff4e8]', 'bg-[#f3e8ff]'][index % 4]}`}>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#1853ff] shadow-sm">
+              <Icon className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <span className="mt-2 inline-flex rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-[#1853ff]">Cover</span>
+            <h3 className="mt-1 text-sm font-semibold text-slate-900">{title}</h3>
+            <p className="mt-1 text-[12px] font-normal leading-snug text-slate-600">{body}</p>
+          </article>
+        ))}
+      </section>
 
       <div id="cover-picker" className="scroll-mt-24 lg:hidden">
         <AmountPicker
@@ -187,7 +197,8 @@ export default function Insurance() {
                 name={insurer.name}
                 onApply={() => {
                   setForm((current) => ({ ...current, insurer: insurer.name }));
-                  document.getElementById('get-quote')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  setQuoteStep(1);
+                  setQuoteOpen(true);
                 }}
                 leftLabel="Yearly premium"
                 leftValue={formatINR(insurer.premium)}
@@ -390,7 +401,7 @@ export default function Insurance() {
         </Section>
       </div>
 
-      <div id="get-quote" className="scroll-mt-24">
+      <div id="get-quote" className="hidden scroll-mt-24 lg:block">
       <Section eyebrow="Firm quotes" title="Get quotes from our insurance desk" bg>
         <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Name and mobile are enough. We call you with firm prices. Nothing is purchased here.</p>
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4 lg:gap-6">
@@ -466,12 +477,12 @@ export default function Insurance() {
 
       <Section eyebrow="Insurers" title="Quotes from licensed partners" bg className="hidden lg:block">
         <div className="flex flex-wrap justify-center gap-3">
-          {INSURERS.map((name) => (
+          {INSURERS.map((insurer) => (
             <span
-              key={name}
-              className="px-5 py-2.5 rounded-full bg-white border border-slate-200 text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm"
+              key={insurer.name}
+              className="px-5 py-2.5 rounded-full bg-white border border-slate-200 text-xs font-semibold tracking-wide text-slate-700 shadow-sm"
             >
-              {name}
+              {insurer.name}
             </span>
           ))}
         </div>
@@ -502,6 +513,78 @@ export default function Insurance() {
       </Section>
 
       <div className="h-6 lg:hidden" />
+
+      <div className="fixed inset-x-0 bottom-[calc(62px+env(safe-area-inset-bottom))] z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] lg:hidden">
+        <button
+          type="button"
+          onClick={() => { setQuoteStep(1); setQuoteOpen(true); }}
+          className="flex h-11 w-full items-center justify-center rounded-xl bg-[#3083ff] text-sm font-semibold text-white"
+        >
+          Get Quote Now
+        </button>
+      </div>
+
+      <StepSheet
+        open={quoteOpen}
+        title={quoteStep === 1 ? 'Your contact' : quoteStep === 2 ? 'The car' : 'Confirm your quote'}
+        step={quoteStep}
+        onClose={() => setQuoteOpen(false)}
+        onBack={() => setQuoteStep((step) => Math.max(1, step - 1))}
+        nextLabel={quoteStep === 3 ? 'Request quotes' : 'Continue'}
+        busy={submitting}
+        onNext={() => {
+          if (quoteStep === 1) {
+            if (!form.name.trim()) {
+              toast.error('Please enter your name');
+              return;
+            }
+            if (!isIndianMobile(form.phone)) {
+              toast.error('Enter a valid 10-digit mobile number');
+              return;
+            }
+            setQuoteStep(2);
+            return;
+          }
+          if (quoteStep === 2) {
+            setQuoteStep(3);
+            return;
+          }
+          submit();
+          setQuoteOpen(false);
+        }}
+      >
+        {quoteStep === 1 && (
+          <div className="space-y-3">
+            <Field label="Full name">
+              <input className={inputClass} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Your name" />
+            </Field>
+            <Field label="Mobile number">
+              <input className={inputClass} inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => set('phone', digitsOnly(e.target.value))} placeholder="10-digit mobile" />
+            </Field>
+          </div>
+        )}
+        {quoteStep === 2 && (
+          <div className="space-y-3">
+            <Field label="City">
+              <input className={inputClass} value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="Hyderabad" />
+            </Field>
+            <Field label="Registration number">
+              <input className={inputClass} value={form.regNumber} onChange={(e) => set('regNumber', e.target.value)} placeholder="TS09AB1234" />
+            </Field>
+            <Field label="Current policy expiry">
+              <input type="date" className={inputClass} value={form.expiry} onChange={(e) => set('expiry', e.target.value)} />
+            </Field>
+          </div>
+        )}
+        {quoteStep === 3 && (
+          <div className="rounded-2xl bg-gradient-to-br from-[#12306f] to-[#3083ff] p-4 text-white">
+            <p className="text-[12px] font-medium text-white/80">{form.insurer || 'Partner quote'}</p>
+            <p className="mt-1 text-2xl font-bold">{formatINR(quote.total)}<span className="ml-1 text-sm font-medium text-white/80">/year</span></p>
+            <p className="mt-1 text-sm font-medium text-white/90">{plan.name} · IDV {formatINR(idv)}</p>
+            <p className="mt-3 text-[12px] font-normal text-white/80">{form.name} · {form.phone}</p>
+          </div>
+        )}
+      </StepSheet>
     </div>
   );
 }
