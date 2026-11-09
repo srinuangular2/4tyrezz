@@ -385,7 +385,67 @@ export const Contact = () => {
         </BannerActions>
       </DesignedPageBanner>
 
-      <Section eyebrow="Reach us" title="Talk to the 4tyrezz desk">
+      <section className="space-y-3 px-4 py-4 lg:hidden">
+        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <p className="text-[12px] font-medium text-[#3083ff]">How to reach the desk</p>
+          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Call for a car. Write if it can wait.</h2>
+          <ol className="mt-3 space-y-3">
+            {[
+              ['1', 'Call or WhatsApp', 'Use this when you are looking at a car today. A person answers, not a seller.'],
+              ['2', 'Or send a message', 'Use the form for payment, a complaint, or a dealer partnership.'],
+              ['3', 'We reply in desk hours', 'Monday to Saturday, 9 AM to 7 PM. Later messages are answered the next morning.'],
+            ].map(([n, title, body]) => (
+              <li key={n} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
+                <div>
+                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
+                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <a href="#write" className="mt-3 flex h-11 items-center justify-center rounded-xl border border-[#3083ff]/30 text-[14px] font-semibold text-[#3083ff]">
+            Write a message
+          </a>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <a href={`tel:+91${COMPANY_PHONE_DIGITS}`} className="flex h-14 flex-col items-center justify-center rounded-2xl bg-[#3083ff] px-2 text-white">
+            <span className="inline-flex items-center gap-1.5 text-[14px] font-semibold"><Phone className="h-4 w-4" strokeWidth={2.25} /> Call</span>
+            <span className="mt-0.5 text-[11px] font-medium text-white/90">{COMPANY_PHONE_DISPLAY}</span>
+          </a>
+          <a
+            href={whatsappUrl('Hi 4tyrezz, I need help with a used car.')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-14 flex-col items-center justify-center rounded-2xl bg-[#eaf2ff] text-[#1853ff]"
+          >
+            <MessageCircle className="h-4 w-4" strokeWidth={2.25} />
+            <span className="mt-0.5 text-[13px] font-semibold">WhatsApp</span>
+          </a>
+        </div>
+        <div className="overflow-hidden rounded-2xl bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <a href="mailto:support@4tyrezz.com" className="flex items-center gap-3 border-b border-slate-100 px-3.5 py-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#1853ff]">
+              <Mail className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <span>
+              <span className="block text-[14px] font-semibold text-slate-900">Email</span>
+              <span className="block text-[12px] font-normal text-slate-500">support@4tyrezz.com · reply in one working day</span>
+            </span>
+          </a>
+          <Link to="/cars" className="flex items-center gap-3 px-3.5 py-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#1853ff]">
+              <MapPin className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <span>
+              <span className="block text-[14px] font-semibold text-slate-900">Hyderabad</span>
+              <span className="block text-[12px] font-normal text-slate-500">Test drives are by appointment</span>
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      <Section eyebrow="Reach us" title="Talk to the 4tyrezz desk" className="hidden lg:block">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {channels.map(({ icon: Icon, label, value, hint, href }) => {
             const Tag = href.startsWith('/') ? Link : 'a';
@@ -406,7 +466,8 @@ export const Contact = () => {
         </div>
       </Section>
 
-      <Section eyebrow="Write to us" title="Send a message" bg>
+      <Section id="write" eyebrow="Write to us" title="Send a message" bg>
+        <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Name and mobile are enough to start. Pick a topic so the right person calls you back.</p>
         <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-6">
           <Card className="p-6 sm:p-8" highlighted>
             {submitted ? (
@@ -447,7 +508,7 @@ export const Contact = () => {
                         key={t.id}
                         type="button"
                         onClick={() => setForm({ ...form, category: t.id })}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition ${
+                        className={`rounded-full border px-3.5 py-2 text-[13px] font-semibold transition lg:rounded-xl lg:text-xs lg:font-black lg:uppercase lg:tracking-wider ${
                           form.category === t.id
                             ? 'bg-[#3083ff] text-white border-[#3083ff]'
                             : 'bg-white text-slate-600 border-slate-200 hover:border-[#3083ff]/40'
@@ -483,7 +544,7 @@ export const Contact = () => {
             )}
           </Card>
 
-          <div className="space-y-5">
+          <div className="hidden space-y-5 lg:block">
             <Card className="p-6 space-y-3" hover={false}>
               <span className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center">
                 <Clock className="w-5 h-5" strokeWidth={2.25} />
@@ -507,6 +568,21 @@ export const Contact = () => {
           </div>
         </div>
       </Section>
+
+      <div className="h-20 lg:hidden" />
+      <div className="fixed inset-x-0 bottom-[calc(62px+env(safe-area-inset-bottom))] z-40 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] lg:hidden">
+        <a href={`tel:+91${COMPANY_PHONE_DIGITS}`} className="flex h-11 items-center justify-center gap-1.5 rounded-full bg-[#e8f1ff] text-[14px] font-semibold text-[#3083ff]">
+          <Phone className="h-4 w-4" strokeWidth={2.25} /> Call
+        </a>
+        <a
+          href={whatsappUrl('Hi 4tyrezz, I need help with a used car.')}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-11 items-center justify-center gap-1.5 rounded-full bg-[#3083ff] text-[14px] font-semibold text-white"
+        >
+          <MessageCircle className="h-4 w-4" strokeWidth={2.25} /> WhatsApp
+        </a>
+      </div>
     </div>
   );
 };

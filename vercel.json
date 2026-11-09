@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://stake-fourth-ceramic-geological.trycloudflare.com/api/:path*"
+      "destination": "https://medium-tail-campaigns-medium.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://stake-fourth-ceramic-geological.trycloudflare.com/uploads/:path*"
+      "destination": "https://medium-tail-campaigns-medium.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/((?!assets/).*)",

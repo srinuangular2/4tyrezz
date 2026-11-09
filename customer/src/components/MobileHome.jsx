@@ -513,48 +513,46 @@ export default function MobileHome() {
       </section>
 
       <section className="mt-7 px-4">
-        <h2 className="text-[18px] font-semibold text-slate-900">How 4tyrezz works</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <h2 className="text-[17px] font-bold tracking-tight text-slate-900">How 4tyrezz works</h2>
+        <div className="mt-3 grid grid-cols-2 gap-2.5">
           {WORK_STEPS.map(({ icon: Icon, title, body, tone }, index) => (
-            <div key={title} className="flex items-center gap-2.5 rounded-2xl bg-white px-2.5 py-2.5 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tone}`}>
-                <Icon className="h-4 w-4" strokeWidth={2.25} />
+            <div key={title} className="rounded-2xl bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.10)] ring-1 ring-slate-100">
+              <span className={`relative flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}>
+                <Icon className="h-[18px] w-[18px]" strokeWidth={2.25} />
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#3083ff] text-[9px] font-bold text-white">{index + 1}</span>
               </span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold text-[#3083ff]">{index + 1}</p>
-                <p className="truncate text-[12px] font-semibold text-slate-900">{title}</p>
-                <p className="truncate text-[11px] font-normal text-slate-500">{body}</p>
-              </div>
+              <p className="mt-2 text-[13px] font-semibold leading-tight text-slate-900">{title}</p>
+              <p className="mt-0.5 text-[12px] font-medium leading-snug text-slate-500">{body}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section className="mt-7 px-4">
-        <h2 className="text-[18px] font-semibold text-slate-900">Why buyers start here</h2>
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <h2 className="text-[17px] font-bold tracking-tight text-slate-900">Why buyers start here</h2>
+        <div className="mt-3 grid grid-cols-3 gap-2.5">
           {WHY_START.map(({ icon: Icon, title, body, tone }) => (
-            <div key={title} className="rounded-2xl bg-white px-2 py-3 text-center shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
-              <span className={`mx-auto flex h-9 w-9 items-center justify-center rounded-xl ${tone}`}>
-                <Icon className="h-4 w-4" strokeWidth={2.25} />
+            <div key={title} className="rounded-2xl bg-white px-2 py-3.5 text-center shadow-[0_8px_20px_rgba(15,23,42,0.10)] ring-1 ring-slate-100">
+              <span className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}>
+                <Icon className="h-[18px] w-[18px]" strokeWidth={2.25} />
               </span>
-              <p className="mt-2 text-[12px] font-semibold leading-tight text-slate-900">{title}</p>
-              <p className="mt-0.5 text-[10px] font-normal leading-snug text-slate-500">{body}</p>
+              <p className="mt-2 text-[13px] font-semibold leading-tight text-slate-900">{title}</p>
+              <p className="mt-1 text-[11px] font-medium leading-snug text-slate-500">{body}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section className="mt-7">
-        <h2 className="px-4 text-[18px] font-semibold text-slate-900">Reviews</h2>
-        <div className="mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 snap-x">
+        <h2 className="px-4 text-[17px] font-bold tracking-tight text-slate-900">Reviews</h2>
+        <div className="mt-3 flex gap-2.5 overflow-x-auto px-4 pb-3 snap-x">
           {DEFAULT_TESTIMONIALS.map((item) => (
-            <article key={item.name} className="flex w-[220px] shrink-0 snap-start items-start gap-2.5 rounded-2xl bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
-              <img src={item.avatar} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+            <article key={item.name} className="flex w-[240px] shrink-0 snap-start items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_8px_20px_rgba(15,23,42,0.10)] ring-1 ring-slate-100">
+              <img src={item.avatar} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
               <div className="min-w-0">
-                <p className="truncate text-[12px] font-semibold text-slate-900">{item.name}</p>
-                <p className="text-[10px] font-semibold text-amber-500">★★★★★</p>
-                <p className="mt-1 line-clamp-2 text-[11px] font-normal leading-snug text-slate-600">{item.text}</p>
+                <p className="truncate text-[13px] font-semibold text-slate-900">{item.name}</p>
+                <p className="text-[11px] font-semibold tracking-wide text-amber-500">★★★★★</p>
+                <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-slate-600">{item.text}</p>
               </div>
             </article>
           ))}

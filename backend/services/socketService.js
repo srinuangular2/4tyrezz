@@ -9,6 +9,9 @@ const SOCKET_ORIGINS = [
   process.env.ADMIN_URL,
   'http://localhost:5173',
   'http://localhost:5174',
+  'https://4tyrezz.vercel.app',
+  'https://www.4tyrezz.com',
+  'https://4tyrezz.com',
 ].filter(Boolean);
 
 function extractToken(socket) {

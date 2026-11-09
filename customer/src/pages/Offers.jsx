@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Copy, Tag, TicketPercent } from 'lucide-react';
+import { BadgeCheck, Scale, Tag, TicketPercent } from 'lucide-react';
 import api from '../api/axios';
 import CarCard from '../components/CarCard';
 import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
 import { whatsappUrl } from '../lib/companyContact';
+import { mediaUrl } from '../pages/profile/hubUtils';
+import { formatPrice } from '../utils/format';
 import {
   BRAND,
   Card,
@@ -31,6 +33,51 @@ function daysLeft(endAt) {
   return Math.ceil(ms / 86400000);
 }
 
+function priceHero(amount) {
+  const n = Number(amount) || 0;
+  if (n >= 10000000) return { big: `₹${(n / 10000000).toFixed(1)}`, unit: 'Cr' };
+  if (n >= 100000) return { big: `₹${(n / 100000).toFixed(1)}`, unit: 'Lakh' };
+  return { big: formatPrice(n), unit: '' };
+}
+
+function OfferBanner({ hero, unit, title, line, image, to, code, onCopy }) {
+  const body = (
+    <>
+      <div className="min-w-0 flex-1">
+        <p className="text-[18px] font-bold leading-none tracking-tight text-slate-900 lg:text-[26px]">
+          {hero}
+          {unit ? <span className="ml-1 text-[11px] font-semibold text-slate-500 lg:text-[13px]">{unit}</span> : null}
+        </p>
+        <p className="mt-1 truncate text-[13px] font-semibold leading-tight text-slate-900 lg:mt-2 lg:text-[15px] lg:font-bold">{title}</p>
+        <p className="mt-0.5 truncate text-[11px] font-normal leading-snug text-slate-500 lg:text-[12px]">{line}</p>
+        {code ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onCopy(code);
+            }}
+            className="mt-2 text-[12px] font-semibold text-[#3083ff]"
+          >
+            Copy {code}
+          </button>
+        ) : null}
+      </div>
+      <img src={image} alt="" className="h-16 w-[88px] shrink-0 rounded-xl object-cover lg:h-[96px] lg:w-[120px] lg:rounded-2xl" />
+    </>
+  );
+  const className = 'flex items-center gap-2.5 overflow-hidden rounded-2xl bg-[#f2f4f7] px-3 py-2 lg:gap-3 lg:rounded-[22px] lg:px-4 lg:py-3';
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {body}
+      </Link>
+    );
+  }
+  return <article className={className}>{body}</article>;
+}
+
 export default function Offers() {
   const [promos, setPromos] = useState([]);
   const [deals, setDeals] = useState([]);
@@ -40,7 +87,7 @@ export default function Offers() {
   useEffect(() => {
     Promise.allSettled([
       api.get('/promotions'),
-      api.get('/cars', { params: { limit: 8, sort: 'price' } }),
+      api.get('/cars', { params: { limit: 12, sort: 'price' } }),
     ])
       .then(([p, c]) => {
         if (p.status === 'fulfilled') setPromos(p.value.data.data || []);
@@ -55,6 +102,8 @@ export default function Offers() {
   }, [promos]);
 
   const visible = filter === 'all' ? promos : promos.filter((p) => p.type === filter);
+  const spotlightCars = visible.length > 0 ? [] : deals.slice(0, 4);
+  const gridCars = visible.length > 0 ? deals.slice(0, 8) : deals.slice(4, 12);
 
   const copyCode = (code) => {
     navigator.clipboard?.writeText(code);
@@ -81,7 +130,32 @@ export default function Offers() {
         </BannerActions>
       </DesignedPageBanner>
 
-      <Section eyebrow="How to save" title="Claim your offer">
+      <section className="space-y-4 px-4 py-4 lg:hidden">
+        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <p className="text-[12px] font-medium text-[#3083ff]">How an offer works</p>
+          <h2 className="mt-1 text-[18px] font-semibold text-slate-900">Three steps to the price</h2>
+          <ol className="mt-3 space-y-3">
+            {[
+              ['1', 'Pick a live deal', 'Only offers published by 4tyrezz are listed here.'],
+              ['2', 'Copy the code', 'If a code is shown, copy it. You will give it to the desk.'],
+              ['3', 'Ask us to apply it', 'Enquire as usual. The desk adds the offer. A seller cannot.'],
+            ].map(([n, title, body]) => (
+              <li key={n} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-[12px] font-semibold text-[#1853ff]">{n}</span>
+                <div>
+                  <p className="text-[14px] font-semibold text-slate-900">{title}</p>
+                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <a href="#live-offers" className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
+            See live offers
+          </a>
+        </div>
+      </section>
+
+      <Section eyebrow="How to save" title="Claim your offer" className="hidden lg:block">
         <div className="grid sm:grid-cols-3 gap-5">
           {[
             ['01', 'Pick a live deal', 'Seasonal campaigns and price drops published by 4tyrezz appear here first.'],
@@ -105,7 +179,7 @@ export default function Offers() {
         </div>
       </Section>
 
-      <Section eyebrow="Live now" title="Current promotions">
+      <Section id="live-offers" eyebrow="Live now" title="Special offers">
         {types.length > 2 && (
           <div className="flex flex-wrap gap-2 mb-6">
             {types.map((t) => (
@@ -125,91 +199,86 @@ export default function Offers() {
         )}
 
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-52" />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3 lg:hidden">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-40" />
+              ))}
+            </div>
+            <div className="hidden gap-5 lg:grid lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-52" />
+              ))}
+            </div>
+          </>
         ) : visible.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <>
+          <div className="grid gap-3 lg:grid-cols-2">
             {visible.map((p) => {
               const left = daysLeft(p.endAt);
+              const vehicle = p.vehicle && typeof p.vehicle === 'object' ? p.vehicle : null;
+              const image = mediaUrl(vehicle?.images?.[0]) || '/offers.png';
+              const line = p.description || (left == null ? 'Ask the desk to apply this offer.' : left === 0 ? 'Ends today.' : `${left} day${left === 1 ? '' : 's'} left.`);
               return (
-                <Card key={p._id} className="p-6 flex flex-col hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
-                      {TYPE_LABEL[p.type] || p.type}
-                    </span>
-                    {p.discountPercent != null && (
-                      <span
-                        className="text-xs font-black px-2.5 py-1 rounded-md text-white"
-                        style={{ backgroundColor: BRAND }}
-                      >
-                        {p.discountPercent}% OFF
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="font-black text-slate-900 text-lg mt-4 leading-snug">{p.title}</h3>
-                  {p.description && (
-                    <p className="text-sm font-medium text-slate-500 mt-2 leading-relaxed">{p.description}</p>
-                  )}
-
-                  <div className="mt-auto pt-5 space-y-3">
-                    {p.code && (
-                      <button
-                        type="button"
-                        onClick={() => copyCode(p.code)}
-                        className="w-full flex items-center justify-between gap-2 border-2 border-dashed border-slate-300 rounded-xl px-4 py-3 hover:border-slate-400 transition group"
-                      >
-                        <span className="font-black text-sm tracking-widest text-slate-900">{p.code}</span>
-                        <span className="flex items-center gap-1.5 text-[11px] font-black uppercase text-slate-500 group-hover:text-slate-700">
-                          <Copy className="w-3.5 h-3.5" strokeWidth={2.5} /> Copy
-                        </span>
-                      </button>
-                    )}
-                    {left != null && (
-                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                        {left === 0 ? 'Ends today' : `${left} day${left === 1 ? '' : 's'} left`}
-                      </p>
-                    )}
-                    <a
-                      href={whatsappUrl(`Hi 4tyrezz, I want to use the offer "${p.title}"${p.code ? ` (code ${p.code})` : ''}.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-center text-xs font-black uppercase tracking-wider text-[#3083ff]"
-                    >
-                      Claim with 4tyrezz →
-                    </a>
-                  </div>
-                </Card>
+                <OfferBanner
+                  key={p._id}
+                  hero={p.discountPercent != null ? `${p.discountPercent}%` : TYPE_LABEL[p.type] || 'Offer'}
+                  title={p.title}
+                  line={line}
+                  image={image}
+                  to={vehicle?._id ? `/cars/${vehicle._id}` : undefined}
+                  code={p.code}
+                  onCopy={copyCode}
+                />
               );
             })}
           </div>
+          </>
         ) : (
-          <EmptyState
-            icon={TicketPercent}
-            title="No live promotions right now"
-            body="Campaigns are published by the 4tyrezz team and appear here automatically. In the meantime, the best-value cars in our inventory are listed below."
-            action={
-              <Link to="/cars">
-                <PrimaryButton>Browse inspected cars</PrimaryButton>
-              </Link>
-            }
-          />
+          <>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {spotlightCars.length === 0 && (
+                <EmptyState
+                  icon={TicketPercent}
+                  title="No live promotions right now"
+                  body="Campaigns are published by the 4tyrezz team and appear here automatically. In the meantime, the best-value cars in our inventory are listed below."
+                  action={
+                    <Link to="/cars">
+                      <PrimaryButton>Browse inspected cars</PrimaryButton>
+                    </Link>
+                  }
+                />
+              )}
+              {spotlightCars.map((car) => {
+                const hero = priceHero(car.price);
+                return (
+                  <OfferBanner
+                    key={car._id}
+                    hero={hero.big}
+                    unit={hero.unit}
+                    title={car.title}
+                    line={[car.fuel, car.transmission].filter(Boolean).join(' · ') || 'Inspected car with a clear price.'}
+                    image={mediaUrl(car.images?.[0]) || '/offers.png'}
+                    to={`/cars/${car._id}`}
+                  />
+                );
+              })}
+            </div>
+          </>
         )}
       </Section>
 
       <Section eyebrow="Always on" title="Best value in our inventory" bg viewAllHref="/cars?sort=price">
+        <p className="mb-3 text-[13px] font-normal leading-snug text-slate-500 lg:hidden">Open a car to see kilometres, fuel and the monthly EMI.</p>
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-72" />
+              <Skeleton key={i} className="h-52 lg:h-72" />
             ))}
           </div>
         ) : deals.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {deals.slice(0, 8).map((c) => (
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-5">
+            {gridCars.map((c) => (
               <CarCard key={c._id} car={c} />
             ))}
           </div>
@@ -220,7 +289,28 @@ export default function Offers() {
         )}
       </Section>
 
-      <Section eyebrow="Standing benefits" title="What every 4tyrezz buyer gets">
+      <section className="px-4 pb-2 lg:hidden">
+        <h2 className="text-[17px] font-semibold text-slate-900">On every car</h2>
+        <ul className="mt-3 space-y-2">
+          {[
+            [BadgeCheck, 'Inspected', 'Engine, tyres, electricals and odometer are checked before a car goes live.'],
+            [Scale, 'Clear price', 'Each listing shows a market range, so you can see if the price is fair.'],
+            [Tag, 'One desk', 'Loan and insurance paperwork is handled with the purchase.'],
+          ].map(([Icon, title, body]) => (
+            <li key={title} className="flex items-start gap-3 rounded-2xl bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#1853ff]">
+                <Icon className="h-4 w-4" strokeWidth={2.25} />
+              </span>
+              <div>
+                <p className="text-[14px] font-semibold text-slate-900">{title}</p>
+                <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <Section eyebrow="Standing benefits" title="What every 4tyrezz buyer gets" className="hidden lg:block">
         <div className="grid sm:grid-cols-3 gap-5">
           {[
             ['15-point inspection', 'Every listed car is manually inspected before it goes live — engine, tyres, electricals, chassis and odometer.'],
@@ -237,6 +327,21 @@ export default function Offers() {
           ))}
         </div>
       </Section>
+
+      <div className="h-20 lg:hidden" />
+      <div className="fixed inset-x-0 bottom-[calc(62px+env(safe-area-inset-bottom))] z-40 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] lg:hidden">
+        <Link to="/cars" className="flex h-11 items-center justify-center rounded-full bg-[#e8f1ff] text-[14px] font-semibold text-[#3083ff]">
+          Browse cars
+        </Link>
+        <a
+          href={whatsappUrl('Hi 4tyrezz, I want to know about current car offers.')}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-11 items-center justify-center rounded-full bg-[#3083ff] text-[14px] font-semibold text-white"
+        >
+          Ask on WhatsApp
+        </a>
+      </div>
     </div>
   );
 }
