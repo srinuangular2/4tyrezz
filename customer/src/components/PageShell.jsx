@@ -16,7 +16,7 @@ function FormattedTitle({ children }) {
   const lastWord = words.pop();
   return (
     <span className="font-medium text-slate-700 lg:font-normal lg:text-slate-800">
-      {words.join(' ')} <span className="font-semibold text-slate-900 lg:font-black">{lastWord}</span>
+      {words.join(' ')} <span className="font-medium text-slate-900 lg:font-bold">{lastWord}</span>
     </span>
   );
 }
@@ -40,7 +40,7 @@ export function PageHero({ eyebrow, title, subtitle, children }) {
             {eyebrow}
           </p>
         )}
-        <h1 className="text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl lg:text-5xl lg:uppercase lg:font-display">
+        <h1 className="text-xl font-normal leading-snug tracking-tight text-white sm:text-2xl lg:text-5xl lg:uppercase lg:font-display lg:font-bold">
           {title}
         </h1>
         {subtitle && (

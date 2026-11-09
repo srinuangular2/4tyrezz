@@ -14,14 +14,16 @@ const EVENTS = [
   'NEW_LISTING_MODERATION',
 ];
 
+const soundFile = (name) => `${import.meta.env.BASE_URL}${name}`;
+
 const SOUND_FILES = {
-  lead: '/alert-lead.mp3',
-  finance: '/alert-finance.mp3',
-  insurance: '/alert-insurance.mp3',
-  testdrive: '/alert-testdrive.mp3',
-  booking: '/alert-booking.mp3',
-  kyc: '/alert-kyc.mp3',
-  moderation: '/alert-moderation.mp3',
+  lead: soundFile('alert-lead.mp3'),
+  finance: soundFile('alert-finance.mp3'),
+  insurance: soundFile('alert-insurance.mp3'),
+  testdrive: soundFile('alert-testdrive.mp3'),
+  booking: soundFile('alert-booking.mp3'),
+  kyc: soundFile('alert-kyc.mp3'),
+  moderation: soundFile('alert-moderation.mp3'),
 };
 
 const SOUND_TONES = {
@@ -139,10 +141,10 @@ function playFile(src) {
 function runChime(payload) {
   if (localStorage.getItem(SOUND_KEY) === 'off') return Promise.resolve(false);
   const soundKey = resolveSoundKey(payload);
-  const typed = SOUND_FILES[soundKey] || '/alert-lead.mp3';
+  const typed = SOUND_FILES[soundKey] || soundFile('alert-lead.mp3');
   return playFile(typed)
-    .catch(() => playFile('/alert.mp3'))
-    .catch(() => playFile('/alert.wav'))
+    .catch(() => playFile(soundFile('alert.mp3')))
+    .catch(() => playFile(soundFile('alert.wav')))
     .catch(() => {
       const ctx = getCtx();
       if (!ctx || ctx.state === 'suspended') throw new Error('audio blocked');

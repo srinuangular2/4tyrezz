@@ -171,7 +171,7 @@ export default function Inspection() {
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/55 to-slate-950/25" />
         <div className="relative px-4 py-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">Pre-delivery inspection</p>
-          <h1 className="mt-1 max-w-[18rem] text-[15px] font-medium leading-snug text-white">Know the car before you drive it away</h1>
+          <h1 className="mt-1 max-w-[18rem] text-[15px] font-normal leading-snug text-white">Know the car before you drive it away</h1>
           <p className="mt-1 max-w-[18rem] text-xs font-light leading-snug text-white/90">A full report from a certified engineer, for a new car or a used one.</p>
           <ul className="mt-3 flex flex-wrap gap-1.5">
             {TRUST.map(([label, Icon]) => (
@@ -195,7 +195,7 @@ export default function Inspection() {
           <div className="max-w-xl">
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Pre-delivery inspection</p>
             <h1 className="mt-2 text-2xl sm:text-5xl tracking-tight font-display text-white leading-tight">
-              Planning to buy a <span className="font-black"> new or used car</span>?
+              Planning to buy a <span className="font-bold"> new or used car</span>?
             </h1>
             <p className="mt-3 text-sm sm:text-lg font-bold text-white leading-snug">
               Make a confident decision with 4tyrezz’s comprehensive car inspection and pre-delivery inspection (PDI) services.

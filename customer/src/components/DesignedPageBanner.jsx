@@ -19,7 +19,7 @@ export default function DesignedPageBanner({
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/55 to-slate-950/25" />
       <div className="relative px-4 py-4">
         {eyebrow && <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">{eyebrow}</p>}
-        <h1 className="mt-1 max-w-[18rem] text-[15px] font-medium leading-snug text-white">
+        <h1 className="mt-1 max-w-[18rem] text-[15px] font-normal leading-snug text-white">
           {title}{accent ? <span> {accent}</span> : null}
         </h1>
         {subtitle && <p className="mt-1 max-w-[18rem] text-xs font-light leading-snug text-white/90 line-clamp-2">{subtitle}</p>}
@@ -55,7 +55,7 @@ export default function DesignedPageBanner({
           )}
 
           <h1 className="text-xl sm:text-5xl sm:uppercase tracking-tight font-display text-white leading-tight">
-            {title} {accent ? <span className="font-black">{accent}</span> : null}
+            {title} {accent ? <span className="font-bold">{accent}</span> : null}
           </h1>
 
           {subtitle && (
