@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://meals-carefully-acne-kick.trycloudflare.com/api/:path*"
+      "destination": "https://recovered-alloy-statute-weed.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://meals-carefully-acne-kick.trycloudflare.com/uploads/:path*"
+      "destination": "https://recovered-alloy-statute-weed.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/admin",
