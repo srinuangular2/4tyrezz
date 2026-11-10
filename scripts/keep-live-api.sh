@@ -28,7 +28,23 @@ api_up() {
 tunnel_up() {
   local url="$1"
   [[ -n "$url" ]] || return 1
-  /usr/bin/curl -sf -m 12 "${url}/api/health" | grep -q '"ok":true'
+  python3 - "$url" <<'PY'
+import subprocess, sys
+url = sys.argv[1].rstrip("/")
+host = url.split("://", 1)[1].split("/", 1)[0]
+lookup = subprocess.run(
+    ["dig", "+short", "+time=3", "+tries=1", "@1.1.1.1", host, "A"],
+    capture_output=True, text=True,
+)
+ips = [line.strip() for line in lookup.stdout.splitlines() if line.strip()[:1].isdigit()]
+if not ips:
+    sys.exit(1)
+check = subprocess.run(
+    ["/usr/bin/curl", "-sf", "-m", "8", "--resolve", f"{host}:443:{ips[0]}", url + "/api/health"],
+    capture_output=True, text=True,
+)
+sys.exit(0 if check.returncode == 0 and '"ok":true' in check.stdout else 1)
+PY
 }
 
 ensure_api() {
@@ -104,12 +120,12 @@ for rel in ("vercel.json", "customer/vercel.json"):
         changed = True
 sys.exit(0 if changed else 2)
 PY
-  local status=$?
-  if [[ "$status" == 2 ]]; then
+  local write_code=$?
+  if [[ "$write_code" == 2 ]]; then
     log "live config already uses this tunnel"
     return 0
   fi
-  if [[ "$status" != 0 ]]; then
+  if [[ "$write_code" != 0 ]]; then
     log "failed to write the tunnel address"
     return 1
   fi
