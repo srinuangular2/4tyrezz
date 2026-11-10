@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://assumptions-assurance-durable-preservation.trycloudflare.com/api/:path*"
+      "destination": "https://spin-heath-springer-pac.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://assumptions-assurance-durable-preservation.trycloudflare.com/uploads/:path*"
+      "destination": "https://spin-heath-springer-pac.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/((?!assets/).*)",
