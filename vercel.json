@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://fees-mai-sales-speech.trycloudflare.com/api/:path*"
+      "destination": "https://stamps-variations-quotations-particular.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://fees-mai-sales-speech.trycloudflare.com/uploads/:path*"
+      "destination": "https://stamps-variations-quotations-particular.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/admin",
