@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://rewards-furnished-reno-parliamentary.trycloudflare.com/api/:path*"
+      "destination": "https://labeled-naples-intermediate-additions.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://rewards-furnished-reno-parliamentary.trycloudflare.com/uploads/:path*"
+      "destination": "https://labeled-naples-intermediate-additions.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/admin",
