@@ -20,6 +20,7 @@ import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 import { mediaUrl } from './profile/hubUtils';
 import PdiCta from '../components/pdi/PdiCta';
 import { COMPANY_NAME, COMPANY_PHONE_DIGITS, COMPANY_WHATSAPP } from '../lib/companyContact';
+import PaymentCheckoutModal from '../components/PaymentCheckoutModal';
 
 const glassCard = 'bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.08)]';
 const glassPanel = 'bg-white/80 backdrop-blur-md border border-white/20 shadow-[0_12px_32px_rgba(15,23,42,0.1)]';
@@ -30,19 +31,6 @@ const youtubeId = (url) => {
 };
 
 const isMp4 = (url) => /\.mp4($|\?)/i.test(String(url || ''));
-
-const TOKEN_CHOICES = [5000, 10000];
-
-function loadRazorpay() {
-  return new Promise((resolve, reject) => {
-    if (window.Razorpay) return resolve();
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = resolve;
-    script.onerror = () => reject(new Error('Razorpay failed to load'));
-    document.body.appendChild(script);
-  });
-}
 
 const resolveImage = (src) => {
   if (!src) return '';
@@ -91,7 +79,6 @@ export default function CarDetails() {
   const [showBook, setShowBook] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [driveMode, setDriveMode] = useState('dealer');
-  const [tokenAmount, setTokenAmount] = useState(5000);
   const [emiModalTab, setEmiModalTab] = useState('breakup');
   const [tab, setTab] = useState('overview');
   const [sent, setSent] = useState(false);
@@ -317,44 +304,6 @@ export default function CarDetails() {
         setShowInsurance(false);
       } catch (err) {
         toast.error(err.response?.data?.message || 'Could not request insurance');
-      }
-    });
-  };
-
-  const submitBooking = () => {
-    requireAuth(async () => {
-      try {
-        const { data } = await api.post('/bookings', {
-          vehicleId: id,
-          amount: tokenAmount,
-          tokenAmount,
-          notes: `Token booking for ${car.title}`,
-        });
-        const payment = data.payment || {};
-        const booking = data.data;
-        if (payment.stub || !payment.keyId || String(payment.keyId).includes('stub')) {
-          await api.post('/bookings/verify-payment', { bookingId: booking._id });
-          toast.success('Vehicle reserved with token payment');
-          setShowBook(false);
-          return;
-        }
-        await loadRazorpay();
-        const rzp = new window.Razorpay({
-          key: payment.keyId,
-          amount: payment.amount,
-          currency: payment.currency || 'INR',
-          name: '4TYREZZ',
-          description: `Token for ${car.title}`,
-          order_id: payment.orderId,
-          handler: async (response) => {
-            await api.post('/bookings/verify-payment', { bookingId: booking._id, ...response });
-            toast.success('Token payment successful');
-            setShowBook(false);
-          },
-        });
-        rzp.open();
-      } catch (err) {
-        toast.error(err.response?.data?.message || 'Could not start booking');
       }
     });
   };
@@ -1471,25 +1420,12 @@ export default function CarDetails() {
       )}
 
       {showBook && (
-        <ModalShell onClose={() => setShowBook(false)} wide={false}>
-          <h3 className="font-display text-xl font-bold text-ink">Book this vehicle</h3>
-          <p className="text-sm text-slate2 mt-1">Pay a refundable token to reserve {car.title}.</p>
-          <div className="grid grid-cols-2 gap-2 my-4">
-            {TOKEN_CHOICES.map((amt) => (
-              <button
-                key={amt}
-                type="button"
-                onClick={() => setTokenAmount(amt)}
-                className={`py-3 rounded-xl border text-sm font-bold ${tokenAmount === amt ? 'bg-ink text-white border-ink' : 'bg-white/70 border-white/30'}`}
-              >
-                {formatPrice(amt)}
-              </button>
-            ))}
-          </div>
-          <button type="button" onClick={submitBooking} className="w-full bg-brand-gradient text-white font-semibold py-2.5 rounded-xl">
-            Pay token {formatPrice(tokenAmount)}
-          </button>
-        </ModalShell>
+        <PaymentCheckoutModal
+          vehicle={{ id, title: car.title, price: car.price }}
+          user={user}
+          onClose={() => setShowBook(false)}
+          onPaid={() => setShowBook(false)}
+        />
       )}
     </div>
   );

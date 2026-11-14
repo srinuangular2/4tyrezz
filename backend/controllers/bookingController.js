@@ -19,8 +19,13 @@ exports.create = async (req, res) => {
     return res.status(400).json({ message: 'Vehicle already sold' });
   }
 
-  const requested = Number(req.body.amount || req.body.tokenAmount);
-  const amount = [5000, 10000].includes(requested) ? requested : BOOKING_TOKEN_DEFAULT;
+  const price = Number(car.price) || 0;
+  let amount = Number(req.body.amount || req.body.tokenAmount);
+  if (!Number.isFinite(amount) || amount < 1) amount = BOOKING_TOKEN_DEFAULT;
+  amount = Math.round(amount);
+  if (price > 0 && amount > price) {
+    return res.status(400).json({ message: 'Amount cannot exceed the vehicle price' });
+  }
   const booking = await Booking.create({
     user: req.user._id,
     vehicle: car._id,
