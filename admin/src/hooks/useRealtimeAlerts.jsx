@@ -215,7 +215,7 @@ function toastAlert(payload, dark) {
   );
 }
 
-export function RealtimeAlertsProvider({ children, token, enabled, variant = 'admin' }) {
+export function RealtimeAlertsProvider({ children, token, enabled, variant = 'admin', role = '' }) {
   const [items, setItems] = useState([]);
   const [counts, setCounts] = useState(emptyCounts);
   const [soundOn, setSoundOn] = useState(() => localStorage.getItem(SOUND_KEY) !== 'off');
@@ -279,6 +279,7 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
     });
 
     const onPayload = (payload) => {
+      if (role === 'field_agent' || role === 'executive_agent') return;
       const key = `${payload?.entityId || payload?.title || ''}:${payload?.message || payload?.body || ''}:${payload?.event || ''}`;
       if (seenRef.current.has(key)) return;
       seenRef.current.add(key);
@@ -322,7 +323,7 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
       socket.off('notification', onPayload);
       socket.disconnect();
     };
-  }, [enabled, token, refresh, dark, variant]);
+  }, [enabled, token, refresh, dark, variant, role]);
 
   const markRead = useCallback(
     async ({ all, id } = {}) => {

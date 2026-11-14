@@ -38,7 +38,7 @@
       "destination": "/d/index.html"
     },
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|sw\\.js|workbox-|manifest\\.webmanifest|registerSW\\.js).*)",
       "destination": "/index.html"
     }
   ]

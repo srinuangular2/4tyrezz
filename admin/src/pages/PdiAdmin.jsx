@@ -81,7 +81,7 @@ export default function PdiAdmin() {
                 <td className="px-3 py-3">
                   <StatusBadge value={row.status} />
                   <select
-                    className="mt-2 block bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[11px]"
+                    className="mt-2 block w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-100"
                     value={row.status}
                     onChange={(e) => updateStatus(row, e.target.value)}
                   >

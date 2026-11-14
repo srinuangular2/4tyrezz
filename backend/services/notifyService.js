@@ -1,17 +1,8 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
-const Car = require('../models/Car');
 const { emitToRooms, adminRoom, dealerRoom, userRoom } = require('./socketService');
 
-const STAFF_ROLES = ['field_agent', 'executive_agent'];
-const STAFF_EVENTS = new Set([
-  'NEW_LEAD',
-  'NEW_FINANCE',
-  'NEW_INSURANCE',
-  'NEW_TEST_DRIVE',
-  'NEW_BOOKING',
-  'NEW_LISTING_MODERATION',
-]);
+const CHILD_ADMIN_ROLES = new Set(['field_agent', 'executive_agent']);
 
 const EVENTS = {
   NEW_LEAD: 'NEW_LEAD',
@@ -92,36 +83,6 @@ async function adminRecipients() {
   }).select('_id role');
 }
 
-function staffHome(role) {
-  if (role === 'field_agent') return '/uploads';
-  if (role === 'executive_agent') return '/cars';
-  return '/';
-}
-
-async function staffOwner(meta = {}) {
-  const seen = new Set();
-  const candidates = [meta.inventoryOwner, meta.ownerId].filter(Boolean);
-  for (const id of candidates) {
-    const key = String(id);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const user = await User.findById(id).select('_id role isActive');
-    if (user && user.isActive !== false && STAFF_ROLES.includes(user.role)) return user;
-  }
-  if (meta.carId) {
-    const car = await Car.findById(meta.carId).select('owner');
-    if (car?.owner && !seen.has(String(car.owner))) {
-      const user = await User.findById(car.owner).select('_id role isActive');
-      if (user && user.isActive !== false && STAFF_ROLES.includes(user.role)) return user;
-    }
-  }
-  if (meta.dealerId) {
-    const user = await User.findById(meta.dealerId).select('_id role isActive');
-    if (user && user.isActive !== false && STAFF_ROLES.includes(user.role)) return user;
-  }
-  return null;
-}
-
 function withId(link, entityId) {
   if (!link) return '';
   if (!entityId) return link;
@@ -175,23 +136,6 @@ async function dispatch({
         meta: { ...meta, event, soundKey, entityId, dealerId: dealerId ? String(dealerId) : undefined },
       });
     });
-  }
-
-  if (STAFF_EVENTS.has(event)) {
-    const owner = await staffOwner(meta);
-    if (owner && !rows.some((row) => String(row.user) === String(owner._id))) {
-      rows.push({
-        user: owner._id,
-        recipientRole: owner.role,
-        title: heading,
-        body: `For your listing — ${text}`,
-        type: mappedType,
-        event,
-        link: staffHome(owner.role),
-        read: false,
-        meta: { ...meta, event, soundKey, entityId, audience: 'owner' },
-      });
-    }
   }
 
   const dealerKey = dealerId ? String(dealerId) : '';
@@ -278,16 +222,16 @@ async function notifyListingDecision({ car, title, message }) {
   if (!car?.owner) return [];
   const owner = await User.findById(car.owner).select('_id role isActive');
   if (!owner || owner.isActive === false) return [];
-  const forDealer = owner.role === 'dealer';
+  if (CHILD_ADMIN_ROLES.has(owner.role) || owner.role !== 'dealer') return [];
   return dispatch({
     event: EVENTS.NEW_LISTING_MODERATION,
     title,
     message,
     entityId: car._id,
-    dealerId: forDealer ? owner._id : undefined,
-    meta: { carId: car._id, inventoryOwner: owner._id },
+    dealerId: owner._id,
+    meta: { carId: car._id },
     notifyMains: false,
-    adminOnly: !forDealer,
+    adminOnly: false,
   });
 }
 

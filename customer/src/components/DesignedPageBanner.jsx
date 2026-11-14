@@ -8,6 +8,8 @@ export default function DesignedPageBanner({
   accent,
   subtitle,
   points = [],
+  desktopSubtitle,
+  hidePointsOnMobile = false,
   children,
   imageClass = 'object-[78%_center] sm:object-right',
   hideOnMobile = false,
@@ -23,7 +25,7 @@ export default function DesignedPageBanner({
           {title}{accent ? <span> {accent}</span> : null}
         </h1>
         {subtitle && <p className="mt-1 max-w-[18rem] text-xs font-light leading-snug text-white/90 line-clamp-2">{subtitle}</p>}
-        {points.length > 0 && (
+        {points.length > 0 && !hidePointsOnMobile && (
           <div className="mt-2.5 grid max-w-[16rem] grid-cols-2 gap-x-2 gap-y-1.5">
             {points.map(({ icon: Icon, label }) => (
               <span key={label} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white">
@@ -58,9 +60,9 @@ export default function DesignedPageBanner({
             {title} {accent ? <span className="font-bold">{accent}</span> : null}
           </h1>
 
-          {subtitle && (
+          {(desktopSubtitle || subtitle) && (
             <p className="text-white/85 text-xs sm:text-base font-medium mt-2 sm:mt-4 max-w-md leading-relaxed line-clamp-2 sm:line-clamp-none">
-              {subtitle}
+              {desktopSubtitle || subtitle}
             </p>
           )}
 

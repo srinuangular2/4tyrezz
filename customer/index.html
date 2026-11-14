@@ -19,6 +19,14 @@
   </head>
   <body class="bg-cream font-body text-ink">
     <div id="root"></div>
+    <script>
+      window.__pwaInstall = null;
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        window.__pwaInstall = event;
+        window.dispatchEvent(new Event('pwa-install-ready'));
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

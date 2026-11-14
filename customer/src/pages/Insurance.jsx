@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { BadgeCheck, CarFront, Clock, LifeBuoy, ShieldCheck, Wrench } from 'lucide-react';
 import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
-import DesignedPageBanner from '../components/DesignedPageBanner';
+import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
 import AmountPicker, { PartnerCard } from '../components/mobile/AmountPicker';
 import StepSheet from '../components/mobile/StepSheet';
 import { digitsOnly, isIndianMobile, whatsappUrl } from '../lib/companyContact';
@@ -148,24 +148,32 @@ export default function Insurance() {
         eyebrow="Car Insurance"
         title="Cover your car in minutes,"
         accent="not days"
-        subtitle="Compare third-party, comprehensive and zero-dep cover, then let our desk fetch firm quotes."
+        subtitle="Pick a cover, see the yearly price, and request a quote."
+        desktopSubtitle="Compare third-party, comprehensive and zero-dep cover, then let our desk fetch firm quotes."
+        hidePointsOnMobile
         points={[
           { icon: ShieldCheck, label: 'Licensed partners' },
           { icon: Clock, label: 'Quotes in hours' },
           { icon: Wrench, label: 'Cashless garages' },
           { icon: LifeBuoy, label: 'Claim desk help' },
         ]}
-      />
+      >
+        <div className="hidden lg:block">
+          <BannerActions>
+            <BannerButton href="#quote">Get an estimate</BannerButton>
+            <BannerButton href="#get-quote" ghost>Request a quote</BannerButton>
+          </BannerActions>
+        </div>
+      </DesignedPageBanner>
 
-      <section className="grid grid-cols-2 gap-3 px-4 py-4 lg:hidden">
+      <section className="grid grid-cols-2 gap-2 px-4 pt-3 lg:hidden">
         {WHY.map(({ icon: Icon, title, body }, index) => (
-          <article key={title} className={`rounded-2xl p-3 shadow-md shadow-slate-200/50 ${['bg-[#e8f1ff]', 'bg-[#e7f8ee]', 'bg-[#fff4e8]', 'bg-[#f3e8ff]'][index % 4]}`}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#1853ff] shadow-sm">
-              <Icon className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-            <span className="mt-2 inline-flex rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-[#1853ff]">Cover</span>
-            <h3 className="mt-1 text-sm font-semibold text-slate-900">{title}</h3>
-            <p className="mt-1 text-[12px] font-normal leading-snug text-slate-600">{body}</p>
+          <article key={title} className={`flex gap-2 rounded-xl px-2.5 py-2 ${['bg-[#e8f1ff]', 'bg-[#e7f8ee]', 'bg-[#fff4e8]', 'bg-[#f3e8ff]'][index % 4]}`}>
+            <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1853ff]" strokeWidth={2.25} />
+            <div className="min-w-0">
+              <h3 className="text-[12px] font-semibold leading-tight text-slate-900">{title}</h3>
+              <p className="mt-0.5 line-clamp-2 text-[11px] font-normal leading-snug text-slate-600">{body}</p>
+            </div>
           </article>
         ))}
       </section>
@@ -220,8 +228,8 @@ export default function Insurance() {
             ['03', 'Get firm quotes', 'Our desk fetches offers from IRDAI-registered insurers and calls you with the paperwork.'],
           ].map(([n, title, body]) => (
             <Card key={n} className="p-6">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#3083ff]">{n}</span>
-              <h3 className="font-black text-slate-900 text-base mt-2">{title}</h3>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-[#3083ff]">{n}</span>
+              <h3 className="font-bold text-slate-900 text-base mt-2">{title}</h3>
               <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{body}</p>
             </Card>
           ))}
@@ -248,7 +256,7 @@ export default function Insurance() {
                 <button type="button" onClick={() => setPlanKey(p.key)} className="text-left flex flex-col h-full">
                   <div className="flex items-center justify-between">
                     <span
-                      className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md"
+                      className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md"
                       style={
                         p.highlight
                           ? { backgroundColor: BRAND, color: '#fff' }
@@ -267,10 +275,10 @@ export default function Insurance() {
                     </span>
                   </div>
 
-                  <h3 className="font-black text-slate-900 text-lg mt-4">{p.name}</h3>
+                  <h3 className="font-bold text-slate-900 text-lg mt-4">{p.name}</h3>
                   <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{p.blurb}</p>
 
-                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mt-5">What's covered</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-5">What's covered</p>
                   <ul className="mt-2 space-y-1.5">
                     {p.covers.map((c) => (
                       <li key={c} className="flex gap-2 text-xs font-semibold text-slate-600">
@@ -280,7 +288,7 @@ export default function Insurance() {
                     ))}
                   </ul>
 
-                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mt-4">Not covered</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-4">Not covered</p>
                   <ul className="mt-2 space-y-1.5">
                     {p.excludes.map((c) => (
                       <li key={c} className="flex gap-2 text-xs font-semibold text-slate-400">
@@ -290,7 +298,7 @@ export default function Insurance() {
                     ))}
                   </ul>
 
-                  <div className="mt-auto pt-5 text-xs font-black" style={{ color: BRAND }}>
+                  <div className="mt-auto pt-5 text-xs font-bold" style={{ color: BRAND }}>
                     {active ? 'Selected for your quote' : 'Select this plan →'}
                   </div>
                 </button>
@@ -308,10 +316,10 @@ export default function Insurance() {
             <Card className="order-2 p-4 lg:order-1 lg:p-6 space-y-5 lg:space-y-6" highlighted>
               <div>
                 <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     Insured Declared Value (IDV)
                   </span>
-                  <span className="font-black text-slate-900 text-sm">{formatINR(idv)}</span>
+                  <span className="font-bold text-slate-900 text-sm">{formatINR(idv)}</span>
                 </div>
                 <input
                   type="range"
@@ -351,7 +359,7 @@ export default function Insurance() {
               </div>
 
               <div>
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Add-ons</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Add-ons</p>
                 <div className="space-y-2">
                   {[
                     ['rsa', 'Roadside assistance', '₹1,499 / year'],
@@ -360,7 +368,7 @@ export default function Insurance() {
                     <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 cursor-pointer">
                       <span className="text-sm font-bold text-slate-800">{label}</span>
                       <span className="flex items-center gap-3">
-                        <span className="text-xs font-black text-slate-500">{price}</span>
+                        <span className="text-xs font-bold text-slate-500">{price}</span>
                         <input
                           type="checkbox"
                           className="accent-[#3083ff] w-4 h-4"
@@ -376,9 +384,9 @@ export default function Insurance() {
 
             <Card className="order-1 p-4 lg:order-2 lg:p-6 flex flex-col" highlighted>
               <p className="text-[12px] font-medium text-[#3083ff] lg:hidden">Your estimate</p>
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 hidden lg:block">Estimated annual premium</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 hidden lg:block">Estimated annual premium</p>
               <p className="text-[13px] font-medium text-slate-700 lg:hidden">Estimated yearly premium</p>
-              <p className="font-black text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">{formatINR(quote.total)}</p>
+              <p className="font-bold text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">{formatINR(quote.total)}</p>
               <p className="text-xs font-semibold text-slate-400 mt-1">{plan.name} · IDV {formatINR(idv)}</p>
 
               <div className="mt-6 space-y-3">
@@ -387,8 +395,8 @@ export default function Insurance() {
                 {quote.extra > 0 && <Row label="Add-ons" value={formatINR(quote.extra)} />}
                 <Row label="GST @ 18%" value={formatINR(quote.gst)} />
                 <div className="flex justify-between items-center pt-3 border-t border-slate-100">
-                  <span className="text-sm font-black text-slate-900">Payable</span>
-                  <span className="text-sm font-black text-slate-900">{formatINR(quote.total)}</span>
+                  <span className="text-sm font-bold text-slate-900">Payable</span>
+                  <span className="text-sm font-bold text-slate-900">{formatINR(quote.total)}</span>
                 </div>
               </div>
 
@@ -437,7 +445,7 @@ export default function Insurance() {
             </div>
 
             <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4">
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Your estimate</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Your estimate</p>
               <p className="text-sm font-extrabold text-slate-800 mt-1">
                 {form.insurer ? `${form.insurer} · ` : ''}{plan.name} · IDV {formatINR(idv)} · ~{formatINR(quote.total)}/year
               </p>
@@ -452,7 +460,7 @@ export default function Insurance() {
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 block text-center text-xs font-black uppercase tracking-wider text-[#3083ff]"
+              className="mt-3 block text-center text-xs font-bold uppercase tracking-wider text-[#3083ff]"
             >
               Or get a quote on WhatsApp →
             </a>
@@ -465,7 +473,7 @@ export default function Insurance() {
                   <Icon className="w-5 h-5 text-white" strokeWidth={2.25} />
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-900 text-sm">{title}</h3>
+                  <h3 className="font-bold text-slate-900 text-sm">{title}</h3>
                   <p className="text-xs font-medium text-slate-500 mt-1 leading-relaxed">{body}</p>
                 </div>
               </Card>
@@ -593,7 +601,7 @@ function Row({ label, value }) {
   return (
     <div className="flex justify-between items-center">
       <span className="text-sm font-semibold text-slate-500">{label}</span>
-      <span className="text-sm font-black text-slate-900">{value}</span>
+      <span className="text-sm font-bold text-slate-900">{value}</span>
     </div>
   );
 }

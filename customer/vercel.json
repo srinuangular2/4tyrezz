@@ -10,7 +10,7 @@
       "destination": "https://backgrounds-triangle-attachment-aye.trycloudflare.com/uploads/:path*"
     },
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|sw\\.js|workbox-|manifest\\.webmanifest|registerSW\\.js).*)",
       "destination": "/index.html"
     }
   ]
