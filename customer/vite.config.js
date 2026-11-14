@@ -62,10 +62,10 @@ export default defineConfig({
           },
         ],
       },
-      // Keep SW off in `vite dev` so UI edits are not stuck behind a stale cache.
-      // Production builds still get full PWA install + offline support.
+      // The phone install prompt needs a manifest and service worker in dev too.
       devOptions: {
-        enabled: false,
+        enabled: true,
+        type: 'module',
       },
     }),
   ],

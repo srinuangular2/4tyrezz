@@ -20,7 +20,7 @@ const AUTH_STEPS = [
   { id: 'profile', label: 'Name' },
 ];
 
-export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showClose }) {
+export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showClose, locked = false }) {
   const dispatch = useDispatch();
   const { error, token, devOtp } = useSelector((s) => s.auth);
 
@@ -49,9 +49,9 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
     setLoading(false);
     if (res.meta.requestStatus === 'fulfilled') {
       onSuccess?.();
-      onClose?.();
+      if (!locked) onClose?.();
     }
-  }, [dispatch, onSuccess, onClose]);
+  }, [dispatch, onSuccess, onClose, locked]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || view !== 'profile') return undefined;
@@ -81,7 +81,7 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
 
   const finish = () => {
     onSuccess?.();
-    onClose?.();
+    if (!locked) onClose?.();
   };
 
   const sendOtp = async (e) => {
@@ -169,7 +169,7 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
   const shellStyle = variant === 'modal'
     ? { backgroundColor: '#ffffff', color: '#0f172a', boxShadow: '0 24px 80px rgba(15, 23, 42, 0.22)' }
     : undefined;
-  const canClose = showClose ?? Boolean(onClose);
+  const canClose = !locked && (showClose ?? Boolean(onClose));
 
   const content = (
     <div className={shellClass} style={shellStyle}>
@@ -203,7 +203,9 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
       <h2 id="customer-login-title" className="pr-10 font-display text-[22px] font-semibold tracking-tight text-slate-900">
         {titles[view][0]}
       </h2>
-      <p className="mt-1.5 text-[13px] font-normal leading-relaxed text-slate-500">{titles[view][1]}</p>
+      <p className="mt-1.5 text-[13px] font-normal leading-relaxed text-slate-500">
+        {locked && view === 'mobile' ? 'Sign in to view this car. It stays open after your number is verified.' : titles[view][1]}
+      </p>
 
       {view === 'mobile' && (
         <form onSubmit={sendOtp} className="mt-7 space-y-5">
@@ -326,6 +328,11 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
           </button>
         </div>
       )}
+      {locked && (
+        <button type="button" onClick={onClose} className="mt-4 w-full py-2 text-[13px] font-semibold text-slate-500">
+          Back to used cars
+        </button>
+      )}
     </div>
   );
 
@@ -337,7 +344,7 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
         role="presentation"
         className="absolute inset-0"
         style={{ backgroundColor: 'rgba(15, 23, 42, 0.52)' }}
-        onClick={onClose}
+        onClick={locked ? undefined : onClose}
       />
       <div className="relative z-10 max-h-[100dvh] w-full overflow-y-auto sm:w-auto" onClick={(e) => e.stopPropagation()}>{content}</div>
     </div>

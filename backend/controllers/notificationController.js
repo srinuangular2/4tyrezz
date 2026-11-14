@@ -14,6 +14,10 @@ function isAdmin(user) {
   return user?.role === 'admin' || user?.role === 'super_admin';
 }
 
+function isStaff(user) {
+  return user?.role === 'field_agent' || user?.role === 'executive_agent';
+}
+
 function isDealer(user) {
   return user?.role === 'dealer';
 }
@@ -21,6 +25,9 @@ function isDealer(user) {
 exports.listMine = async (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Number(req.query.limit) || 30);
+  if (isStaff(req.user)) {
+    return res.json({ data: [], page, limit, total: 0, totalPages: 1, unread: 0 });
+  }
   const filter = { user: req.user._id };
   if (req.query.unread === 'true') filter.read = false;
 
@@ -47,6 +54,25 @@ exports.unreadCounts = async (req, res) => {
   const uid = req.user._id;
   const admin = isAdmin(req.user);
   const dealer = isDealer(req.user);
+  const staff = isStaff(req.user);
+
+  if (staff) {
+    return res.json({
+      unread: 0,
+      leads: 0,
+      testDrives: 0,
+      bookings: 0,
+      kycPending: 0,
+      moderation: 0,
+      unreadByType: {
+        leads: 0,
+        testDrives: 0,
+        bookings: 0,
+        kycPending: 0,
+        moderation: 0,
+      },
+    });
+  }
 
   const leadScope = dealer ? { seller: uid } : {};
   const tdScope = dealer ? { dealer: uid } : {};

@@ -20,6 +20,7 @@ export default function AdminLayout() {
   const { user } = useSelector((s) => s.auth);
   const { pathname } = useLocation();
   const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
+  const childAdmin = user?.role === 'field_agent' || user?.role === 'executive_agent';
   const executiveRedirect = user?.role === 'executive_agent' && pathname === '/sold'
     ? '/cars?filter=sold'
     : user?.role === 'executive_agent' && !executiveAllowed(pathname)
@@ -27,8 +28,8 @@ export default function AdminLayout() {
       : '';
 
   return (
-    <RealtimeAlertsProvider token={token} enabled={Boolean(token)} variant="admin">
-      <div className="min-h-screen flex bg-[#090d16] text-slate-100">
+    <RealtimeAlertsProvider token={token} enabled={Boolean(token) && !childAdmin} variant="admin" role={user?.role || ''}>
+      <div className="flex h-screen overflow-hidden bg-[#090d16] text-slate-100">
         <AdminSidebar
           user={user}
           onLogout={() => {
@@ -36,15 +37,15 @@ export default function AdminLayout() {
             navigate('/login');
           }}
         />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-16 bg-slate-950/70 backdrop-blur-xl border-b border-slate-800/80 flex items-center justify-end px-6 gap-3 sticky top-0 z-20">
-            <NotificationBell variant="admin" />
+        <div className="ml-72 flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="z-20 flex h-16 shrink-0 items-center justify-end gap-3 border-b border-slate-800/80 bg-slate-950/70 px-6 backdrop-blur-xl">
+            {!childAdmin && <NotificationBell variant="admin" />}
             <span className="text-sm font-semibold text-slate-300">{user?.name}</span>
             <span className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-[0_0_16px_rgba(59,130,246,0.45)]">
               {(user?.name || 'A')[0].toUpperCase()}
             </span>
           </header>
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 overflow-y-auto p-6">
             {executiveRedirect ? <Navigate to={executiveRedirect} replace /> : <Outlet />}
           </main>
         </div>

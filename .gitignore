@@ -9,6 +9,7 @@ customer/.env
 
 # Build folders
 dist/
+dev-dist/
 build/
 
 # macOS

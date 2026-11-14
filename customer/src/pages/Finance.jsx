@@ -165,13 +165,7 @@ export default function Finance() {
         eyebrow="Car Finance"
         title="Easy vehicle loans on every"
         accent="inspected car"
-        subtitle="Compare partner banks, see a monthly EMI, and apply once. Our desk calls you back with the papers."
-        points={[
-          { icon: Clock, label: 'Fast approval' },
-          { icon: Banknote, label: 'High funding' },
-          { icon: ShieldCheck, label: 'Clear charges' },
-          { icon: FileText, label: 'Few documents' },
-        ]}
+        subtitle="Pick an amount, see the EMI, and apply. We call you back."
       >
         <div className="hidden lg:block">
           <BannerActions>
@@ -181,14 +175,14 @@ export default function Finance() {
         </div>
       </DesignedPageBanner>
 
-      <section className="grid grid-cols-2 gap-3 px-4 py-4 lg:hidden">
+      <section className="grid grid-cols-2 gap-2 px-4 pt-3 lg:hidden">
         {BENEFITS.map(({ icon: Icon, title, body }, index) => (
-          <article key={title} className={`rounded-2xl p-3 shadow-md shadow-slate-200/50 ${['bg-[#e8f1ff]', 'bg-[#e7f8ee]', 'bg-[#fff4e8]', 'bg-[#f3e8ff]'][index % 4]}`}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#1853ff] shadow-sm">
-              <Icon className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-            <h3 className="mt-2 text-sm font-semibold text-slate-900">{title}</h3>
-            <p className="mt-1 text-[12px] font-normal leading-snug text-slate-600">{body}</p>
+          <article key={title} className={`flex gap-2 rounded-xl px-2.5 py-2 ${['bg-[#e8f1ff]', 'bg-[#e7f8ee]', 'bg-[#fff4e8]', 'bg-[#f3e8ff]'][index % 4]}`}>
+            <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1853ff]" strokeWidth={2.25} />
+            <div className="min-w-0">
+              <h3 className="text-[12px] font-semibold leading-tight text-slate-900">{title}</h3>
+              <p className="mt-0.5 line-clamp-2 text-[11px] font-normal leading-snug text-slate-600">{body}</p>
+            </div>
           </article>
         ))}
       </section>
@@ -245,8 +239,8 @@ export default function Finance() {
             ['03', 'Talk to our desk', 'Submit one form. 4tyrezz matches you with a lending partner and calls you back — you never deal with a dealer for paperwork.'],
           ].map(([n, title, body]) => (
             <Card key={n} className="p-6">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#3083ff]">{n}</span>
-              <h3 className="font-black text-slate-900 text-base mt-2">{title}</h3>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-[#3083ff]">{n}</span>
+              <h3 className="font-bold text-slate-900 text-base mt-2">{title}</h3>
               <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{body}</p>
             </Card>
           ))}
@@ -268,7 +262,7 @@ export default function Finance() {
               <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center">
                 <Icon className="w-5 h-5 text-white" strokeWidth={2.25} />
               </div>
-              <h3 className="font-black text-slate-900 text-sm mt-4">{title}</h3>
+              <h3 className="font-bold text-slate-900 text-sm mt-4">{title}</h3>
               <p className="text-xs font-medium text-slate-500 mt-1.5 leading-relaxed">{body}</p>
             </Card>
           ))}
@@ -306,14 +300,14 @@ export default function Finance() {
                 maxLabel={formatINR(price)}
               />
               <div>
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">Tenure</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Tenure</p>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {TENURES.map((m) => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => setMonths(m)}
-                      className={`px-3 py-2.5 lg:py-1.5 rounded-xl lg:rounded-lg text-[13px] lg:text-[11px] font-semibold lg:font-black lg:uppercase lg:tracking-wider border transition ${
+                      className={`px-3 py-2.5 lg:py-1.5 rounded-xl lg:rounded-lg text-[13px] lg:text-[11px] font-semibold lg:font-bold lg:uppercase lg:tracking-wider border transition ${
                         months === m
                           ? 'bg-[#3083ff] text-white border-[#3083ff]'
                           : 'bg-white text-slate-600 border-slate-200 hover:border-[#3083ff]/50'
@@ -350,9 +344,9 @@ export default function Finance() {
 
             <Card className="p-4 lg:p-6 flex flex-col" highlighted>
               <p className="text-[12px] font-medium text-[#3083ff] lg:hidden">Step 2</p>
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 hidden lg:block">Your monthly EMI</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 hidden lg:block">Your monthly EMI</p>
               <p className="text-[13px] font-medium text-slate-700 lg:hidden">Your monthly EMI</p>
-              <p className="font-black text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">
+              <p className="font-bold text-slate-900 text-2xl lg:text-4xl tracking-tight mt-1">
                 {formatINR(emi)}
                 <span className="text-sm font-extrabold text-slate-400 ml-1.5">/month</span>
               </p>
@@ -361,8 +355,8 @@ export default function Finance() {
                 <SummaryRow label="Loan amount" value={formatINR(loanAmount)} />
                 <SummaryRow label="Total interest" value={formatINR(totalInterest)} accent />
                 <div className="flex justify-between items-center pt-3 border-t border-slate-100">
-                  <span className="text-sm font-black text-slate-900">Total payable</span>
-                  <span className="text-sm font-black text-slate-900">{formatINR(totalPayable)}</span>
+                  <span className="text-sm font-bold text-slate-900">Total payable</span>
+                  <span className="text-sm font-bold text-slate-900">{formatINR(totalPayable)}</span>
                 </div>
               </div>
 
@@ -450,7 +444,7 @@ export default function Finance() {
               </div>
 
               <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Your selection</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Your selection</p>
                 <p className="text-sm font-extrabold text-slate-800 mt-1">
                   {formatINR(loanAmount)} over {months} months · EMI {formatINR(emi)} @ {rate}% p.a.
                 </p>
@@ -465,14 +459,14 @@ export default function Finance() {
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 block text-center text-xs font-black uppercase tracking-wider text-[#3083ff]"
+                className="mt-3 block text-center text-xs font-bold uppercase tracking-wider text-[#3083ff]"
               >
                 Or apply on WhatsApp →
               </a>
             </Card>
 
             <Card className="hidden p-6 lg:block">
-              <h3 className="font-black text-slate-900 text-base">Documents you'll need</h3>
+              <h3 className="font-bold text-slate-900 text-base">Documents you'll need</h3>
               <ul className="mt-4 space-y-3">
                 {DOCUMENTS.map((d) => (
                   <li key={d} className="flex gap-2.5 text-sm font-semibold text-slate-600">
@@ -486,7 +480,7 @@ export default function Finance() {
                   Already found a car? Open any listing and use the in-page EMI calculator to apply against that
                   specific vehicle.
                 </p>
-                <Link to="/cars" className="font-black text-sm mt-3 inline-flex items-center gap-1" style={{ color: BRAND }}>
+                <Link to="/cars" className="font-bold text-sm mt-3 inline-flex items-center gap-1" style={{ color: BRAND }}>
                   Browse inspected cars <span>→</span>
                 </Link>
               </div>
@@ -522,7 +516,7 @@ export default function Finance() {
           {BANKS.map((b) => (
             <span
               key={b}
-              className="px-5 py-2.5 rounded-full bg-white border border-slate-200 text-xs font-black uppercase tracking-wider text-slate-700 shadow-sm"
+              className="px-5 py-2.5 rounded-full bg-white border border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-700 shadow-sm"
             >
               {b}
             </span>
@@ -637,8 +631,8 @@ function SliderRow({ label, value, min, max, step, sliderValue, onChange, minLab
   return (
     <div>
       <div className="flex justify-between items-baseline mb-2">
-        {label ? <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</span> : <span />}
-        <span className="font-black text-slate-900 text-sm">{value}</span>
+        {label ? <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</span> : <span />}
+        <span className="font-bold text-slate-900 text-sm">{value}</span>
       </div>
       <input
         type="range"
@@ -667,7 +661,7 @@ function SummaryRow({ label, value, accent }) {
         />
         {label}
       </span>
-      <span className="text-sm font-black text-slate-900">{value}</span>
+      <span className="text-sm font-bold text-slate-900">{value}</span>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
@@ -57,7 +57,8 @@ export default function CarDetails() {
   const dispatch = useDispatch();
   const { user } = useSelector((s) => s.auth);
   const wishlisted = useSelector((s) => s.wishlist.ids.includes(id));
-  const { requireAuth } = useAuthGuard();
+  const { requireAuth, releaseLock } = useAuthGuard();
+  const navigate = useNavigate();
   const [driveSent, setDriveSent] = useState(false);
   const [inCart, setInCart] = useState(() => readCart().some((row) => row.id === String(id)));
 
@@ -134,6 +135,15 @@ export default function CarDetails() {
     if (!uid) return;
     rememberRecentlyViewed(car, uid);
   }, [car, user?._id, user?.id]);
+
+  useEffect(() => {
+    if (user) return undefined;
+    requireAuth(undefined, {
+      locked: true,
+      onCancel: () => navigate('/cars', { replace: true }),
+    });
+    return () => releaseLock();
+  }, [id, user, requireAuth, releaseLock, navigate]);
 
   const insights = car?.quickInsights || {};
   const rto = car?.rtoDetails || {};
