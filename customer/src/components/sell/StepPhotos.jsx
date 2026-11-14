@@ -19,7 +19,7 @@ function ownerLabel(value) {
   return '';
 }
 
-export default function StepPhotos({ state, patch, onSkip }) {
+export default function StepPhotos({ state, patch, onBack, onNext }) {
   const thumbs = (state.photoPreviews || []).map((item) => item.dataUrl).filter(Boolean);
 
   const onPhotos = async (e) => {
@@ -51,16 +51,11 @@ export default function StepPhotos({ state, patch, onSkip }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <StepHeading
-          step={4}
-          title="Upload photos"
-          hint="A few photos help buyers and the inspector. You can skip this and add them later."
-        />
-        <button type="button" onClick={onSkip} className="shrink-0 pt-1 text-[13px] font-medium text-slate-500">
-          Skip photos for now
-        </button>
-      </div>
+      <StepHeading
+        step={4}
+        title="Upload photos"
+        hint="Add a few photos of the car, then continue to confirm the inspection."
+      />
 
       {chips.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -107,6 +102,19 @@ export default function StepPhotos({ state, patch, onSkip }) {
           ))}
         </div>
       )}
+
+      <div className="hidden gap-3 pt-2 lg:flex">
+        <button type="button" onClick={onBack} className="flex-1 rounded-xl border border-slate-200 bg-white py-3.5 text-xs font-black uppercase tracking-wider text-slate-700">
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          className="flex-1 rounded-xl bg-[#3083ff] py-3.5 text-xs font-black uppercase tracking-wider text-white hover:bg-[#1853ff]"
+        >
+          Continue
+        </button>
+      </div>
     </div>
   );
 }
