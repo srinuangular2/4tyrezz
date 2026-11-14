@@ -16,7 +16,7 @@ const STEP_META = [
   { label: 'Car', title: 'Which car are you selling?', hint: 'Enter the number on the number plate, or choose the brand yourself.' },
   { label: 'Details', title: 'Tell us about the car', hint: 'Kilometres, owners and city. Photos come after the price.' },
   { label: 'Price', title: 'Your price and a visit slot', hint: 'This range is a guide. Pick the price you want and when we should inspect the car.' },
-  { label: 'Photos', title: 'Upload photos', hint: 'Add photos now, or skip and upload them later from My Vehicles.' },
+  { label: 'Photos', title: 'Upload photos', hint: 'Add photos of the car, then continue to book the inspection.' },
   { label: 'Book', title: 'Confirm your mobile', hint: 'Check the car and the visit, then verify your number. The final offer comes after inspection.' },
 ];
 import StepIdentify from './StepIdentify';
@@ -383,12 +383,14 @@ export default function SellCarFlow() {
         <StepPhotos
           state={state}
           patch={patch}
-          onSkip={() => {
+          onBack={() => patch({ step: 3 })}
+          onNext={() => {
             if (state.photoOnly && state.enquiryId) {
               navigate('/profile/my-vehicles');
               return;
             }
-            patch({ step: 5, photosSkipped: true });
+            const hasPhotos = (state.photoFiles || []).length > 0 || (state.photoPreviews || []).length > 0;
+            patch({ step: 5, photosSkipped: !hasPhotos });
           }}
         />
       )}
@@ -409,7 +411,7 @@ export default function SellCarFlow() {
     : state.step === 2
       ? (valuating ? 'Estimating…' : 'See estimate')
       : state.step === 4
-        ? ((state.photoFiles || []).length || (state.photoPreviews || []).length ? 'Continue' : 'Skip photos for now')
+        ? 'Continue'
         : state.step === 5
           ? (submitting ? 'Booking…' : 'Book inspection')
           : 'Continue';
@@ -462,7 +464,7 @@ export default function SellCarFlow() {
           {state.fromValuation && (
             <div className="mb-3 rounded-2xl border border-[#3083ff]/20 bg-[#f4f8ff] px-3.5 py-3">
               <p className="text-[13px] font-medium text-slate-800">This car is from your valuation.</p>
-              <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">Photos are next. You can skip them and add or edit the car later in My Vehicles.</p>
+              <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">Add photos, then continue to book the inspection.</p>
             </div>
           )}
           {(state.brand || state.valuation) && (
@@ -533,7 +535,7 @@ export default function SellCarFlow() {
         {state.fromValuation && (
           <div className="mb-4 hidden rounded-2xl border border-[#3083ff]/20 bg-[#f4f8ff] px-4 py-3 lg:block">
             <p className="text-sm font-black text-slate-900">This car is from your valuation.</p>
-            <p className="mt-1 text-xs font-semibold text-slate-500">Photos are next. You can skip them and add or edit the car later in My Vehicles.</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">Add photos, then continue to book the inspection.</p>
           </div>
         )}
         {stepNodes}

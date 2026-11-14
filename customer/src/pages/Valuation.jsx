@@ -365,7 +365,7 @@ export default function Valuation() {
       ]);
       setMobileStep(3);
       if (window.matchMedia('(min-width: 1024px)').matches) {
-        document.getElementById('result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('valuation-result')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     } catch (e) {
       toast.error(e.response?.data?.message || 'Could not calculate a valuation');
@@ -845,95 +845,86 @@ export default function Valuation() {
             </PrimaryButton>
             <p className="hidden lg:block text-center text-[11px] font-semibold text-emerald-600 mt-3">100% free · Instant estimate</p>
           </Card>
-            <div className="hidden lg:block space-y-5">
-              <Card className="p-6 space-y-3" highlighted>
-                <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">How to use</p>
-                <h3 className="font-black text-slate-900 text-base">Check price in under a minute</h3>
-                <ul className="space-y-2.5 text-sm font-medium text-slate-600">
-                  <li>1. Pick brand, year, model and variant</li>
-                  <li>2. Add kilometres, owners and city</li>
-                  <li>3. Or type your RC number instead</li>
-                  <li>4. Tap Check value for a SmartPrice range</li>
-                </ul>
-              </Card>
-              <Card className="p-6 space-y-3" hover={false}>
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">What you get</p>
-                <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                  An indicative market range — not a final offer. 4tyrezz confirms the real price after inspection if you choose to sell.
-                </p>
-                <button type="button" onClick={continueToSell} className="inline-flex font-black text-sm text-[#3083ff] pt-1">
-                  Book inspection for this car →
-                </button>
-              </Card>
+            <div className="hidden lg:block lg:sticky lg:top-24 space-y-5">
+              {result ? (
+                <div id="valuation-result" className="space-y-5">
+                  <Card className="p-6 rounded-3xl" highlighted>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-amber-600">Indicative estimate — not a purchase offer</p>
+                    <p className="font-black text-slate-900 text-4xl tracking-tight mt-1">{formatINR(fair)}</p>
+                    <p className="text-sm font-extrabold mt-2" style={{ color: BRAND }}>
+                      Market range {formatINR(minP)} – {formatINR(maxP)}
+                    </p>
+                    {valuation?.demandScore && (
+                      <p className="mt-3 text-xs font-extrabold text-slate-600">
+                        Demand: <span className="text-[#3083ff]">{valuation.demandScore}</span>
+                        {valuation.depreciationApplied ? ` · Age depreciation ${valuation.depreciationApplied}` : ''}
+                      </p>
+                    )}
+                    <div className="mt-5 h-2.5 rounded-full bg-slate-100 relative overflow-hidden">
+                      <div className="absolute inset-y-0 left-[12%] right-[12%] rounded-full" style={{ backgroundColor: BRAND }} />
+                    </div>
+                    {valuation?.priceFactors && (
+                      <div className="mt-5 grid grid-cols-2 gap-2">
+                        {Object.entries(valuation.priceFactors).map(([k, v]) => (
+                          <div key={k} className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600">
+                            <span className="uppercase tracking-wider text-slate-400">{k.replace(/([A-Z])/g, ' $1')}</span>
+                            <span className="block text-slate-900 mt-0.5">{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-[11px] font-semibold text-slate-500 mt-4 leading-relaxed">
+                      {result.disclaimer || 'This is an estimated market value only. It is not a final purchase offer. Price is confirmed after inspection.'}
+                    </p>
+                  </Card>
+                  <Card className="p-6" highlighted>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Want real offers on this car?</p>
+                    <div className="mt-4 space-y-3">
+                      <input className={inputClass} placeholder="Your name" value={contact.name} onChange={(e) => setC('name', e.target.value)} />
+                      <input className={inputClass} placeholder="Mobile number" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
+                      <SearchableSelect
+                        value={contact.city}
+                        placeholder="Select city"
+                        searchPlaceholder="Search city"
+                        options={(cities || []).map((c) => ({ value: c.name, label: c.name }))}
+                        onChange={(value) => setC('city', value)}
+                      />
+                      <PrimaryButton className="w-full" disabled={submitting} onClick={requestOffers}>
+                        {submitting ? 'Sending…' : 'Request a 4tyrezz follow-up'}
+                      </PrimaryButton>
+                      <button type="button" onClick={continueToSell} className="block w-full text-center text-xs font-black uppercase tracking-wider text-[#3083ff] pt-1">
+                        Book inspection for this car
+                      </button>
+                    </div>
+                  </Card>
+                </div>
+              ) : (
+                <>
+                  <Card className="p-6 space-y-3" highlighted>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-[#3083ff]">How to use</p>
+                    <h3 className="font-black text-slate-900 text-base">Check price in under a minute</h3>
+                    <ul className="space-y-2.5 text-sm font-medium text-slate-600">
+                      <li>1. Pick brand, year, model and variant</li>
+                      <li>2. Add kilometres, owners and city</li>
+                      <li>3. Or type your RC number instead</li>
+                      <li>4. Tap Check value for a SmartPrice range</li>
+                    </ul>
+                  </Card>
+                  <Card className="p-6 space-y-3" hover={false}>
+                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">What you get</p>
+                    <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                      An indicative market range — not a final offer. 4tyrezz confirms the real price after inspection if you choose to sell.
+                    </p>
+                    <button type="button" onClick={continueToSell} className="inline-flex font-black text-sm text-[#3083ff] pt-1">
+                      Book inspection for this car →
+                    </button>
+                  </Card>
+                </>
+              )}
             </div>
           </div>
         ) : null}
       </Section>
-
-      <div id="result" className="hidden scroll-mt-24 lg:block">
-        {result && (
-          <Section eyebrow="SmartPrice" title="Your used car valuation" className="!py-5 lg:!py-12">
-            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-4 lg:gap-6">
-              <Card className="p-4 sm:p-6 rounded-2xl lg:rounded-3xl" highlighted>
-                <p className="text-[11px] font-black uppercase tracking-wider text-amber-600">Indicative estimate — not a purchase offer</p>
-                <p className="font-black text-slate-900 text-3xl sm:text-4xl tracking-tight mt-1">{formatINR(fair)}</p>
-                <p className="text-sm font-extrabold mt-2" style={{ color: BRAND }}>
-                  Market range {formatINR(minP)} – {formatINR(maxP)}
-                </p>
-                {valuation?.demandScore && (
-                  <p className="mt-3 text-xs font-extrabold text-slate-600">
-                    Demand: <span className="text-[#3083ff]">{valuation.demandScore}</span>
-                    {valuation.depreciationApplied ? ` · Age depreciation ${valuation.depreciationApplied}` : ''}
-                  </p>
-                )}
-                <div className="mt-5 h-2.5 rounded-full bg-slate-100 relative overflow-hidden">
-                  <div className="absolute inset-y-0 left-[12%] right-[12%] rounded-full" style={{ backgroundColor: BRAND }} />
-                </div>
-                {valuation?.priceFactors && (
-                  <div className="mt-5 grid sm:grid-cols-2 gap-2">
-                    {Object.entries(valuation.priceFactors).map(([k, v]) => (
-                      <div key={k} className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600">
-                        <span className="uppercase tracking-wider text-slate-400">{k.replace(/([A-Z])/g, ' $1')}</span>
-                        <span className="block text-slate-900 mt-0.5">{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="text-[11px] font-semibold text-slate-500 mt-4 leading-relaxed">
-                  {result.disclaimer || 'This is an estimated market value only. It is not a final purchase offer. Price is confirmed after inspection.'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => document.querySelector('#valuation-form')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="mt-5 text-xs font-black uppercase tracking-wider text-[#3083ff]"
-                >
-                  Edit car details
-                </button>
-              </Card>
-              <Card className="p-6" highlighted>
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Want real offers on this car?</p>
-                <div className="mt-4 space-y-3">
-                  <input className={inputClass} placeholder="Your name" value={contact.name} onChange={(e) => setC('name', e.target.value)} />
-                  <input className={inputClass} placeholder="Mobile number" value={contact.phone} onChange={(e) => setC('phone', e.target.value)} />
-                  <SearchableSelect
-                    value={contact.city}
-                    placeholder="Select city"
-                    searchPlaceholder="Search city"
-                    options={(cities || []).map((c) => ({ value: c.name, label: c.name }))}
-                    onChange={(value) => setC('city', value)}
-                  />
-                  <PrimaryButton className="w-full" disabled={submitting} onClick={requestOffers}>
-                    {submitting ? 'Sending…' : 'Request a 4tyrezz follow-up'}
-                  </PrimaryButton>
-                  <button type="button" onClick={continueToSell} className="block w-full text-center text-xs font-black uppercase tracking-wider text-[#3083ff] pt-1">
-                    Book inspection for this car
-                  </button>
-                </div>
-              </Card>
-            </div>
-          </Section>
-        )}
-      </div>
 
       <Section bg>
         <WhyValuation />
