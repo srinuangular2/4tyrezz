@@ -40,7 +40,7 @@ ips = [line.strip() for line in lookup.stdout.splitlines() if line.strip()[:1].i
 if not ips:
     sys.exit(1)
 check = subprocess.run(
-    ["/usr/bin/curl", "-sf", "-m", "8", "--resolve", f"{host}:443:{ips[0]}", url + "/api/health"],
+    ["/usr/bin/curl", "-sf", "-m", "20", "--resolve", f"{host}:443:{ips[0]}", url + "/api/health"],
     capture_output=True, text=True,
 )
 sys.exit(0 if check.returncode == 0 and '"ok":true' in check.stdout else 1)
@@ -136,22 +136,50 @@ Keep the live site connected to the local car API.
 
 EOF
 )" || return 1
-  local branch
+  local branch sha
   branch=$(git branch --show-current)
+  sha=$(git rev-parse HEAD)
   git push origin "$branch" || return 1
   if [[ "$branch" != "main" ]]; then
-    git push origin "${branch}:main" || return 1
+    git checkout main || return 1
+    if ! git fetch origin main || ! git merge --ff-only origin/main; then
+      git checkout "$branch"
+      return 1
+    fi
+    if ! git cherry-pick "$sha"; then
+      git checkout --theirs vercel.json customer/vercel.json 2>/dev/null || true
+      git add vercel.json customer/vercel.json
+      if ! GIT_EDITOR=true git cherry-pick --continue; then
+        git cherry-pick --abort 2>/dev/null || true
+        git checkout "$branch"
+        return 1
+      fi
+    fi
+    if ! git push origin main; then
+      git checkout "$branch"
+      return 1
+    fi
+    git checkout "$branch" || return 1
   fi
   log "published $url"
 }
 
 log "watch started"
+misses=0
 while true; do
   ensure_api || { sleep 20; continue; }
   current=$(configured_url)
   if tunnel_up "$current"; then
+    misses=0
     log "healthy $current"
   else
+    misses=$((misses + 1))
+    log "tunnel check failed ($misses/3) $current"
+    if [[ "$misses" -lt 3 ]]; then
+      sleep 15
+      continue
+    fi
+    misses=0
     log "tunnel is down ($current), opening a new one"
     url=$(start_tunnel) || { log "could not open a tunnel"; sleep 20; continue; }
     log "new tunnel $url"
@@ -169,5 +197,5 @@ while true; do
       log "new tunnel did not answer"
     fi
   fi
-  sleep 40
+  sleep 60
 done

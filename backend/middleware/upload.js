@@ -38,9 +38,9 @@ const makeUploader = (subfolder) => {
   });
 
   const fileFilter = (req, file, cb) => {
-    if (subfolder === 'kyc') {
-      const ok = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(file.mimetype);
-      if (!ok) return cb(new Error('Only PDF, JPG and PNG files are allowed (max 5MB)'));
+    if (subfolder === 'kyc' || subfolder === 'receipts') {
+      const ok = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.mimetype);
+      if (!ok) return cb(new Error('Only PDF, JPG, PNG and WEBP files are allowed (max 5MB)'));
       return cb(null, true);
     }
     if (subfolder === 'bulk') {
@@ -61,6 +61,7 @@ module.exports = {
   uploadBrandLogo: makeUploader('brands'),
   uploadBannerImage: makeUploader('banners'),
   uploadKycDocument: makeUploader('kyc'),
+  uploadPaymentReceipt: makeUploader('receipts'),
   uploadBulkInventory: makeUploader('bulk'),
   uploadAvatar: makeUploader('avatars'),
   uploadSellPhotos: makeUploader('sell'),
