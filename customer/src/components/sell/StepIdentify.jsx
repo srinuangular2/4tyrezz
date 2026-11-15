@@ -3,12 +3,14 @@ import toast from 'react-hot-toast';
 import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../../lib/fetchVehicleDetailsByReg';
 import { applyLookup } from './sellCarState';
 import BrandModelGrid from './BrandModelGrid';
+import BrandChipRow from '../mobile/BrandChipRow';
 import VerifiedDetailsCard from './VerifiedDetailsCard';
 import { Skeleton } from '../PageShell';
 import { StepHeading, useIsPhone } from './ui';
 
-export default function StepIdentify({ state, setState, patch, onNext, onGuide }) {
+export default function StepIdentify({ state, setState, patch, onNext, onGuide, guided = false }) {
   const phone = useIsPhone();
+  const landing = phone && !guided;
   const [error, setError] = useState('');
   const [cooldown, setCooldown] = useState(0);
 
@@ -43,17 +45,85 @@ export default function StepIdentify({ state, setState, patch, onNext, onGuide }
     }
   };
 
-  const openManual = () => {
+  const openManual = (phase) => {
     if (phone) onGuide?.();
     patch({
       identifyMode: 'manual',
       editManual: true,
-      manualPhase: state.model ? 'variant' : state.year ? 'model' : state.brand ? 'year' : 'brand',
+      manualPhase: phase || (state.model ? 'variant' : state.year ? 'model' : state.brand ? 'year' : 'brand'),
     });
+  };
+
+  const pickBrand = (name) => {
+    patch({
+      brand: name,
+      model: '',
+      year: '',
+      variant: '',
+      identifyMode: 'manual',
+      editManual: true,
+      manualPhase: 'year',
+    });
+    if (phone) onGuide?.();
   };
 
   return (
     <div className="space-y-5 lg:space-y-6">
+      {landing && (
+        <div id="sell-start" className="relative z-10 -mt-7 rounded-t-[28px] bg-white px-4 pb-3 pt-5">
+          <h2 className="text-[16px] font-semibold text-slate-900">Unlock your car’s best price</h2>
+          <label htmlFor="sell-plate" className="mt-3 block text-[13px] font-medium text-slate-800">Enter your car plate number</label>
+          <div className="mt-2 flex overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <span className="flex items-center bg-[#3083ff] px-3 text-[12px] font-bold tracking-wide text-white">IND</span>
+            <input
+              id="sell-plate"
+              value={state.plate}
+              onChange={(e) => patch({ plate: formatPlateInput(e.target.value), verified: false })}
+              onKeyDown={(e) => e.key === 'Enter' && lookup()}
+              placeholder="e.g. AB 12 CD 1275"
+              autoCapitalize="characters"
+              className="h-11 min-w-0 flex-1 px-3 text-[13px] font-semibold uppercase tracking-wide text-slate-900 outline-none placeholder:font-medium placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400"
+            />
+          </div>
+          <p className="mt-2 text-[12px] font-normal text-slate-500">This is the same as your registration number</p>
+          {error && <p className="mt-2 text-[13px] font-medium text-rose-600">{error}</p>}
+          <button
+            type="button"
+            onClick={lookup}
+            disabled={state.lookupStatus === 'loading' || cooldown > 0}
+            id="sell-price-btn"
+            className="mt-3 flex h-10 w-full items-center justify-center rounded-xl bg-[#3083ff] text-[13px] font-semibold text-white disabled:opacity-50"
+          >
+            {state.lookupStatus === 'loading' ? 'Checking…' : cooldown > 0 ? `Wait ${cooldown}s` : 'Get instant car price'}
+          </button>
+          <button type="button" onClick={() => openManual('brand')} className="mt-2.5 text-[13px] font-medium text-slate-700">
+            Don’t remember? <span className="font-semibold text-[#1853ff]">Choose brand</span>
+          </button>
+          <div className="relative my-4 text-center">
+            <span className="absolute inset-x-0 top-1/2 border-t border-slate-200" />
+            <span className="relative bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">or</span>
+          </div>
+          <BrandChipRow accent="#3083ff" onSelect={pickBrand} />
+          <button
+            type="button"
+            onClick={() => openManual('brand')}
+            className="mt-3 flex h-10 w-full items-center justify-center rounded-xl border border-[#3083ff] text-[13px] font-semibold text-[#1853ff]"
+          >
+            Select your brand
+          </button>
+          {state.lookupStatus === 'loading' && <Skeleton className="mt-3 h-16" />}
+          {state.verified && !state.editManual && (
+            <div className="mt-4">
+              <VerifiedDetailsCard
+                state={state}
+                onEdit={() => patch({ editManual: true, identifyMode: 'manual', manualPhase: 'brand' })}
+                onContinue={onNext}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      <div className={landing ? 'hidden' : ''}>
       <StepHeading
         step={1}
         title="Which car are you selling?"
@@ -112,9 +182,9 @@ export default function StepIdentify({ state, setState, patch, onNext, onGuide }
         />
       )}
 
-      <button
+        <button
         type="button"
-        onClick={openManual}
+        onClick={() => openManual()}
         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left lg:w-auto lg:border-0 lg:bg-transparent lg:p-0"
       >
         <span className="block text-[14px] font-semibold text-[#3083ff] lg:text-sm lg:font-extrabold lg:hover:underline">Choose brand, year and model</span>
@@ -133,6 +203,7 @@ export default function StepIdentify({ state, setState, patch, onNext, onGuide }
         </div>
       )}
 
+      </div>
     </div>
   );
 }

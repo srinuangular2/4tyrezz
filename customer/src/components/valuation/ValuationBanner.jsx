@@ -1,4 +1,5 @@
 import { Gauge, Lock, Zap } from 'lucide-react';
+import LeadHero from '../mobile/LeadHero';
 
 const POINTS = [
   { icon: Zap, label: 'Instant estimate' },
@@ -15,23 +16,15 @@ const STEPS = [
 export default function ValuationBanner() {
   return (
     <>
-    <section className="relative overflow-hidden lg:hidden">
-      <img src="/car-valution.png" alt="" className="absolute inset-0 h-full w-full object-cover object-[85%_center]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/55 to-slate-950/20" />
-      <div className="relative px-4 py-4">
-        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">4tyrezz SmartPrice</p>
-        <h1 className="mt-1 max-w-[18rem] text-[15px] font-normal leading-snug text-white">Know your car’s market price</h1>
-        <p className="mt-1 text-xs font-light leading-snug text-white/90">Free, instant, and based on live catalogue data.</p>
-        <div className="mt-3 grid max-w-[20rem] grid-cols-3 gap-2">
-          {POINTS.map(({ icon: Icon, label }) => (
-            <div key={label} className="rounded-xl border border-white/25 bg-white/10 px-1.5 py-2 text-center">
-              <Icon className="mx-auto h-4 w-4 text-white" strokeWidth={2.25} />
-              <p className="mt-1 text-[10px] font-semibold leading-tight text-white">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+    <LeadHero
+      kicker="Car valuation"
+      title="Know your car’s"
+      accent="best price"
+      points={['Free instant range', 'Based on your car', 'No obligation to sell']}
+      badge="4tyrezz SmartPrice"
+      image="/hero-car.png"
+      imageAlt=""
+    />
     <section className="relative hidden overflow-hidden min-h-[200px] sm:min-h-[420px] lg:block lg:min-h-[540px]">
       <img
         src="/car-valution.png"

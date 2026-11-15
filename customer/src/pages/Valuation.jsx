@@ -28,8 +28,10 @@ import ResumeListingCard from '../components/sell/ResumeListingCard';
 import SearchableSelect from '../components/common/SearchableSelect';
 import { isAutomatic, variantRowKey } from '../lib/vehicleVariant';
 import { cityFromPlate, matchCityName, sellStateFromValuation } from '../components/sell/sellCarState';
+import useShowWhenOffscreen from '../hooks/useShowWhenOffscreen';
 import { saveSellDraft } from '../lib/listingDrafts';
 import { useIsPhone } from '../components/sell/ui';
+import BrandChipRow from '../components/mobile/BrandChipRow';
 import { formatWhen } from './profile/hubUtils';
 import {
   BRAND,
@@ -139,6 +141,7 @@ export default function Valuation() {
   const [mobileStep, setMobileStep] = useState(1);
   const [guided, setGuided] = useState(false);
   const phone = useIsPhone();
+  const showPriceBar = useShowWhenOffscreen('value-price-btn');
   const navigate = useNavigate();
   const [draft, setDraft] = useState(null);
   const { requireAuth, isAuthed } = useAuthGuard();
@@ -596,10 +599,10 @@ export default function Valuation() {
   const modelOptions = ensureOption(modelNames, form.model);
 
   return (
-    <div className="bg-slate-50 overflow-x-clip pb-24 lg:pb-0">
+    <div className="bg-slate-50 pb-24 lg:pb-0">
       <ValuationBanner />
 
-      <Section eyebrow="SmartPrice" title="Used car price calculator" className="!py-4 lg:!py-12" headerClassName="hidden lg:flex">
+      <Section eyebrow="SmartPrice" title="Used car price calculator" className="!pb-4 !pt-0 lg:!py-12" headerClassName="hidden lg:flex">
         {gate === 'resume' && valuationDraftReady(draft) ? (
           <ResumeListingCard
             subtitle="Thanks for sharing the details"
@@ -618,28 +621,46 @@ export default function Valuation() {
           />
         ) : gate === 'form' ? (
           <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-4 lg:gap-6 items-start">
-          <Card id="valuation-form" className={`rounded-2xl p-4 sm:p-7 lg:rounded-3xl ${phone ? 'bg-gradient-to-br from-white via-sky-50 to-blue-100 shadow-[0_16px_40px_rgba(48,131,255,0.16)] ring-1 ring-[#3083ff]/20' : ''}`} highlighted>
+          <Card id="valuation-form" className={`rounded-2xl p-4 sm:p-7 lg:rounded-3xl ${phone && !guided ? 'max-lg:relative max-lg:z-10 max-lg:-mx-4 max-lg:-mt-7 max-lg:!rounded-b-none max-lg:!rounded-t-[28px] max-lg:!border-0 max-lg:!bg-white max-lg:!p-4 max-lg:!pt-5 max-lg:!shadow-none' : ''}`} highlighted={!(phone && !guided)} beam={!(phone && !guided)}>
             {phone && !guided && (
-              <div className="space-y-4">
-                <p className="text-[12px] font-medium text-[#3083ff]">Check your car’s price</p>
-                <h2 className="text-[18px] font-semibold text-slate-900">Which car is it?</h2>
-                <p className="text-[13px] font-normal leading-snug text-slate-500">Enter the number on the plate, or choose the brand yourself.</p>
-                <label className="block">
-                  <span className="text-[13px] font-medium text-slate-700">Registration number</span>
+              <div id="value-start" className="space-y-3">
+                <h2 className="text-[16px] font-semibold text-slate-900">Unlock your car’s best price</h2>
+                <label htmlFor="value-plate" className="block text-[13px] font-medium text-slate-800">Enter your car plate number</label>
+                <div className="flex overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <span className="flex items-center bg-[#3083ff] px-3 text-[12px] font-bold tracking-wide text-white">IND</span>
                   <input
-                    className={`${inputClass} mt-1.5 h-12 text-base`}
+                    id="value-plate"
                     value={form.plate}
                     onChange={(e) => set('plate', formatPlateInput(e.target.value))}
-                    placeholder="TS 09 AB 1234"
+                    placeholder="e.g. AB 12 CD 1275"
                     autoCapitalize="characters"
+                    className="h-11 min-w-0 flex-1 px-3 text-[13px] font-semibold uppercase tracking-wide text-slate-900 outline-none placeholder:font-medium placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400"
                   />
-                </label>
-                <button type="button" onClick={startFromPlate} disabled={lookingUp} className="h-11 w-full rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white disabled:opacity-50">
-                  {lookingUp ? 'Looking up…' : 'Find my car'}
+                </div>
+                <p className="text-[12px] font-normal text-slate-500">This is the same as your registration number</p>
+                <button id="value-price-btn" type="button" onClick={startFromPlate} disabled={lookingUp} className="flex h-10 w-full items-center justify-center rounded-xl bg-[#3083ff] text-[13px] font-semibold text-white disabled:opacity-50">
+                  {lookingUp ? 'Looking up…' : 'Get instant car price'}
                 </button>
-                <button type="button" onClick={() => openSheet(1)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left">
-                  <span className="block text-[14px] font-semibold text-[#3083ff]">Choose brand, year and model</span>
-                  <span className="mt-0.5 block text-[12px] font-normal text-slate-500">Use this if the RC number is not with you.</span>
+                <button type="button" onClick={() => openSheet(1)} className="text-[13px] font-medium text-slate-700">
+                  Don’t remember? <span className="font-semibold text-[#3083ff]">Choose brand</span>
+                </button>
+                <div className="relative my-1 text-center">
+                  <span className="absolute inset-x-0 top-1/2 border-t border-slate-200" />
+                  <span className="relative bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">or</span>
+                </div>
+                <BrandChipRow
+                  accent="#3083ff"
+                  onSelect={(name) => {
+                    pickBrand(name);
+                    openSheet(1);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => openSheet(1)}
+                  className="flex h-10 w-full items-center justify-center rounded-xl border border-[#3083ff] text-[13px] font-semibold text-[#3083ff]"
+                >
+                  Select your brand
                 </button>
               </div>
             )}
@@ -930,7 +951,7 @@ export default function Valuation() {
         <WhyValuation />
       </Section>
 
-      <Section>
+      <Section className="hidden lg:block">
         <PriceFactors />
       </Section>
 
@@ -1035,6 +1056,20 @@ export default function Valuation() {
           layout="stack"
         />
       </Section>
+      {showPriceBar && phone && !guided && gate === 'form' && (
+        <div className="fixed inset-x-0 bottom-[calc(62px+env(safe-area-inset-bottom))] z-40 border-t border-slate-200 bg-white px-3 py-2.5 lg:hidden">
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById('value-plate')?.focus();
+              document.getElementById('value-start')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            className="flex h-10 w-full items-center justify-center rounded-xl bg-[#3083ff] text-[13px] font-semibold text-white"
+          >
+            Get instant car price
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,25 +1,29 @@
-import { ClipboardList, FileCheck2, IndianRupee, SearchCheck } from 'lucide-react';
+import { ClipboardList, FileCheck2, HandCoins, IndianRupee, SearchCheck, ShieldCheck } from 'lucide-react';
 
 const STEPS = [
   {
     icon: ClipboardList,
+    short: 'Enter your car',
     title: 'Enter RC or car details',
-    body: 'Share the number plate, or pick brand and model.',
+    body: 'Type the plate number, or pick the brand if you don’t remember it.',
   },
   {
     icon: IndianRupee,
+    short: 'See a price range',
     title: 'See an indicative estimate',
-    body: 'A market range. The final offer comes after inspection.',
+    body: 'This first number is a guide. The final offer is confirmed only after we see the car.',
   },
   {
     icon: SearchCheck,
+    short: 'We inspect at your door',
     title: 'Book a doorstep inspection',
-    body: 'We check the car at your door before quoting.',
+    body: 'Pick a time. Our team checks the car where it is parked. You don’t visit a yard.',
   },
   {
     icon: FileCheck2,
+    short: 'Accept, we do the papers',
     title: 'Accept the offer. We handle paperwork',
-    body: 'Agree, and we handle RC, NOC and insurance.',
+    body: 'If the offer feels right, you accept. We handle the RC transfer and the documents.',
   },
 ];
 
@@ -31,23 +35,41 @@ export default function WhySell4tyrezz() {
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#3083ff]" />
           Why 4tyrezz
         </span>
-        <h2 className="text-base font-semibold text-slate-800 sm:text-lg lg:hidden">How does it work?</h2>
+        <h2 className="text-[16px] font-semibold text-slate-900 lg:hidden">Why sell with 4tyrezz?</h2>
+        <div className="mt-3 space-y-3 lg:hidden">
+          {[
+            { icon: HandCoins, title: 'A fair price after inspection', body: 'The first range is a guide. The offer comes after we see the car.' },
+            { icon: ShieldCheck, title: 'We take care of the papers', body: 'RC transfer and documents stay with the 4tyrezz desk.' },
+            { icon: SearchCheck, title: 'Same-day pickup when the slot fits', body: 'We inspect at your door. You do not visit a yard.' },
+          ].map(({ icon: Icon, title, body }) => (
+            <article key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#d7ebff] text-[#1d6fbe]">
+                <Icon className="h-5 w-5" strokeWidth={2.1} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-[13px] font-semibold leading-snug text-slate-900">{title}</h3>
+                <p className="mt-0.5 text-[13px] font-normal leading-snug text-slate-500">{body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <h2 className="mt-5 text-[16px] font-semibold text-slate-900 lg:hidden">Sell your car in 4 easy steps</h2>
         <h2 className="hidden text-slate-800 lg:block lg:font-display lg:text-4xl lg:uppercase">How does it work?</h2>
         <p className="mt-2 hidden max-w-lg text-sm font-medium leading-relaxed text-slate-500 lg:block">
           We buy through inspection, not through random buyer chats. You share the car, we evaluate, then you choose the offer.
         </p>
 
-        <ol className="mt-4 grid grid-cols-2 gap-3 md:gap-6 lg:hidden">
-          {STEPS.map(({ icon: Icon, title, body }, i) => (
-            <li key={title} className="rounded-2xl bg-white p-3 shadow-md shadow-slate-200/60">
-              <div className="flex items-center justify-between">
-                <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${['bg-[#e8f1ff] text-[#3083ff]', 'bg-[#fff4e8] text-[#e07a12]', 'bg-[#f3e8ff] text-[#7c3aed]', 'bg-[#e8f8ef] text-[#178a45]'][i % 4]}`}>
-                  <Icon className="h-5 w-5" strokeWidth={2.25} />
-                </span>
-                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#3083ff] px-1.5 text-[11px] font-bold text-white">{i + 1}</span>
+        <ol className="mt-3 lg:hidden">
+          {STEPS.map(({ short, body }, i) => (
+            <li key={short} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#3083ff] text-[11px] font-bold text-white">{i + 1}</span>
+                {i < STEPS.length - 1 ? <span className="my-1 w-px flex-1 bg-[#3083ff]/25" /> : null}
               </div>
-              <h3 className="mt-3 text-sm font-semibold leading-snug text-slate-800">{title}</h3>
-              <p className="mt-1 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+              <div className={i < STEPS.length - 1 ? 'pb-4' : ''}>
+                <p className="text-[13px] font-semibold leading-snug text-slate-900">{short}</p>
+                <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+              </div>
             </li>
           ))}
         </ol>

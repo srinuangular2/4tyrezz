@@ -42,10 +42,10 @@ const SELL_FAQS = [
 
 export default function SellCar() {
   return (
-    <div className="bg-slate-50 overflow-x-clip pb-24 lg:pb-0">
+    <div className="bg-slate-50 pb-24 lg:pb-0">
       <SellBanner />
 
-      <Section eyebrow="Assured selling" title="Start with your registration number" className="!py-4 lg:!py-12">
+      <Section eyebrow="Assured selling" title="Start with your registration number" className="!py-0 lg:!py-12" headerClassName="hidden lg:flex">
         <SellCarFlow />
       </Section>
 
@@ -53,7 +53,7 @@ export default function SellCar() {
         <WhySell4tyrezz />
       </Section>
 
-      <Section className="!py-6 lg:!py-12">
+      <Section className="hidden !py-6 lg:block lg:!py-12">
         <SellBenefits />
       </Section>
 

@@ -1,25 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   BadgeCheck,
   BatteryCharging,
-  CalendarCheck,
   Camera,
   ChevronDown,
+  ChevronRight,
   CircleDot,
   FileCheck2,
   Gauge,
-  Phone,
   ScanLine,
   ShieldCheck,
   Thermometer,
   X,
   Check,
 } from 'lucide-react';
-import HowItWorks from '../components/mobile/HowItWorks';
+import LeadHero from '../components/mobile/LeadHero';
 import useReferenceData from '../hooks/useReferenceData';
 import InspectionPriceFields from '../components/pdi/InspectionPriceFields';
 import { ENGINE_PRICE, PRIMARY_CITIES, bookPath, inr, quoteInspection } from '../lib/pdiPricing';
+
+const INSPECT = '#0e7a52';
 
 const TRUST = [
   ['100% independent inspection', ShieldCheck],
@@ -132,7 +133,27 @@ const FAQS = [
   ['When do I receive the report?', 'The engineer briefs you on site or by phone, then the PDF with scores and photos is sent within 60 minutes of the inspection ending.'],
 ];
 
+const INSPECT_WHY = [
+  { icon: ShieldCheck, title: 'An independent check', body: 'The engineer works for you, not for the seller or the showroom.' },
+  { icon: FileCheck2, title: 'A report in 60 minutes', body: 'Scores, photos and paint readings arrive after the visit.' },
+  { icon: BadgeCheck, title: 'Decide before you pay', body: 'Use the report before registration, or before you transfer the money.' },
+];
+
+const INSPECT_FINDS = [
+  { icon: Gauge, title: 'Engine defects', body: 'Idle, leaks, fault codes and gearbox slip a walkaround will miss.' },
+  { icon: ShieldCheck, title: 'Paint and factory issues', body: 'Panel gaps, respray and damage picked up on the way to you.' },
+  { icon: FileCheck2, title: 'Hidden accident history', body: 'Structure, flood signs, and papers that do not match the car.' },
+];
+
+const INSPECT_STEPS = [
+  { title: 'Choose new or used', body: 'A new car is checked for delivery damage. A used car is checked for accident history.' },
+  { title: 'Book a time', body: 'Share where the car is, then pick a date and a slot.' },
+  { title: 'The engineer checks it', body: 'A certified engineer runs the checklist and photographs anything that fails.' },
+  { title: 'You get the report', body: 'You hear the findings first. The PDF with scores arrives within 60 minutes.' },
+];
+
 export default function Inspection() {
+  const navigate = useNavigate();
   const { cities } = useReferenceData();
   const cityNames = useMemo(() => {
     const fromApi = (cities || []).map((city) => city.name).filter(Boolean);
@@ -149,6 +170,10 @@ export default function Inspection() {
   const quote = quoteInspection({ pdiType, engineBand, obdScan, serviceHistory });
   const activeCheck = CHECKS.find((row) => row.key === check) || CHECKS[0];
   const bookHref = bookPath({ pdiType, city, engineBand, obdScan, serviceHistory });
+  const chooseType = (type) => {
+    setPdiType(type);
+    navigate(bookPath({ pdiType: type, city, engineBand, obdScan, serviceHistory }));
+  };
   const setPrice = (key, value) => {
     if (key === 'engineBand') setEngineBand(value);
     if (key === 'obdScan') setObdScan(value);
@@ -166,23 +191,17 @@ export default function Inspection() {
 
   return (
     <div className="bg-slate-50 pb-36 lg:pb-0">
-      <section className="relative overflow-hidden lg:hidden">
-        <img src="/car-pdi.png" alt="" className="absolute inset-0 h-full w-full object-cover object-[85%_center]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/55 to-slate-950/25" />
-        <div className="relative px-4 py-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/80">Pre-delivery inspection</p>
-          <h1 className="mt-1 max-w-[18rem] text-[15px] font-normal leading-snug text-white">Know the car before you drive it away</h1>
-          <p className="mt-1 max-w-[18rem] text-xs font-light leading-snug text-white/90">A full report from a certified engineer, for a new car or a used one.</p>
-          <ul className="mt-3 flex flex-wrap gap-1.5">
-            {TRUST.map(([label, Icon]) => (
-              <li key={label} className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-2 py-1 text-[10px] font-semibold text-white">
-                <Icon className="h-3 w-3" />
-                {label}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <div className="lg:hidden">
+        <LeadHero
+          kicker="Car inspection"
+          title="Buy safe before"
+          accent="you take the car"
+          points={['Inspected before delivery', 'Report within 60 minutes', 'New car or used car']}
+          badge="A 4tyrezz inspection"
+          image="/hero-car.png"
+          imageAlt=""
+        />
+      </div>
       <section className="relative hidden overflow-hidden min-h-[280px] sm:min-h-[420px] lg:block lg:min-h-[520px]">
         <img
           src="/car-pdi.png"
@@ -223,67 +242,86 @@ export default function Inspection() {
         </div>
       </section>
 
-      <section className="space-y-4 px-4 py-4 lg:hidden">
-        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <p className="text-[12px] font-medium text-[#3083ff]">Start here</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-800">Choose the inspection</h2>
-          <p className="mt-1 text-[13px] font-normal leading-snug text-slate-500">Pick new or used, then the city and engine. The price updates as you go.</p>
-
-          <div className="mt-4 flex flex-row gap-3">
+      <section className="lg:hidden">
+        <div id="inspect-start" className="relative z-10 -mt-7 rounded-t-[28px] bg-white px-4 pb-5 pt-5">
+          <h2 className="text-[16px] font-semibold text-slate-900">Choose your car type</h2>
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
             {[
-              ['NEW_CAR', 'New car PDI', `From ${inr(ENGINE_PRICE.UPTO_1249)}`],
-              ['USED_CAR', 'Used car inspection', `From ${inr(ENGINE_PRICE.UPTO_1249)}`],
-            ].map(([id, label, hint]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setPdiType(id)}
-                className={`min-w-0 flex-1 rounded-2xl px-3 py-3 text-left ${pdiType === id ? 'bg-[#3083ff] text-white shadow-md shadow-blue-200' : 'bg-slate-50 text-slate-800'}`}
-              >
-                <span className="block text-sm font-semibold leading-tight">{label}</span>
-                <span className={`mt-1 block text-[11px] font-normal ${pdiType === id ? 'text-white/80' : 'text-slate-500'}`}>{hint}</span>
-              </button>
-            ))}
+              ['NEW_CAR', 'Brand new car', 'Factory defects and delivery damage', 'from-[#fff1f4] to-[#ffe4ea]'],
+              ['USED_CAR', 'Used car', 'Accident, flood and paper checks', 'from-[#eaf2ff] to-[#dce8ff]'],
+            ].map(([id, label, body, tone]) => {
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => chooseType(id)}
+                  className={`flex min-h-[148px] flex-col rounded-2xl border border-slate-200 bg-gradient-to-b p-3 text-left ${tone}`}
+                >
+                  <p className="text-[13px] font-semibold leading-tight text-slate-900">{label}</p>
+                  <p className="mt-1 text-[11px] leading-snug text-slate-500">{body}</p>
+                  <span className="relative mt-auto flex h-14 items-end">
+                    <span className="absolute bottom-1 left-0 flex h-6 w-6 items-center justify-center rounded-full bg-[#3083ff] text-white">
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                    <img src="/hero-car.png" alt="" className="ml-auto h-12 w-[78%] object-contain object-right" />
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          <label className="mt-4 block">
-            <span className="text-[13px] font-medium text-slate-700">2. Which city?</span>
-            <select
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-[14px] font-medium text-slate-900"
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-            >
-              {cityNames.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
-          </label>
-
-          <div className="mt-4">
-            <InspectionPriceFields
-              name="engine-mobile"
-              pdiType={pdiType}
-              engineBand={engineBand}
-              obdScan={obdScan}
-              serviceHistory={serviceHistory}
-              onChange={setPrice}
-            />
+          <div className="mt-5">
+            <h3 className="text-[14px] font-semibold leading-snug text-slate-900">What the inspection looks for</h3>
+            <div className="mt-2.5 space-y-2">
+              {INSPECT_FINDS.map(({ icon: Icon, title, body }) => (
+                <article key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200 px-3 py-2.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#3083ff]">
+                    <Icon className="h-5 w-5" strokeWidth={2.1} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-slate-900">{title}</p>
+                    <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
-          <Link to={bookHref} className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
-            Continue to book
-          </Link>
-          <p className="mt-2 text-center text-[12px] font-normal text-slate-500">Next you pick the car, a time and pay. The report arrives within 60 minutes.</p>
+
         </div>
 
-        <HowItWorks
-          title="How does it work?"
-          steps={[
-            { icon: CalendarCheck, title: 'Book a time', body: 'Pick the place, date and slot.' },
-            { icon: ShieldCheck, title: 'Engineer checks', body: 'Photos and a full checklist on site.' },
-            { icon: Phone, title: 'Hear the findings', body: 'A call before you sign anything.' },
-            { icon: FileCheck2, title: 'Get the report', body: 'Scores and photos within 60 minutes.' },
-          ]}
-        />
+        <div className="space-y-4 px-4 pb-4 pt-5">
+          <h2 className="text-[16px] font-semibold text-slate-900">Why inspect with 4tyrezz?</h2>
+          <div className="space-y-3">
+            {INSPECT_WHY.map(({ icon: Icon, title, body }) => (
+              <article key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#d7f5e8] text-[#0e7a52]">
+                  <Icon className="h-5 w-5" strokeWidth={2.1} />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-[13px] font-semibold leading-snug text-slate-900">{title}</h3>
+                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+          <h2 className="text-[16px] font-semibold text-slate-900">Book an inspection in 4 easy steps</h2>
+          <ol>
+            {INSPECT_STEPS.map(({ title, body }, index) => (
+              <li key={title} className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ backgroundColor: INSPECT }}>{index + 1}</span>
+                  {index < INSPECT_STEPS.length - 1 ? <span className="my-1 w-px flex-1 bg-[#0e7a52]/25" /> : null}
+                </div>
+                <div className={index < INSPECT_STEPS.length - 1 ? 'pb-4' : ''}>
+                  <p className="text-[13px] font-semibold leading-snug text-slate-900">{title}</p>
+                  <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-md shadow-slate-200/60">
+        <div className="mx-4 mb-4 rounded-2xl bg-white p-4 shadow-md shadow-slate-200/60">
           <p className="text-[12px] font-medium text-[#3083ff]">300+ points</p>
           <h2 className="mt-1 text-base font-semibold text-slate-800">What the engineer checks</h2>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -487,12 +525,6 @@ export default function Inspection() {
           </div>
         </div>
       </section>
-
-      <div className="lg:hidden fixed inset-x-0 bottom-[calc(62px+env(safe-area-inset-bottom))] z-40 border-t border-slate-200 bg-white px-3 py-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
-        <Link to={bookHref} className="flex h-11 items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">
-          Book this inspection · {inr(quote.total)}
-        </Link>
-      </div>
 
       {tool && (
         <div className="fixed inset-0 z-[60] bg-slate-900/50 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={() => setTool(null)}>

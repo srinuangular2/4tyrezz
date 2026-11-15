@@ -128,6 +128,7 @@ export default function App() {
   const location = useLocation();
   const dealerWindow = location.pathname.startsWith('/dealer');
   const accountPage = /^\/profile\/.+/.test(location.pathname);
+  const immersiveMobile = location.pathname === '/sell' || location.pathname === '/valuation' || location.pathname === '/inspection' || location.pathname === '/pdi' || location.pathname === '/cars' || location.pathname === '/buy-cars';
 
   useEffect(() => {
     const previous = window.history.scrollRestoration;
@@ -165,7 +166,7 @@ export default function App() {
         <div className="w-full flex flex-col flex-1">
           <KickDealerFromMarketplace />
           {!dealerWindow && (
-            <div className={accountPage ? 'hidden lg:block' : undefined}>
+            <div className={accountPage || immersiveMobile ? 'hidden lg:block' : undefined}>
               <Header />
             </div>
           )}

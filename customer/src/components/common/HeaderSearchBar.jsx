@@ -88,6 +88,7 @@ export default function HeaderSearchBar({
   onClose,
   anchorRef,
   autoFocus = false,
+  showVoice = false,
 }) {
   const navigate = useNavigate();
   const inputRef = useRef(null);
@@ -812,7 +813,7 @@ export default function HeaderSearchBar({
   ) : null;
 
   const field = (
-    <div className={`relative flex-1 flex items-center ${isModal ? 'bg-slate-50 border border-slate-200 rounded-xl px-3' : 'px-3'}`}>
+    <div className={`relative flex min-w-0 w-full flex-1 items-center ${isModal ? 'bg-slate-50 border border-slate-200 rounded-xl px-3' : 'px-3'}`}>
       <Search className="w-4 h-4 text-slate-400 shrink-0 mr-2" />
       <input
         ref={inputRef}
@@ -823,7 +824,7 @@ export default function HeaderSearchBar({
         aria-expanded={panelOpen}
         aria-controls="header-search-dropdown"
         placeholder={listening ? 'Listening…' : 'Type Swift, Honda, or 10 lakhs…'}
-        className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none py-2 [&::-webkit-search-cancel-button]:hidden"
+        className="w-full min-w-0 bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none py-2 [&::-webkit-search-cancel-button]:hidden"
         onChange={(e) => {
           if (recRef.current) stopVoice();
           setQuery(e.target.value);
@@ -845,7 +846,7 @@ export default function HeaderSearchBar({
           <Close className="w-3.5 h-3.5" />
         </button>
       )}
-      {isModal && (
+      {(isModal || showVoice) && (
         <button
           type="button"
           className={`ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
@@ -886,6 +887,22 @@ export default function HeaderSearchBar({
         {dropdown}
       </div>,
       document.body
+    );
+  }
+
+  if (showVoice) {
+    return (
+      <div className="relative w-full min-w-0">
+        <div className="flex h-11 w-full min-w-0 items-center rounded-full bg-white px-1">
+          {field}
+        </div>
+        {(listening || voiceNote) && (
+          <p className={`px-2 pt-1 text-[11px] font-medium ${listening ? 'text-white' : 'text-rose-100'}`}>
+            {listening ? 'Listening… say a car name or a budget' : voiceNote}
+          </p>
+        )}
+        {dropdown}
+      </div>
     );
   }
 
