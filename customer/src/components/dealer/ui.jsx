@@ -12,9 +12,9 @@ export function PageHeader({ kicker, title, subtitle, actions }) {
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
         {kicker && (
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">{kicker}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#3083ff]">{kicker}</p>
         )}
-        <h1 className="font-display font-black text-2xl text-slate-900 mt-1">{title}</h1>
+        <h1 className="mt-1 text-[20px] font-semibold text-slate-900 sm:text-2xl">{title}</h1>
         {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
       </div>
       {actions}
@@ -51,8 +51,8 @@ export function KpiCard({ label, value, hint, icon: Icon, tone = 'blue' }) {
       <div className="absolute inset-y-0 left-0 w-1 bg-[#3083ff]" />
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{label}</p>
-          <p className="font-display text-3xl font-black text-slate-900 mt-2">{value}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+          <p className="mt-2 text-[26px] font-semibold text-slate-900">{value}</p>
           {hint && <p className="text-[12px] font-semibold text-slate-500 mt-1.5">{hint}</p>}
         </div>
         {Icon && (

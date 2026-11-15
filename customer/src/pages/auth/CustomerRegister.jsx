@@ -119,16 +119,16 @@ export default function CustomerRegister() {
           )}
         </Field>
         <Field label="Mobile" error={errors.mobile}>
-          <div className="flex gap-2">
-            <input className={inputClass} value={form.mobile} disabled={Boolean(token)} onChange={(e) => set('mobile', normalizeMobile(e.target.value))} />
-            <button type="button" disabled={loading || Boolean(token)} onClick={requestOtp} className="shrink-0 px-4 rounded-2xl bg-slate-900 text-white text-xs font-black">Send OTP</button>
+          <div className="space-y-2">
+            <input className={inputClass} inputMode="numeric" value={form.mobile} disabled={Boolean(token)} onChange={(e) => set('mobile', normalizeMobile(e.target.value))} />
+            <button type="button" disabled={loading || Boolean(token)} onClick={requestOtp} className="flex h-11 w-full items-center justify-center rounded-2xl bg-slate-900 text-[13px] font-semibold text-white disabled:opacity-50">Send OTP</button>
           </div>
         </Field>
         {otpSent && !token && (
           <Field label="OTP" error={errors.otp}>
-            <div className="flex gap-2">
-              <input className={inputClass} value={form.otp} onChange={(e) => set('otp', e.target.value.replace(/\D/g, '').slice(0, 4))} />
-              <button type="button" onClick={verifyOtp} className="shrink-0 px-4 rounded-2xl bg-[#3083ff] text-white text-xs font-black">Verify</button>
+            <div className="space-y-2">
+              <input className={inputClass} inputMode="numeric" value={form.otp} onChange={(e) => set('otp', e.target.value.replace(/\D/g, '').slice(0, 4))} />
+              <button type="button" onClick={verifyOtp} className="flex h-11 w-full items-center justify-center rounded-2xl bg-[#3083ff] text-[13px] font-semibold text-white">Verify</button>
             </div>
             <DevOtpHint code={devOtp} mobile={form.mobile} />
           </Field>

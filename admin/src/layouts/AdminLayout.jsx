@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { Menu } from 'lucide-react';
 import { logout } from '../app/authSlice';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import NotificationBell from '../components/NotificationBell';
@@ -26,26 +28,32 @@ export default function AdminLayout() {
     : user?.role === 'executive_agent' && !executiveAllowed(pathname)
       ? '/'
       : '';
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <RealtimeAlertsProvider token={token} enabled={Boolean(token) && !childAdmin} variant="admin" role={user?.role || ''}>
-      <div className="flex h-screen overflow-hidden bg-[#090d16] text-slate-100">
+      <div className="flex h-[100dvh] overflow-hidden bg-[#090d16] text-slate-100">
         <AdminSidebar
           user={user}
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
           onLogout={() => {
             dispatch(logout());
             navigate('/login');
           }}
         />
-        <div className="ml-72 flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="z-20 flex h-16 shrink-0 items-center justify-end gap-3 border-b border-slate-800/80 bg-slate-950/70 px-6 backdrop-blur-xl">
+        <div className="flex h-[100dvh] min-w-0 flex-1 flex-col overflow-hidden lg:ml-72">
+          <header className="z-20 flex h-14 shrink-0 items-center gap-2 border-b border-slate-800/80 bg-slate-950/70 px-3 backdrop-blur-xl sm:h-16 sm:px-6">
+            <button type="button" onClick={() => setMenuOpen(true)} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 text-slate-200 lg:hidden" aria-label="Open menu">
+              <Menu className="h-5 w-5" />
+            </button>
+            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-slate-300 lg:text-right">{user?.name}</span>
             {!childAdmin && <NotificationBell variant="admin" />}
-            <span className="text-sm font-semibold text-slate-300">{user?.name}</span>
-            <span className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-[0_0_16px_rgba(59,130,246,0.45)]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-[0_0_16px_rgba(59,130,246,0.45)]">
               {(user?.name || 'A')[0].toUpperCase()}
             </span>
           </header>
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6">
             {executiveRedirect ? <Navigate to={executiveRedirect} replace /> : <Outlet />}
           </main>
         </div>

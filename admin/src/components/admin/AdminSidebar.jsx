@@ -77,14 +77,16 @@ function groupsFor(role) {
   return GROUPS;
 }
 
-export default function AdminSidebar({ user, onLogout }) {
+export default function AdminSidebar({ user, onLogout, open = false, onClose }) {
   const alerts = useRealtimeAlerts();
   const counts = alerts?.counts || {};
   const unreadByType = counts.unreadByType || {};
   const groups = groupsFor(user?.role);
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex h-screen w-72 flex-col border-r border-slate-800/80 bg-[#070b14]/95 text-slate-200 backdrop-blur-xl">
+    <>
+    {open ? <button type="button" className="fixed inset-0 z-40 bg-black/60 lg:hidden" aria-label="Close menu" onClick={onClose} /> : null}
+    <aside className={`fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-72 max-w-[86vw] flex-col border-r border-slate-800/80 bg-[#070b14]/95 text-slate-200 backdrop-blur-xl transition-transform lg:z-30 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="h-16 flex items-center px-5 border-b border-slate-800/80">
         <img src={`${import.meta.env.BASE_URL}blue-logo.png`} alt="4TYREZZ" className="h-9 w-auto bg-white rounded-md px-1.5 py-0.5" />
       </div>
@@ -100,6 +102,7 @@ export default function AdminSidebar({ user, onLogout }) {
                   key={to}
                   to={to}
                   end={end}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-semibold transition ${
                       isActive
@@ -134,5 +137,6 @@ export default function AdminSidebar({ user, onLogout }) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

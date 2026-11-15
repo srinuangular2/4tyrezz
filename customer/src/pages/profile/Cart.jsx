@@ -13,7 +13,9 @@ export default function Cart() {
   const total = rows.reduce((sum, row) => sum + (Number(row.price) || 0), 0);
 
   return (
+    <div className="mx-auto min-h-[calc(100dvh-8rem)] max-w-3xl bg-[#f6f7fb] px-4 py-4">
     <ProfileCard eyebrow="Checkout" title="My Cart">
+      <h1 className="px-1 pb-3 text-[18px] font-semibold text-slate-900 lg:hidden">My Cart</h1>
       {rows.length === 0 && (
         <EmptyNote>
           Your cart is empty.{' '}
@@ -43,5 +45,6 @@ export default function Cart() {
         </>
       )}
     </ProfileCard>
+    </div>
   );
 }

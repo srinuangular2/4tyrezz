@@ -185,7 +185,7 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
       )}
 
       {variant !== 'embed' && (
-        <div className="mb-4 flex items-center gap-2 pr-10">
+        <div className="mb-4 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           {AUTH_STEPS.map((item, index) => {
             const on = index === stepIndex;
             const done = index < stepIndex;
@@ -200,7 +200,7 @@ export default function AuthFlow({ onClose, onSuccess, variant = 'modal', showCl
           })}
         </div>
       )}
-      <h2 id="customer-login-title" className="pr-10 font-display text-[22px] font-semibold tracking-tight text-slate-900">
+      <h2 id="customer-login-title" className="font-display text-[20px] font-semibold leading-snug tracking-tight text-slate-900 sm:text-[22px]">
         {titles[view][0]}
       </h2>
       <p className="mt-1.5 text-[13px] font-normal leading-relaxed text-slate-500">

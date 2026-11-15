@@ -23,6 +23,7 @@ import OtpLoginModal from './OtpLoginModal';
 import HeaderSearchBar, { MobileSearchButton } from './common/HeaderSearchBar';
 import api from '../api/axios';
 import NotificationBell from './NotificationBell';
+import AccountAvatar from './AccountAvatar';
 import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
 
 export default function Header() {
@@ -48,7 +49,7 @@ export default function Header() {
   const searchPillRef = useRef(null);
 
   const isDealer = user?.role === 'dealer';
-  const isUser = user && !isDealer;
+  const isUser = user?.role === 'customer';
   const avatarSrc = mediaUrl(user?.avatar);
   const avatarLetter = (user?.name || user?.mobile || 'U')[0].toUpperCase();
 
@@ -212,11 +213,11 @@ export default function Header() {
                   aria-label="Wishlist"
                 >
                   <Heart className="w-6 h-6" />
-                  {wishlistCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-[#3083ff] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                      {wishlistCount}
-                    </span>
-                  )}
+                {isUser && wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#3083ff] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
                 </Link>
               )}
               {!user && (
@@ -245,9 +246,19 @@ export default function Header() {
                 </div>
               </a>
 
-              <Link to="/profile/cart" className="relative text-slate-700 hover:text-[#3083ff] transition p-1" aria-label="Cart">
+              <Link
+                to={isUser ? '/profile/cart' : '#'}
+                onClick={(e) => {
+                  if (!isUser) {
+                    e.preventDefault();
+                    setShowLogin(true);
+                  }
+                }}
+                className="relative text-slate-700 hover:text-[#3083ff] transition p-1"
+                aria-label="Cart"
+              >
                 <ShoppingCart className="w-6 h-6" strokeWidth={2} />
-                {cartCount > 0 && (
+                {isUser && cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#3083ff] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                     {cartCount}
                   </span>
@@ -260,14 +271,10 @@ export default function Header() {
                 <div className="relative">
                   <button
                     onClick={() => setUserMenu((v) => !v)}
-                    className="w-9 h-9 rounded-full overflow-hidden bg-[#3083ff] text-white flex items-center justify-center text-sm font-black cursor-pointer"
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center"
                     aria-label="Account"
                   >
-                    {avatarSrc ? (
-                      <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      avatarLetter
-                    )}
+                    <AccountAvatar user={isUser ? user : null} className="h-9 w-9 text-[14px]" />
                   </button>
 
                   {userMenu && (
@@ -332,16 +339,26 @@ export default function Header() {
                 aria-label="Wishlist"
               >
                 <Heart className="w-5 h-5" />
-                {wishlistCount > 0 && (
+                {isUser && wishlistCount > 0 && (
                   <span className="absolute top-1 right-1 bg-[#3083ff] text-white text-[9px] font-black min-w-4 h-4 px-1 rounded-full flex items-center justify-center">
                     {wishlistCount}
                   </span>
                 )}
               </Link>
-              <Link to="/profile/cart" className="relative min-w-11 min-h-11 flex items-center justify-center text-slate-800" aria-label="Cart">
+              <Link
+                to={isUser ? '/profile/cart' : '#'}
+                onClick={(e) => {
+                  if (!isUser) {
+                    e.preventDefault();
+                    setShowLogin(true);
+                  }
+                }}
+                className="relative min-w-11 min-h-11 flex items-center justify-center text-slate-800"
+                aria-label="Cart"
+              >
                 <ShoppingCart className="w-5 h-5" strokeWidth={2.2} />
-                {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 bg-[#3083ff] text-white text-[9px] font-black min-w-4 h-4 px-1 rounded-full flex items-center justify-center">
+                {isUser && cartCount > 0 && (
+                  <span className="absolute top-1 right-0.5 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#3083ff] px-1 text-[10px] font-bold leading-none text-white">
                     {cartCount}
                   </span>
                 )}
@@ -354,14 +371,10 @@ export default function Header() {
                     setShowLogin(true);
                   }
                 }}
-                className="min-w-11 min-h-11 flex items-center justify-center text-slate-800"
+                className="flex min-h-11 min-w-11 items-center justify-center text-slate-800"
                 aria-label="Profile"
               >
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt="" className="h-7 w-7 rounded-full object-cover" />
-                ) : (
-                  <UserRound className="h-5 w-5" strokeWidth={2.2} />
-                )}
+                <AccountAvatar user={isUser ? user : null} className="h-8 w-8 text-[13px]" />
               </Link>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
+import { FileSpreadsheet, Upload } from 'lucide-react';
 import { GlassCard, PageHeader, btnPrimary } from '../../components/dealer/ui';
 
 const HEADERS = ['registration_no', 'brand', 'model', 'variant', 'year', 'km_driven', 'fuel_type', 'transmission', 'price', 'owners', 'city', 'state', 'pincode', 'car_location', 'upload_address', 'body_type', 'color', 'description', 'images', 'features', 'status'];
@@ -92,19 +93,31 @@ export default function DealerBulkUpload() {
 
   return (
     <div className="space-y-6">
+      <div className="-mx-3 -mt-3 bg-[#3083ff] px-4 py-4 text-white lg:hidden">
+        <p className="text-[12px] font-normal text-white/80">Many cars at once</p>
+        <h1 className="text-[18px] font-medium">Bulk upload</h1>
+      </div>
+      <div className="hidden lg:block">
       <PageHeader
         kicker="Inventory"
         title="Bulk upload"
         actions={<button type="button" onClick={downloadTemplate} className="text-xs font-black uppercase tracking-wider text-[#3083ff]">Download template</button>}
       />
-      <GlassCard className="p-5">
+      </div>
+      <GlassCard className="p-4 sm:p-5">
+      <div className="mb-3 rounded-[20px] border border-white bg-gradient-to-b from-[#eaf2ff] to-white p-3 lg:hidden">
+        <p className="text-[13px] font-medium text-slate-800">Add a spreadsheet of your stock.</p>
+        <p className="mt-1 text-[12px] font-normal text-slate-500">Use the template so each row becomes a car. CSV, Excel and ODS files work.</p>
+        <button type="button" onClick={downloadTemplate} className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-white py-2.5 text-[13px] font-medium text-[#1853ff]"><FileSpreadsheet className="h-4 w-4" /> Download template</button>
+      </div>
       <label
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); loadFile(e.dataTransfer.files?.[0]); }}
-        className="block rounded-2xl border-2 border-dashed border-slate-700 p-10 text-center cursor-pointer hover:border-blue-500"
+        className="block cursor-pointer rounded-[22px] border-2 border-dashed border-[#3083ff]/40 bg-[#f4f8ff] p-8 text-center"
       >
-        <p className="font-black text-slate-900">Drop CSV, Excel or ODS here</p>
-        <p className="text-xs font-semibold text-slate-400 mt-1">Accepted: .csv .xlsx .xls .ods .tsv .txt · Headers: {HEADERS.join(', ')}</p>
+        <span className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf2ff] text-[#3083ff]"><Upload className="h-5 w-5" /></span>
+        <p className="text-[15px] font-medium text-slate-900">Choose a file</p>
+        <p className="mt-1 text-[12px] font-normal text-slate-500">.csv, .xlsx, .xls or .ods</p>
         <input
           type="file"
           accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.xlsb,.ods,.xml,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain"
@@ -121,7 +134,16 @@ export default function DealerBulkUpload() {
               {importing ? 'Importing…' : 'Import valid cars'}
             </button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="space-y-2 lg:hidden">
+            {rows.map((r) => (
+              <div key={r._row} className={`rounded-2xl px-3 py-3 ${r.errors?.length ? 'bg-rose-50 text-rose-700' : 'bg-slate-50 text-slate-700'}`}>
+                <p className="text-[14px] font-semibold">{r.brand} {r.model} {r.variant}</p>
+                <p className="mt-0.5 text-[12px]">Row {r._row} · {r.year || '—'} · ₹{Number(r.price || 0).toLocaleString('en-IN')}</p>
+                <p className="mt-1 text-[12px]">{r.errors?.join(', ') || 'Ready to import'}</p>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-xs">
               <thead className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                 <tr>{['Row', ...HEADERS, 'Issues'].map((h) => <th key={h} className="text-left py-2 pr-3">{h}</th>)}</tr>
