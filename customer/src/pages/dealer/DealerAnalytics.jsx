@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Car, CircleCheck, Clock3, Eye, IndianRupee, Plus, ShoppingBag, Upload, Wallet } from 'lucide-react';
+import { Car, CircleCheck, Clock3, Eye, IndianRupee, Megaphone, Plus, ShoppingBag, Upload, Wallet } from 'lucide-react';
 import api from '../../api/axios';
 import { formatPrice } from '../../utils/format';
 import { mediaUrl } from '../profile/hubUtils';
-import { GlassCard, KpiCard, PageHeader, StatusBadge, btnGhost, btnPrimary } from '../../components/dealer/ui';
+import { StatusBadge } from '../../components/dealer/ui';
 
 function greeting() {
   const hour = new Date().getHours();
@@ -43,6 +43,19 @@ function settlementLabel(status) {
   return status || '—';
 }
 
+const STRIPES = {
+  backgroundImage: 'repeating-linear-gradient(115deg, transparent 0 22px, rgba(255,255,255,0.08) 22px 44px)',
+};
+
+const ACTIONS = [
+  { to: '/dealer/dashboard/inventory/add', label: 'Add a car', icon: Plus, tone: 'bg-[#3083ff]' },
+  { to: '/dealer/dashboard/inventory', label: 'Stock', icon: Car, tone: 'bg-[#0f7a45]' },
+  { to: '/dealer/dashboard/inventory/bulk', label: 'Bulk upload', icon: Upload, tone: 'bg-[#d97706]' },
+  { to: '/dealer/dashboard/promotions', label: 'Offers', icon: Megaphone, tone: 'bg-[#7c3aed]' },
+];
+
+const BAR_COLORS = ['bg-[#3083ff]', 'bg-[#0f7a45]', 'bg-[#d97706]', 'bg-[#7c3aed]', 'bg-[#be123c]'];
+
 function paymentDate(value) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -53,6 +66,7 @@ export default function DealerAnalytics() {
   const [stats, setStats] = useState(null);
   const [cars, setCars] = useState(null);
   const [payments, setPayments] = useState(null);
+  const [bucket, setBucket] = useState('all');
 
   useEffect(() => {
     Promise.all([
@@ -76,81 +90,90 @@ export default function DealerAnalytics() {
     [inventory]
   );
   const maxViews = Math.max(1, ...topViewed.map((c) => Number(c.views || 0)));
-  const recent = useMemo(
-    () => [...inventory].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6),
-    [inventory]
-  );
+  const recent = useMemo(() => {
+    const rows = [...inventory].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const picked = bucket === 'all' ? rows : rows.filter((car) => carBucket(car) === bucket);
+    return picked.slice(0, 6);
+  }, [inventory, bucket]);
   const showroom = user?.dealershipName || user?.name || 'Dealer';
   const collected = (payments || []).filter((p) => p.status === 'paid').reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
   const tiles = [
-    { icon: Car, label: 'Cars', value: stats || cars ? total : '—', tone: 'from-[#b7d9f8] to-[#dceefc]', ink: 'text-[#1853ff]' },
-    { icon: Clock3, label: 'Waiting', value: stats || cars ? pending : '—', tone: 'from-[#ffe09a] to-[#fff0c8]', ink: 'text-[#9a6700]' },
-    { icon: CircleCheck, label: 'Live', value: stats || cars ? live : '—', tone: 'from-[#b4e8d0] to-[#d8f5e8]', ink: 'text-[#0f7a45]' },
-    { icon: ShoppingBag, label: 'Sold', value: stats || cars ? sold : '—', tone: 'from-[#d9c6f6] to-[#eee4fc]', ink: 'text-[#6d28d9]' },
+    { key: 'all', icon: Car, label: 'Cars', value: stats || cars ? total : '—', tone: 'from-[#7eb6f5] to-[#d7ebff]', mark: 'bg-[#1853ff]' },
+    { key: 'pending', icon: Clock3, label: 'Waiting', value: stats || cars ? pending : '—', tone: 'from-[#ffd56a] to-[#fff0c8]', mark: 'bg-[#9a6700]' },
+    { key: 'live', icon: CircleCheck, label: 'Live', value: stats || cars ? live : '—', tone: 'from-[#7ddeb4] to-[#d8f5e8]', mark: 'bg-[#0f7a45]' },
+    { key: 'sold', icon: ShoppingBag, label: 'Sold', value: stats || cars ? sold : '—', tone: 'from-[#c4a6f5] to-[#eee4fc]', mark: 'bg-[#6d28d9]' },
   ];
+
+  const stockTitle = tiles.find((tile) => tile.key === bucket)?.label || 'Cars';
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      <section className="-mx-3 -mt-3 bg-[#3083ff] px-4 pb-4 pt-4 text-white lg:hidden">
-        <p className="text-[12px] font-normal text-white/80">{greeting()}</p>
-        <h1 className="truncate text-[18px] font-medium">{showroom}</h1>
-        {user?.dealerCode && <p className="mt-0.5 text-[12px] font-normal text-white/75">{user.dealerCode}</p>}
+      <section className="relative -mx-3 -mt-3 overflow-hidden bg-[#3083ff] px-4 pb-5 pt-4 text-white sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60" style={STRIPES} />
+        <div className="relative flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[12px] font-medium text-white/80">{greeting()}</p>
+            <h1 className="truncate text-[20px] font-medium sm:text-[28px]">{showroom}</h1>
+            <p className="mt-1 text-[12px] font-normal text-white/80">
+              {user?.dealerCode || 'Showroom dashboard'}
+              {payments?.length ? ` · ${formatPrice(collected)} collected` : ''}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link to="/dealer/dashboard/inventory/bulk" className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/15 px-3 py-2 text-[13px] font-medium text-white">
+              <Upload className="h-4 w-4" /> Bulk
+            </Link>
+            <Link to="/dealer/dashboard/inventory/add" className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[13px] font-medium text-[#1853ff]">
+              <Plus className="h-4 w-4" /> Add a car
+            </Link>
+          </div>
+        </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3 lg:hidden">
-        {tiles.map(({ icon: Icon, label, value, tone, ink }) => (
-          <div key={label} className={`rounded-[22px] border border-white bg-gradient-to-b ${tone} p-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)]`}>
-            <span className={`flex h-8 w-8 items-center justify-center rounded-xl bg-white/80 ${ink}`}>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {tiles.map(({ key, icon: Icon, label, value, tone, mark }) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={bucket === key}
+            onClick={() => setBucket(key)}
+            className={`rounded-[22px] bg-gradient-to-br ${tone} p-3 text-left shadow-[0_8px_20px_rgba(15,23,42,0.06)] lg:p-4 ${bucket === key ? 'ring-2 ring-[#1853ff] ring-offset-2' : ''}`}
+          >
+            <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-white ${mark}`}>
               <Icon className="h-4 w-4" strokeWidth={2} />
             </span>
-            <p className="mt-3 text-[22px] font-medium leading-none text-slate-900">{value}</p>
-            <p className="mt-1 text-[12px] font-normal text-slate-600">{label}</p>
-          </div>
+            <p className="mt-3 text-[22px] font-medium leading-none text-slate-900 lg:text-[28px]">{value}</p>
+            <p className="mt-1 text-[12px] font-medium text-slate-700">{label}</p>
+          </button>
         ))}
       </div>
 
-      <div className="hidden lg:block">
-      <PageHeader
-        kicker="Showroom"
-        title={`${greeting()}, ${showroom}`}
-        subtitle="Upload cars. 4tyrezz handles buyers, payments and payouts."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Link to="/dealer/dashboard/inventory/bulk" className={btnGhost}>
-              <Upload size={15} /> Bulk upload
-            </Link>
-            <Link to="/dealer/dashboard/inventory/add" className={btnPrimary}>
-              <Plus size={16} /> Add a car
-            </Link>
-          </div>
-        }
-      />
+      <div className="grid grid-cols-4 gap-2">
+        {ACTIONS.map(({ to, label, icon: Icon, tone }) => (
+          <Link key={to} to={to} className="rounded-2xl bg-white p-2 text-center shadow-[0_8px_20px_rgba(15,23,42,0.05)] lg:flex lg:items-center lg:gap-3 lg:p-3 lg:text-left">
+            <span className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl text-white lg:mx-0 ${tone}`}>
+              <Icon className="h-4 w-4" strokeWidth={2} />
+            </span>
+            <span className="mt-1.5 block text-[11px] font-medium leading-tight text-slate-800 lg:mt-0 lg:text-[14px]">{label}</span>
+          </Link>
+        ))}
       </div>
 
-      <div className="hidden gap-4 sm:grid-cols-2 xl:grid-cols-4 lg:grid">
-        <KpiCard icon={Car} tone="slate" label="Total cars" value={stats || cars ? total : '—'} hint="All vehicles in this showroom" />
-        <KpiCard icon={Clock3} tone="amber" label="Waiting for admin" value={stats || cars ? pending : '—'} hint="Buyers cannot see these yet" />
-        <KpiCard icon={CircleCheck} tone="emerald" label="Live on 4tyrezz" value={stats || cars ? live : '—'} hint="Showing on the marketplace now" />
-        <KpiCard icon={ShoppingBag} tone="blue" label="Sold" value={stats || cars ? sold : '—'} hint="Closed from this showroom" />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <GlassCard className="p-5">
-          <h3 className="inline-flex items-center gap-1.5 text-[16px] font-semibold text-slate-900 lg:hidden"><Wallet className="h-4 w-4 text-[#3083ff]" /> Payments</h3>
-          <p className="hidden text-[11px] font-semibold uppercase tracking-wider text-[#3083ff] lg:block">Settlements</p>
-          <h3 className="mt-1 hidden text-lg font-semibold text-slate-900 lg:block">Payment history</h3>
-          <p className="mt-1 hidden text-sm text-slate-500 lg:block">
-            Buyers pay 4tyrezz. Token and sale money collected for your cars
-            {payments?.length ? ` · ${formatPrice(collected)}` : ''}
-          </p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-[24px] bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] lg:p-5">
+          <h2 className="inline-flex items-center gap-2 text-[16px] font-medium text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#1853ff]"><Wallet className="h-4 w-4" /></span>
+            Payments
+          </h2>
+          <p className="mt-1 text-[12px] font-normal text-slate-500">Buyers pay 4tyrezz. Money for your cars shows here.</p>
           {!payments ? (
-            <p className="text-sm font-semibold text-slate-400 mt-5">Loading payments…</p>
+            <p className="mt-4 text-[13px] font-medium text-slate-400">Loading payments…</p>
           ) : payments.length ? (
-            <div className="mt-3 divide-y divide-slate-100 lg:hidden">
+            <div className="mt-3 space-y-2">
               {payments.map((row) => (
-                <div key={row._id} className="flex items-center gap-3 py-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#1853ff]"><IndianRupee className="h-4 w-4" /></span>
+                <div key={row._id} className="flex items-center gap-3 rounded-2xl bg-[#f4f7fb] px-3 py-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#3083ff] text-white"><IndianRupee className="h-4 w-4" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium text-slate-800">{row.vehicle?.title || 'Payment'}</p>
                     <p className="text-[12px] font-normal text-slate-500">{paymentDate(row.createdAt)}</p>
@@ -163,102 +186,75 @@ export default function DealerAnalytics() {
               ))}
             </div>
           ) : (
-            <p className="mt-5 text-sm font-semibold text-slate-500">
-              No settlements yet. When a buyer pays 4tyrezz for your car, it appears here.
-            </p>
+            <p className="mt-4 text-[13px] font-medium text-slate-500">No settlements yet. When a buyer pays 4tyrezz for your car, it appears here.</p>
           )}
-          {payments?.length ? (
-            <div className="mt-4 hidden overflow-x-auto lg:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-[11px] font-black uppercase tracking-wider text-slate-400">
-                    <th className="pb-2 font-black">Date</th>
-                    <th className="pb-2 font-black">Car</th>
-                    <th className="pb-2 font-black">Amount</th>
-                    <th className="pb-2 font-black">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {payments.map((row) => (
-                    <tr key={row._id}>
-                      <td className="py-3 pr-3 font-semibold text-slate-600">{paymentDate(row.createdAt)}</td>
-                      <td className="py-3 pr-3 font-bold text-slate-900">{row.vehicle?.title || '—'}</td>
-                      <td className="py-3 pr-3 font-black text-slate-900">{formatPrice(row.amount)}</td>
-                      <td className="py-3"><StatusBadge value={settlementLabel(row.status)} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </GlassCard>
+        </section>
 
-        <GlassCard className="p-5">
-          <h3 className="inline-flex items-center gap-1.5 text-[16px] font-semibold text-slate-900 lg:hidden"><Eye className="h-4 w-4 text-[#3083ff]" /> Most viewed</h3>
-          <p className="hidden text-[11px] font-semibold uppercase tracking-wider text-[#3083ff] lg:block">Buyer interest</p>
-          <h3 className="mt-1 hidden text-lg font-semibold text-slate-900 lg:block">Which cars get the most views?</h3>
-          <p className="mt-1 hidden text-sm text-slate-500 lg:block">Longer bar = more people opened that listing.</p>
-          <div className="mt-5 space-y-3.5">
+        <section className="rounded-[24px] bg-[#061a4a] p-4 text-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] lg:p-5">
+          <h2 className="inline-flex items-center gap-2 text-[16px] font-medium">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15"><Eye className="h-4 w-4" /></span>
+            Most viewed
+          </h2>
+          <p className="mt-1 text-[12px] font-normal text-white/70">Longer bar means more people opened that listing.</p>
+          <div className="mt-4 space-y-3">
             {topViewed.length ? topViewed.map((car, index) => {
               const views = Number(car.views || 0);
               return (
-                <Link key={car._id} to={`/dealer/dashboard/inventory/edit/${car._id}`} className="block group">
+                <Link key={car._id} to={`/dealer/dashboard/inventory/edit/${car._id}`} className="block">
                   <div className="flex items-center justify-between gap-3 text-[13px]">
-                    <p className="truncate font-medium text-slate-800">
-                      <span className="mr-1 font-normal text-slate-400">{index + 1}.</span>
+                    <p className="truncate font-medium">
+                      <span className="mr-1 font-normal text-white/50">{index + 1}.</span>
                       {car.title}
                     </p>
-                    <span className="inline-flex shrink-0 items-center gap-1 text-[12px] font-normal text-slate-500">
-                      <Eye size={13} /> {views}
+                    <span className="inline-flex shrink-0 items-center gap-1 text-[12px] text-white/70">
+                      <Eye className="h-3.5 w-3.5" /> {views}
                     </span>
                   </div>
-                  <div className="mt-1.5 h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#3083ff] group-hover:bg-[#1853ff] transition-all"
-                      style={{ width: `${Math.max(8, (views / maxViews) * 100)}%` }}
-                    />
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/15">
+                    <div className={`h-full rounded-full ${BAR_COLORS[index % BAR_COLORS.length]}`} style={{ width: `${Math.max(8, (views / maxViews) * 100)}%` }} />
                   </div>
                 </Link>
               );
             }) : (
-              <p className="text-sm font-semibold text-slate-500 py-6">Views appear after buyers open your listings.</p>
+              <p className="py-6 text-[13px] font-medium text-white/70">Views appear after buyers open your listings.</p>
             )}
           </div>
-        </GlassCard>
+        </section>
       </div>
 
-      <GlassCard className="p-5">
-        <div className="flex items-end justify-between gap-3 mb-4">
+      <section className="rounded-[24px] bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] lg:p-5">
+        <div className="flex items-end justify-between gap-3">
           <div>
-            <h3 className="inline-flex items-center gap-1.5 text-[16px] font-semibold text-slate-900 lg:hidden"><Car className="h-4 w-4 text-[#3083ff]" /> Latest stock</h3>
-            <p className="hidden text-[11px] font-semibold uppercase tracking-wider text-[#3083ff] lg:block">Latest stock</p>
-            <h3 className="mt-1 hidden text-lg font-semibold text-slate-900 lg:block">Recently added cars</h3>
+            <h2 className="inline-flex items-center gap-2 text-[16px] font-medium text-slate-900">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#e7f8ef] text-[#0f7a45]"><Car className="h-4 w-4" /></span>
+              {bucket === 'all' ? 'Latest stock' : stockTitle}
+            </h2>
+            <p className="mt-1 text-[12px] font-normal text-slate-500">Tap a count above to filter this list.</p>
           </div>
-          <Link to="/dealer/dashboard/inventory" className="text-[13px] font-semibold text-[#1853ff]">
-            See all
-          </Link>
+          <Link to="/dealer/dashboard/inventory" className="text-[13px] font-medium text-[#1853ff]">See all</Link>
         </div>
         {!cars ? (
-          <p className="text-sm font-semibold text-slate-400">Loading listings…</p>
+          <p className="mt-4 text-[13px] font-medium text-slate-400">Loading listings…</p>
         ) : !recent.length ? (
-          <p className="text-sm font-semibold text-slate-500">No cars in this showroom yet. Add a listing to get started.</p>
+          <p className="mt-4 text-[13px] font-medium text-slate-500">
+            {bucket === 'all' ? 'No cars in this showroom yet. Add a listing to get started.' : `No ${stockTitle.toLowerCase()} cars yet.`}
+          </p>
         ) : (
-          <>
-          <div className="space-y-2 lg:hidden">
+          <div className="mt-4 grid gap-2 lg:grid-cols-2">
             {recent.map((car) => {
               const photo = mediaUrl(car.images?.[0]);
               return (
-                <Link key={car._id} to={`/dealer/dashboard/inventory/edit/${car._id}`} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-2">
+                <Link key={car._id} to={`/dealer/dashboard/inventory/edit/${car._id}`} className="flex items-center gap-3 rounded-2xl bg-[#f4f7fb] p-2">
                   {photo ? (
                     <img src={photo} alt="" className="h-14 w-16 rounded-xl object-cover" />
                   ) : (
-                    <span className="flex h-14 w-16 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#1853ff]">
+                    <span className="flex h-14 w-16 items-center justify-center rounded-xl bg-[#3083ff] text-white">
                       <Car className="h-5 w-5" />
                     </span>
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium text-slate-800">{car.title}</span>
-                    <span className="mt-0.5 flex items-center gap-2 text-[12px] font-normal text-slate-500">
+                    <span className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] font-normal text-slate-500">
                       {formatPrice(car.price)}
                       <StatusBadge value={listingLabel(car)} />
                     </span>
@@ -270,35 +266,8 @@ export default function DealerAnalytics() {
               );
             })}
           </div>
-          <div className="hidden overflow-x-auto lg:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[11px] font-black uppercase tracking-wider text-slate-400">
-                  <th className="pb-2 font-black">Car</th>
-                  <th className="pb-2 font-black">Price</th>
-                  <th className="pb-2 font-black">Status</th>
-                  <th className="pb-2 font-black text-right">Views</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {recent.map((car) => (
-                  <tr key={car._id}>
-                    <td className="py-3 pr-3">
-                      <Link to={`/dealer/dashboard/inventory/edit/${car._id}`} className="font-bold text-slate-900 hover:text-[#3083ff]">
-                        {car.title}
-                      </Link>
-                    </td>
-                    <td className="py-3 pr-3 font-semibold text-slate-700">{formatPrice(car.price)}</td>
-                    <td className="py-3 pr-3"><StatusBadge value={listingLabel(car)} /></td>
-                    <td className="py-3 text-right font-bold text-slate-600 tabular-nums">{Number(car.views || 0)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          </>
         )}
-      </GlassCard>
+      </section>
     </div>
   );
 }

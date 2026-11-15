@@ -22,8 +22,8 @@ export function PageHeader({ kicker, title, subtitle, actions }) {
   );
 }
 
-export function GlassCard({ children, className = '' }) {
-  return <div className={`${glass} rounded-2xl ${className}`}>{children}</div>;
+export function GlassCard({ children, className = '', ...rest }) {
+  return <div className={`${glass} rounded-2xl ${className}`} {...rest}>{children}</div>;
 }
 
 export function StatusBadge({ value }) {
