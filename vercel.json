@@ -26,18 +26,6 @@
       "destination": "/admin/index.html"
     },
     {
-      "source": "/dealer",
-      "destination": "/d/index.html"
-    },
-    {
-      "source": "/dealer/",
-      "destination": "/d/index.html"
-    },
-    {
-      "source": "/dealer/:path*",
-      "destination": "/d/index.html"
-    },
-    {
       "source": "/((?!assets/|sw\\.js|workbox-|manifest\\.webmanifest|registerSW\\.js).*)",
       "destination": "/index.html"
     }
