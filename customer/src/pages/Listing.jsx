@@ -2,13 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { BookmarkPlus, SlidersHorizontal, X } from 'lucide-react';
+import { BookmarkPlus, X } from 'lucide-react';
 import api from '../api/axios';
 import useReferenceData from '../hooks/useReferenceData';
 import CarCard from '../components/CarCard';
 import { CarGridSkeleton } from '../components/Skeletons';
 import FilterSidebar from '../components/listing/FilterSidebar';
 import UsedCarsBanner from '../components/listing/UsedCarsBanner';
+import MobileBuyBar from '../components/listing/MobileBuyBar';
+import MobileFilterSheet from '../components/listing/MobileFilterSheet';
+import BuyCarCard from '../components/listing/BuyCarCard';
 import { describeFilters } from './profile/hubUtils';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import {
@@ -61,7 +64,7 @@ function isBucketActive(bucket, minKey, maxKey, filters) {
 }
 
 const KEEP_ON_CLEAR = ['sort'];
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 60;
 
 export default function Listing() {
   const [params, setParams] = useSearchParams();
@@ -74,6 +77,7 @@ export default function Listing() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [filterTab, setFilterTab] = useState('budget');
   const sentinelRef = useRef(null);
   const pageRef = useRef(1);
   const loadingMoreRef = useRef(false);
@@ -353,60 +357,29 @@ export default function Listing() {
       </div>
 
       <div className="bg-slate-50 lg:bg-slate-50 min-h-screen">
-      <div className="lg:container-px lg:py-8 pb-6 lg:pb-8 grid lg:grid-cols-[300px_1fr] gap-7 items-start">
+      <div className="lg:container-px lg:grid lg:grid-cols-[300px_1fr] lg:items-start lg:gap-7 lg:py-8 pb-6 lg:pb-8">
         <aside className="hidden lg:sticky lg:top-[5.5rem] lg:z-20 lg:block lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto lg:pr-1">
           {sidebar(false)}
         </aside>
 
-        <div>
-          <div className="sticky top-14 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md lg:hidden">
-            <div className="flex items-center gap-2 px-3 py-2">
-              <button
-                type="button"
-                onClick={() => setMobileOpen(true)}
-                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[#3083ff] px-3 text-[12px] font-bold text-white"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                Filters
-                {chips.length > 0 && (
-                  <span className="min-w-[16px] h-4 rounded-full bg-white px-1 text-center text-[10px] leading-4 text-[#3083ff]">
-                    {chips.length}
-                  </span>
-                )}
-              </button>
-              <p className="flex-1 truncate text-[13px] font-bold text-slate-800">
-                {loading ? 'Finding cars…' : `${meta.total} cars`}
-              </p>
-              <select
-                value={filters.sort || '-createdAt'}
-                onChange={(e) => set('sort', e.target.value)}
-                className="h-9 max-w-[132px] rounded-full border border-slate-200 bg-white px-2.5 text-[12px] font-bold"
-              >
-                <option value="-createdAt">Newest</option>
-                <option value="price">Price ↑</option>
-                <option value="-price">Price ↓</option>
-                <option value="-year">Year</option>
-              </select>
-            </div>
-            {chips.length > 0 && (
-              <div className="no-scrollbar flex gap-2 overflow-x-auto px-3 pb-2">
-                {chips.map((chip) => (
-                  <button
-                    key={chip.key}
-                    type="button"
-                    onClick={() => apply(chip.next)}
-                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-blue-100 bg-blue-50 pl-2.5 pr-1.5 text-[11px] font-bold text-[#1853ff]"
-                  >
-                    {chip.label}
-                    <X className="h-3 w-3" />
-                  </button>
-                ))}
-                <button type="button" onClick={clearAll} className="shrink-0 px-1 text-[11px] font-bold text-slate-500">
-                  Clear
-                </button>
-              </div>
-            )}
-          </div>
+        <div className="min-w-0 max-w-full">
+          <MobileBuyBar
+            onOpen={(tab) => {
+              setFilterTab(tab || 'budget');
+              setMobileOpen(true);
+            }}
+            active={{
+              filters: chips.length > 0,
+              sort: Boolean(filters.sort && filters.sort !== '-createdAt'),
+              budget: Boolean(filters.minPrice || filters.maxPrice),
+              brand: Boolean(filters.brand),
+              fuel: Boolean(filters.fuel),
+              year: Boolean(filters.minYear || filters.maxYear),
+              km: Boolean(filters.minKm || filters.maxKm),
+            }}
+            total={meta.total}
+            loading={loading}
+          />
 
           <div className="sticky top-[5.5rem] z-20 mb-4 hidden flex-wrap items-center justify-between gap-3 bg-slate-50/95 py-2 backdrop-blur lg:flex">
             <strong className="font-display font-semibold text-xl">
@@ -461,7 +434,12 @@ export default function Listing() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-5 px-3 lg:px-0 pt-3 lg:pt-0">
+              <div className="grid w-full min-w-0 grid-cols-2 gap-2 px-3 pt-2 lg:hidden [&>*]:min-w-0">
+                {cars.map((c) => (
+                  <BuyCarCard key={c._id} car={c} />
+                ))}
+              </div>
+              <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-5 lg:pt-0">
                 {cars.map((c) => (
                   <CarCard key={c._id} car={c} />
                 ))}
@@ -486,66 +464,20 @@ export default function Listing() {
       </div>
       </div>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[80] lg:hidden">
-          <button type="button" aria-label="Close filters" className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-x-0 bottom-0 top-8 bg-slate-50 rounded-t-3xl shadow-2xl flex flex-col">
-            <div className="pt-2 pb-1 flex justify-center bg-white rounded-t-3xl">
-              <span className="h-1.5 w-10 rounded-full bg-slate-300" />
-            </div>
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 bg-white">
-              <strong className="text-sm font-black">Filters</strong>
-              <div className="flex items-center gap-3">
-                {user?.role !== 'dealer' && (
-                  <button type="button" onClick={saveSearch} className="inline-flex items-center gap-1 text-[12px] font-bold text-[#3083ff]">
-                    <BookmarkPlus className="w-3.5 h-3.5" />
-                    Save
-                  </button>
-                )}
-                <button type="button" onClick={clearAll} className="text-[12px] font-bold text-[#3083ff]">
-                  Clear all
-                </button>
-                <button type="button" onClick={() => setMobileOpen(false)} className="p-1 text-slate-500" aria-label="Close">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 pb-24">
-              <div className="mb-3 rounded-2xl bg-white p-3 shadow-sm">
-                <p className="text-[12px] font-semibold text-slate-500">Recommended filters</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {[
-                    ['Under ₹5 Lakh', { minPrice: '', maxPrice: '500000' }],
-                    ['Under ₹10 Lakh', { minPrice: '', maxPrice: '1000000' }],
-                    ['Petrol', { fuel: 'Petrol' }],
-                    ['Automatic', { transmission: 'Automatic' }],
-                    ['1st owner', { ownership: '1' }],
-                  ].map(([label, patch]) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => apply({ ...filters, ...patch, page: 1 })}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-semibold text-slate-700"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {sidebar(true)}
-            </div>
-            <div className="absolute bottom-0 inset-x-0 p-3 bg-white border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                className="w-full bg-[#3083ff] text-white font-black rounded-xl py-3 text-sm"
-              >
-                Show {loading ? 'cars' : `${meta.total} cars`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MobileFilterSheet
+        open={mobileOpen}
+        initial={filterTab}
+        onClose={() => setMobileOpen(false)}
+        onClear={clearAll}
+        sort={filters.sort}
+        onSort={(value) => set('sort', value)}
+        total={meta.total}
+        loading={loading}
+        filters={{ ...filters, city: cityDoc?.name || filters.city }}
+        apply={apply}
+        brands={brands}
+        models={models}
+      />
     </>
   );
 }

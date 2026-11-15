@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { ChevronLeft } from 'lucide-react';
+import { Calendar, ChevronLeft, MapPin, Phone, UserRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useIsPhone } from '../components/sell/ui';
 import api from '../api/axios';
@@ -12,11 +12,12 @@ import { useVehicleBrands, useVehicleModels } from '../hooks/useVehicleCatalog';
 import CatalogSearchList from '../components/pdi/CatalogSearchList';
 import InspectionPriceFields from '../components/pdi/InspectionPriceFields';
 import { PRIMARY_CITIES, inr, quoteInspection } from '../lib/pdiPricing';
+import { formatPlateInput } from '../lib/fetchVehicleDetailsByReg';
 
 const SLOTS = ['09:00–11:00', '11:00–13:00', '14:00–16:00', '16:00–18:00'];
 
 const BOOK_STEPS = [
-  { label: 'Car', title: 'Which car is it?', hint: 'Pick the brand and model. The size and city are already set.' },
+  { label: 'Car', title: 'Which car is it?', hint: 'Add the plate if you have it, then pick the brand and model.' },
   { label: 'Contact', title: 'Your contact details', hint: 'We use this to confirm the visit and send the report.' },
   { label: 'Address', title: 'Where is the car?', hint: 'House, area, city and PIN code, then pick a day and time.' },
   { label: 'Pay', title: 'Confirm and pay', hint: 'Choose the engine size and any add-ons. The total updates as you tick them.' },
@@ -26,6 +27,13 @@ const fieldClass = 'mt-1.5 w-full rounded-2xl border border-slate-200 bg-white p
 
 function nameOf(item) {
   return typeof item === 'string' ? item : item?.name || '';
+}
+
+function visitDate(value) {
+  if (!value) return '';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function engineFromQuery(params) {
@@ -63,6 +71,7 @@ export default function InspectionBook() {
     phone: '',
     email: '',
     brand: params.get('brand') || '',
+    plate: params.get('plate') || '',
     model: params.get('model') || '',
     scheduledDate: '',
     timeSlot: SLOTS[0],
@@ -138,8 +147,10 @@ export default function InspectionBook() {
     setSaving(true);
     try {
       const address = [form.addressLine, form.area].filter(Boolean).join(', ') || form.address;
+      const bookingForm = { ...form };
+      delete bookingForm.plate;
       const { data } = await api.post('/pdi/bookings', {
-        ...form,
+        ...bookingForm,
         address,
         pincode: form.pincode,
         pdiType: type,
@@ -293,17 +304,36 @@ export default function InspectionBook() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <p className="text-[12px] font-normal text-slate-500">
-            {type === 'NEW_CAR' ? 'New car PDI' : 'Used car inspection'}
-            {' · '}
-            {form.city}
-          </p>
-          <button type="button" onClick={() => switchType(type === 'NEW_CAR' ? 'used' : 'new')} className="mt-1 text-[12px] font-semibold text-[#3083ff]">
-            {type === 'NEW_CAR' ? 'Switch to a used car' : 'Switch to a new car'}
-          </button>
+          {step < 4 && (
+            <>
+              <p className="text-[12px] font-normal text-slate-500">
+                {type === 'NEW_CAR' ? 'New car PDI' : 'Used car inspection'}
+                {' · '}
+                {form.city}
+                {form.plate ? ` · ${form.plate}` : ''}
+              </p>
+              <button type="button" onClick={() => switchType(type === 'NEW_CAR' ? 'used' : 'new')} className="mt-1 text-[12px] font-semibold text-[#3083ff]">
+                {type === 'NEW_CAR' ? 'Switch to a used car' : 'Switch to a new car'}
+              </button>
+            </>
+          )}
 
           {step === 1 && (
             <div className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-[13px] font-medium text-slate-700">Plate number</span>
+                <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <span className="flex items-center bg-[#3083ff] px-3 text-[12px] font-bold tracking-wide text-white">IND</span>
+                  <input
+                    value={form.plate}
+                    onChange={(event) => set('plate', formatPlateInput(event.target.value))}
+                    placeholder="e.g. AB 12 CD 1275"
+                    autoCapitalize="characters"
+                    className="h-12 min-w-0 flex-1 px-3 text-[14px] font-semibold uppercase tracking-wide text-slate-900 outline-none placeholder:font-medium placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400"
+                  />
+                </div>
+                <p className="mt-1.5 text-[12px] text-slate-500">Optional. This is the registration number.</p>
+              </label>
               {carFocus === 'brand' ? (
                 <CatalogSearchList
                   inline
@@ -426,14 +456,32 @@ export default function InspectionBook() {
 
           {step === 4 && (
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-[#3083ff]/20 bg-[#f4f8ff] px-3.5 py-3">
-                <p className="text-[11px] font-medium text-[#3083ff]">Your visit</p>
-                <p className="mt-0.5 text-[14px] font-medium text-slate-900">{form.brand} {form.model}</p>
-                <p className="mt-0.5 text-[12px] font-normal text-slate-500">{form.name} · {form.phone}</p>
-                <p className="mt-0.5 text-[12px] font-normal text-slate-500">{[form.addressLine, form.area, form.city, form.pincode].filter(Boolean).join(', ')}</p>
-                <p className="mt-0.5 text-[12px] font-normal text-slate-500">{form.scheduledDate} · {form.timeSlot}</p>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="bg-[#3083ff] px-4 py-3 text-white">
+                  <p className="text-[11px] font-medium text-white/75">{type === 'NEW_CAR' ? 'New car PDI' : 'Used car inspection'}</p>
+                  <p className="mt-0.5 text-[16px] font-semibold leading-snug">{form.brand} {form.model}</p>
+                  <button type="button" onClick={() => switchType(type === 'NEW_CAR' ? 'used' : 'new')} className="mt-1 text-[12px] font-medium text-white/90 underline underline-offset-2">
+                    {type === 'NEW_CAR' ? 'Switch to a used car' : 'Switch to a new car'}
+                  </button>
+                </div>
+                <div className="space-y-3 px-4 py-3">
+                  {[
+                    [UserRound, form.name],
+                    [Phone, form.phone],
+                    [MapPin, [form.addressLine, form.area].filter(Boolean).join(', ')],
+                    [Calendar, [visitDate(form.scheduledDate), form.timeSlot, form.city, form.pincode].filter(Boolean).join(' · ')],
+                  ].map(([Icon, text]) => (
+                    <div key={text} className="flex items-start gap-2.5">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef8f3] text-[#0e7a52]">
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <p className="min-w-0 pt-1 text-[13px] font-medium leading-snug text-slate-800">{text}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
               <InspectionPriceFields
+                cards
                 pdiType={type}
                 engineBand={form.engineBand}
                 obdScan={form.obdScan}

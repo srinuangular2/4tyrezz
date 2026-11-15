@@ -17,8 +17,14 @@ import {
   Check,
   User,
   X,
+  Zap,
+  Leaf,
+  Flame,
+  Droplets,
+  Cog,
 } from 'lucide-react';
 import api from '../../api/axios';
+import { mediaUrl } from '../../pages/profile/hubUtils';
 import {
   BUDGETS,
   BODY_TYPES,
@@ -61,8 +67,11 @@ function isBucketActive(bucket, minKey, maxKey, filters) {
   return min === bMin && max === bMax;
 }
 
-function FilterCard({ title, icon: Icon, defaultOpen = false, activeCount = 0, children }) {
+function FilterCard({ title, icon: Icon, defaultOpen = false, activeCount = 0, forceOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
+  if (forceOpen) {
+    return <div className="px-1">{children}</div>;
+  }
   return (
     <section>
       <button
@@ -153,6 +162,25 @@ function BodyMark({ type }) {
     </svg>
   );
 }
+
+function IconChoice({ checked, onChange, label, icon }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex min-w-0 flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 text-center ${
+        checked ? 'border-[#4f46e5] bg-[#eeecff] text-[#4f46e5]' : 'border-slate-200 bg-white text-slate-600'
+      }`}
+    >
+      <span className={`flex h-9 w-9 items-center justify-center rounded-full ${checked ? 'bg-white' : 'bg-slate-100'}`}>
+        {icon}
+      </span>
+      <span className="text-[11px] font-semibold leading-tight">{label}</span>
+    </button>
+  );
+}
+
+const FUEL_ICONS = { Petrol: Fuel, Diesel: Droplets, CNG: Flame, Electric: Zap, Hybrid: Leaf };
 
 function DualRange({ min, max, step, valueMin, valueMax, onCommit, formatMin, formatMax }) {
   const loBound = Number(min);
@@ -248,6 +276,7 @@ export default function FilterSidebar({
   canSave,
   onSaveSearch,
   compact = false,
+  section = '',
 }) {
   const selectedCity = String(filters.city || '').trim();
   const selectedAreas = asList(filters.area);
@@ -397,7 +426,7 @@ export default function FilterSidebar({
 
   return (
     <div className="space-y-3">
-      {!compact && (
+      {!section && !compact && (
         <div className="sticky top-0 z-10 space-y-2 bg-slate-50/95 backdrop-blur-sm pb-1">
           <div className="flex items-center justify-between px-0.5 py-1">
             <h3 className="text-sm font-black text-slate-900">Filters</h3>
@@ -420,7 +449,7 @@ export default function FilterSidebar({
         </div>
       )}
 
-      {compact && canSave && onSaveSearch && (
+      {!section && compact && canSave && onSaveSearch && (
         <button
           type="button"
           onClick={onSaveSearch}
@@ -431,6 +460,7 @@ export default function FilterSidebar({
         </button>
       )}
 
+      {!section && (
       <div className="relative">
         <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
         <input
@@ -459,9 +489,11 @@ export default function FilterSidebar({
           </button>
         )}
       </div>
+      )}
 
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <FilterCard title="Budget" icon={IndianRupee} activeCount={budgetActiveCount} defaultOpen>
+      <div className={section ? '' : 'bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.04)]'}>
+        {(!section || section === 'budget') && (
+        <FilterCard title="Budget" icon={IndianRupee} activeCount={budgetActiveCount} defaultOpen forceOpen={section === 'budget'}>
           <DualRange
             min={PRICE_SLIDER.min}
             max={PRICE_SLIDER.max}
@@ -472,7 +504,33 @@ export default function FilterSidebar({
             formatMax={(v) => formatLakh(v, { plus: true })}
             onCommit={(minPrice, maxPrice) => patch({ minPrice, maxPrice })}
           />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Popular ranges</p>
+          <p className={`mb-2 ${section ? 'mt-4 text-[14px] font-semibold text-slate-900' : 'text-[10px] font-bold uppercase tracking-wider text-slate-400'}`}>
+            {section ? 'Popular budget ranges' : 'Popular ranges'}
+          </p>
+          {section ? (
+            <div className="flex flex-wrap gap-2">
+              {BUDGETS.map((b) => {
+                const active = isBudgetActive(b, filters.minPrice, filters.maxPrice);
+                return (
+                  <button
+                    key={b.label}
+                    type="button"
+                    onClick={() => {
+                      const next = budgetQuery(b);
+                      patch({
+                        minPrice: active ? '' : (next.minPrice || ''),
+                        maxPrice: active ? '' : (next.maxPrice || ''),
+                      });
+                    }}
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-2 text-[12px] font-semibold ${active ? 'border-[#4f46e5] bg-[#eeecff] text-[#4f46e5]' : 'border-slate-300 text-slate-700'}`}
+                  >
+                    <IndianRupee className="h-3.5 w-3.5" />
+                    {b.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
           <ShowMoreList
             items={BUDGETS}
             limit={6}
@@ -494,9 +552,12 @@ export default function FilterSidebar({
               );
             }}
           />
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Brand & model" icon={Car} activeCount={selectedBrands.length + selectedModels.length} defaultOpen>
+        {(!section || section === 'brand') && (
+        <FilterCard title="Brand & model" icon={Car} activeCount={selectedBrands.length + selectedModels.length} defaultOpen forceOpen={section === 'brand'}>
           <div className="relative mb-2.5">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -509,6 +570,31 @@ export default function FilterSidebar({
           {sortedBrands.some((b) => b.isPopular) && !q && (
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Popular brands</p>
           )}
+          {section === 'brand' ? (
+            <div className="grid grid-cols-3 gap-2">
+              {visibleBrands.map((b) => {
+                const on = selectedBrands.some((v) => sameId(v, b._id) || sameId(v, b.name) || sameId(v, b.slug));
+                const src = b.logo ? mediaUrl(b.logo) : '';
+                return (
+                  <button
+                    key={b._id}
+                    type="button"
+                    onClick={() => toggleBrand(b)}
+                    className={`flex min-w-0 flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-2.5 text-center ${on ? 'border-[#4f46e5] bg-[#eeecff] text-[#4f46e5]' : 'border-slate-200 bg-white text-slate-700'}`}
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50">
+                      {src ? (
+                        <img src={src} alt="" className="h-8 w-8 object-contain" />
+                      ) : (
+                        <span className="text-[13px] font-bold">{(b.name || '?')[0]}</span>
+                      )}
+                    </span>
+                    <span className="line-clamp-2 text-[10px] font-semibold leading-tight">{b.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
           <ShowMoreList
             items={visibleBrands}
             limit={8}
@@ -521,6 +607,7 @@ export default function FilterSidebar({
               />
             )}
           />
+          )}
           {matchingModels.length > 0 && (
             <div className="mt-3 pt-2.5 border-t border-slate-100">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Matching models</p>
@@ -559,19 +646,37 @@ export default function FilterSidebar({
             </div>
           )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Model year" icon={Calendar} activeCount={yearActiveCount}>
-          {YEAR_RANGES.map(([label, params]) => (
-            <CheckRow
-              key={label}
-              checked={isBucketActive(params, 'minYear', 'maxYear', filters)}
-              label={label}
-              onChange={() => toggleBucket('minYear', 'maxYear', params)}
-            />
-          ))}
+        {(!section || section === 'year') && (
+        <FilterCard title="Model year" icon={Calendar} activeCount={yearActiveCount} forceOpen={section === 'year'}>
+          {section === 'year' ? (
+            <div className="grid grid-cols-2 gap-2">
+              {YEAR_RANGES.map(([label, params]) => (
+                <IconChoice
+                  key={label}
+                  checked={isBucketActive(params, 'minYear', 'maxYear', filters)}
+                  label={label}
+                  icon={<Calendar className="h-4 w-4" />}
+                  onChange={() => toggleBucket('minYear', 'maxYear', params)}
+                />
+              ))}
+            </div>
+          ) : (
+            YEAR_RANGES.map(([label, params]) => (
+              <CheckRow
+                key={label}
+                checked={isBucketActive(params, 'minYear', 'maxYear', filters)}
+                label={label}
+                onChange={() => toggleBucket('minYear', 'maxYear', params)}
+              />
+            ))
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Kilometers" icon={Gauge} activeCount={kmActiveCount} defaultOpen>
+        {(!section || section === 'km') && (
+        <FilterCard title="Kilometers" icon={Gauge} activeCount={kmActiveCount} defaultOpen forceOpen={section === 'km'}>
           <DualRange
             min={KM_SLIDER.min}
             max={KM_SLIDER.max}
@@ -583,62 +688,145 @@ export default function FilterSidebar({
             onCommit={(minKm, maxKm) => patch({ minKm, maxKm })}
           />
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Popular ranges</p>
-          {KM_RANGES.map(([label, params]) => (
-            <CheckRow
-              key={label}
-              checked={isBucketActive(params, 'minKm', 'maxKm', filters)}
-              label={label}
-              onChange={() => toggleBucket('minKm', 'maxKm', params)}
-            />
-          ))}
+          {section === 'km' ? (
+            <div className="grid grid-cols-1 gap-2">
+              {KM_RANGES.map(([label, params]) => (
+                <IconChoice
+                  key={label}
+                  checked={isBucketActive(params, 'minKm', 'maxKm', filters)}
+                  label={label}
+                  icon={<Gauge className="h-4 w-4" />}
+                  onChange={() => toggleBucket('minKm', 'maxKm', params)}
+                />
+              ))}
+            </div>
+          ) : (
+            KM_RANGES.map(([label, params]) => (
+              <CheckRow
+                key={label}
+                checked={isBucketActive(params, 'minKm', 'maxKm', filters)}
+                label={label}
+                onChange={() => toggleBucket('minKm', 'maxKm', params)}
+              />
+            ))
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Fuel type" icon={Fuel} activeCount={selectedFuels.length} defaultOpen>
-          {FUEL_TYPES.map((fuel) => (
-            <CheckRow
-              key={fuel}
-              checked={selectedFuels.some((v) => sameId(v, fuel))}
-              label={fuel}
-              onChange={() => toggleCsv('fuel', fuel)}
-            />
-          ))}
+        {(!section || section === 'fuel') && (
+        <FilterCard title="Fuel type" icon={Fuel} activeCount={selectedFuels.length} defaultOpen forceOpen={section === 'fuel'}>
+          {section === 'fuel' ? (
+            <div className="grid grid-cols-2 gap-2">
+              {FUEL_TYPES.map((fuel) => {
+                const Icon = FUEL_ICONS[fuel] || Fuel;
+                return (
+                  <IconChoice
+                    key={fuel}
+                    checked={selectedFuels.some((v) => sameId(v, fuel))}
+                    label={fuel}
+                    icon={<Icon className="h-4 w-4" />}
+                    onChange={() => toggleCsv('fuel', fuel)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            FUEL_TYPES.map((fuel) => (
+              <CheckRow
+                key={fuel}
+                checked={selectedFuels.some((v) => sameId(v, fuel))}
+                label={fuel}
+                onChange={() => toggleCsv('fuel', fuel)}
+              />
+            ))
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Transmission" icon={Settings2} activeCount={selectedTransmissions.length}>
-          {TRANSMISSIONS.map((t) => (
-            <CheckRow
-              key={t}
-              checked={selectedTransmissions.some((v) => sameId(v, t))}
-              label={t}
-              onChange={() => toggleCsv('transmission', t)}
-            />
-          ))}
+        {(!section || section === 'transmission') && (
+        <FilterCard title="Transmission" icon={Settings2} activeCount={selectedTransmissions.length} forceOpen={section === 'transmission'}>
+          {section === 'transmission' ? (
+            <div className="grid grid-cols-2 gap-2">
+              {TRANSMISSIONS.map((t) => (
+                <IconChoice
+                  key={t}
+                  checked={selectedTransmissions.some((v) => sameId(v, t))}
+                  label={t}
+                  icon={t === 'Automatic' ? <Cog className="h-4 w-4" /> : <Settings2 className="h-4 w-4" />}
+                  onChange={() => toggleCsv('transmission', t)}
+                />
+              ))}
+            </div>
+          ) : (
+            TRANSMISSIONS.map((t) => (
+              <CheckRow
+                key={t}
+                checked={selectedTransmissions.some((v) => sameId(v, t))}
+                label={t}
+                onChange={() => toggleCsv('transmission', t)}
+              />
+            ))
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Body type" icon={Car} activeCount={selectedBodies.length}>
-          {BODY_TYPES.map((t) => (
-            <CheckRow
-              key={t}
-              checked={selectedBodies.some((v) => sameId(v, t))}
-              label={t}
-              mark={<BodyMark type={t} />}
-              onChange={() => toggleCsv('bodyType', t)}
-            />
-          ))}
+        {(!section || section === 'body') && (
+        <FilterCard title="Body type" icon={Car} activeCount={selectedBodies.length} forceOpen={section === 'body'}>
+          {section === 'body' ? (
+            <div className="grid grid-cols-2 gap-2">
+              {BODY_TYPES.map((t) => (
+                <IconChoice
+                  key={t}
+                  checked={selectedBodies.some((v) => sameId(v, t))}
+                  label={t}
+                  icon={<BodyMark type={t} />}
+                  onChange={() => toggleCsv('bodyType', t)}
+                />
+              ))}
+            </div>
+          ) : (
+            BODY_TYPES.map((t) => (
+              <CheckRow
+                key={t}
+                checked={selectedBodies.some((v) => sameId(v, t))}
+                label={t}
+                mark={<BodyMark type={t} />}
+                onChange={() => toggleCsv('bodyType', t)}
+              />
+            ))
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Seats" icon={Armchair} activeCount={selectedSeats.length}>
-          {SEAT_OPTIONS.map((row) => (
-            <CheckRow
-              key={row.value}
-              checked={selectedSeats.some((v) => sameId(v, row.value))}
-              label={row.label}
-              onChange={() => toggleCsv('seats', row.value)}
-            />
-          ))}
+        {(!section || section === 'seats') && (
+        <FilterCard title="Seats" icon={Armchair} activeCount={selectedSeats.length} forceOpen={section === 'seats'}>
+          {section === 'seats' ? (
+            <div className="grid grid-cols-2 gap-2">
+              {SEAT_OPTIONS.map((row) => (
+                <IconChoice
+                  key={row.value}
+                  checked={selectedSeats.some((v) => sameId(v, row.value))}
+                  label={row.label}
+                  icon={<Armchair className="h-4 w-4" />}
+                  onChange={() => toggleCsv('seats', row.value)}
+                />
+              ))}
+            </div>
+          ) : (
+            SEAT_OPTIONS.map((row) => (
+              <CheckRow
+                key={row.value}
+                checked={selectedSeats.some((v) => sameId(v, row.value))}
+                label={row.label}
+                onChange={() => toggleCsv('seats', row.value)}
+              />
+            ))
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="Colors" icon={Palette} activeCount={selectedColors.length}>
+        {(!section || section === 'color') && (
+        <FilterCard title="Colors" icon={Palette} activeCount={selectedColors.length} forceOpen={section === 'color'}>
           {COLORS.map((color) => (
             <CheckRow
               key={color}
@@ -649,8 +837,10 @@ export default function FilterSidebar({
             />
           ))}
         </FilterCard>
+        )}
 
-        <FilterCard title="RTO" icon={Landmark} activeCount={selectedRtos.length}>
+        {(!section || section === 'rto') && (
+        <FilterCard title="RTO" icon={Landmark} activeCount={selectedRtos.length} forceOpen={section === 'rto'}>
           <div className="relative mb-2">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -673,19 +863,37 @@ export default function FilterSidebar({
             )}
           />
         </FilterCard>
+        )}
 
-        <FilterCard title="Ownership" icon={User} activeCount={selectedOwners.length}>
-          {OWNER_TYPES.map(([label, params]) => (
-            <CheckRow
-              key={label}
-              checked={selectedOwners.some((v) => String(v) === String(params.ownership))}
-              label={label}
-              onChange={() => toggleCsv('ownership', params.ownership)}
-            />
-          ))}
+        {(!section || section === 'ownership') && (
+        <FilterCard title="Ownership" icon={User} activeCount={selectedOwners.length} forceOpen={section === 'ownership'}>
+          {section === 'ownership' ? (
+            <div className="grid grid-cols-2 gap-2">
+              {OWNER_TYPES.map(([label, params]) => (
+                <IconChoice
+                  key={label}
+                  checked={selectedOwners.some((v) => String(v) === String(params.ownership))}
+                  label={label}
+                  icon={<User className="h-4 w-4" />}
+                  onChange={() => toggleCsv('ownership', params.ownership)}
+                />
+              ))}
+            </div>
+          ) : (
+            OWNER_TYPES.map(([label, params]) => (
+              <CheckRow
+                key={label}
+                checked={selectedOwners.some((v) => String(v) === String(params.ownership))}
+                label={label}
+                onChange={() => toggleCsv('ownership', params.ownership)}
+              />
+            ))
+          )}
         </FilterCard>
+        )}
 
-        <FilterCard title="City" icon={MapPin} activeCount={selectedCity ? 1 : 0}>
+        {(!section || section === 'city') && (
+        <FilterCard title="City" icon={MapPin} activeCount={selectedCity ? 1 : 0} forceOpen={section === 'city'}>
           <select
             value={filters.city || ''}
             onChange={(e) => patch({ city: e.target.value, area: '' })}
@@ -699,9 +907,10 @@ export default function FilterSidebar({
             ))}
           </select>
         </FilterCard>
+        )}
 
-        {popular.length > 0 && (
-          <FilterCard title="Popular localities" icon={MapPin} activeCount={selectedAreas.filter((a) => popular.some((p) => p.name === a)).length}>
+        {(!section || section === 'area') && popular.length > 0 && (
+          <FilterCard title="Popular localities" icon={MapPin} activeCount={selectedAreas.filter((a) => popular.some((p) => p.name === a)).length} forceOpen={section === 'area'}>
             <div className="flex flex-wrap gap-1.5">
               {popular.map((row) => {
                 const on = selectedAreas.includes(row.name);
@@ -724,8 +933,8 @@ export default function FilterSidebar({
           </FilterCard>
         )}
 
-        {areas.length > 0 && (
-          <FilterCard title="Locality / Area" icon={MapPin} activeCount={selectedAreas.length}>
+        {(!section || section === 'area') && areas.length > 0 && (
+          <FilterCard title="Locality / Area" icon={MapPin} activeCount={selectedAreas.length} forceOpen={section === 'area'}>
             <ShowMoreList
               items={areas}
               limit={8}

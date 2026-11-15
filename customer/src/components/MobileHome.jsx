@@ -36,12 +36,12 @@ const PROMO_BANNERS = [
 ];
 
 const SERVICES = [
-  { title: 'Buy Certified Cars', hint: 'Best pre-owned cars', to: '/cars', tone: 'from-[#ffe8d6] to-[#fff6ee]', art: 'buy' },
-  { title: 'Sell your car', hint: 'From your home', to: '/sell', tone: 'from-[#d9ecff] to-[#f3f9ff]', art: 'sell' },
-  { title: 'Car Inspection', hint: '60 min report', to: '/inspection', tone: 'from-[#d8f6ea] to-[#f3fff8]', art: 'inspect' },
-  { title: 'Car Valuation', hint: 'Free price estimate', to: '/valuation', tone: 'from-[#efe4ff] to-[#faf7ff]', art: 'value' },
-  { title: 'Finance & EMI', hint: 'Plans from 8.5%', to: '/finance', tone: 'from-[#fff1c9] to-[#fffaf0]', art: 'finance' },
-  { title: 'Insurance', hint: 'Renew your cover', to: '/insurance', tone: 'from-[#ffe0ea] to-[#fff7f9]', art: 'insurance' },
+  { title: 'Buy Certified Cars', hint: 'Best pre-owned cars', to: '/cars', tone: 'from-[#f6c9a4] to-[#ffe4cf]', art: 'buy' },
+  { title: 'Sell your car', hint: 'From your home', to: '/sell', tone: 'from-[#b7d9f8] to-[#dceefc]', art: 'sell' },
+  { title: 'Car Inspection', hint: '60 min report', to: '/inspection', tone: 'from-[#b4e8d0] to-[#d8f5e8]', art: 'inspect' },
+  { title: 'Car Valuation', hint: 'Free price estimate', to: '/valuation', tone: 'from-[#d9c6f6] to-[#eee4fc]', art: 'value' },
+  { title: 'Finance & EMI', hint: 'Plans from 8.5%', to: '/finance', tone: 'from-[#ffe09a] to-[#fff0c8]', art: 'finance' },
+  { title: 'Insurance', hint: 'Renew your cover', to: '/insurance', tone: 'from-[#f7c2d2] to-[#ffdfe8]', art: 'insurance' },
 ];
 
 const HOME_BUDGETS = [

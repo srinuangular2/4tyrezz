@@ -44,7 +44,7 @@ export function quoteSegment({ pdiType, vehicleSegment, city }) {
   return { base, visit, total: base + visit, vehicleSegment: segment, pdiType: type };
 }
 
-export function bookPath({ pdiType, city, engineBand, obdScan = true, serviceHistory = false }) {
+export function bookPath({ pdiType, city, engineBand, obdScan = true, serviceHistory = false, brand, plate }) {
   const params = new URLSearchParams({
     type: pdiType === 'NEW_CAR' ? 'new' : 'used',
   });
@@ -53,5 +53,7 @@ export function bookPath({ pdiType, city, engineBand, obdScan = true, serviceHis
   else if (engineBand === 'UPTO_1249') params.set('engine', 'upto');
   if (!obdScan) params.set('obd', '0');
   if (serviceHistory) params.set('history', '1');
+  if (brand) params.set('brand', brand);
+  if (plate) params.set('plate', plate);
   return `/inspection/book?${params.toString()}`;
 }

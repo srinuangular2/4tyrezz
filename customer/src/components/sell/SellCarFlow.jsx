@@ -11,6 +11,7 @@ import { Card, formatINR } from '../PageShell';
 import { conditionScoreFromPills, filesFromPreviews, initialSellCarState, resumeSellStep, vehicleReady, conditionReady, conditionMessage, plateError, variantError } from './sellCarState';
 import ResumeListingCard from './ResumeListingCard';
 import { Stepper, useIsPhone } from './ui';
+import useShowWhenOffscreen from '../../hooks/useShowWhenOffscreen';
 
 const STEP_META = [
   { label: 'Car', title: 'Which car are you selling?', hint: 'Enter the number on the number plate, or choose the brand yourself.' },
@@ -42,6 +43,7 @@ export default function SellCarFlow() {
   const [guided, setGuided] = useState(false);
   const { requireAuth, isAuthed } = useAuthGuard();
   const phone = useIsPhone();
+  const showPriceBar = useShowWhenOffscreen('sell-price-btn');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -407,7 +409,7 @@ export default function SellCarFlow() {
   );
 
   const nextLabel = state.step === 1
-    ? 'Continue'
+    ? 'Get instant car price'
     : state.step === 2
       ? (valuating ? 'Estimating…' : 'See estimate')
       : state.step === 4
@@ -510,7 +512,7 @@ export default function SellCarFlow() {
   return (
     <div className="grid lg:grid-cols-[1.35fr_0.65fr] gap-4 lg:gap-6 pb-2 lg:pb-0">
       <div className="min-w-0">
-      {(state.brand || state.valuation) && (
+      {(state.brand || state.valuation) && !(phone && state.step === 1 && !guided) && (
         <div className="lg:hidden mb-3 rounded-2xl border border-[#3083ff]/20 bg-blue-50/60 px-3.5 py-3">
           <p className="text-[10px] font-black uppercase tracking-wider text-[#3083ff]">Your car</p>
           <p className="text-[13px] font-black text-slate-900 mt-0.5">
@@ -528,8 +530,8 @@ export default function SellCarFlow() {
         </div>
       )}
 
-      <Card className="p-4 sm:p-8 bg-white border border-slate-200 rounded-2xl lg:rounded-3xl overflow-x-clip" hover={false} beam={false}>
-        <div className="lg:static sticky z-20 -mx-4 mb-2 border-b border-slate-100 bg-white/95 px-4 pb-3 pt-2 backdrop-blur lg:mx-0 lg:mb-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0 lg:backdrop-blur-none">
+      <Card className={`bg-white p-4 sm:p-8 border border-slate-200 rounded-2xl lg:rounded-3xl ${phone && state.step === 1 && !guided ? 'max-lg:-mx-4 max-lg:!overflow-visible max-lg:!rounded-none max-lg:!border-0 max-lg:!bg-transparent max-lg:!p-0 max-lg:!shadow-none' : 'overflow-x-clip'}`} hover={false} beam={false}>
+        <div className={`lg:static sticky z-20 -mx-4 mb-2 border-b border-slate-100 bg-white/95 px-4 pb-3 pt-2 backdrop-blur lg:mx-0 lg:mb-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0 lg:backdrop-blur-none ${phone && state.step === 1 && !guided ? 'max-lg:hidden' : ''}`}>
           <Stepper step={state.step} />
         </div>
         {state.fromValuation && (
@@ -587,7 +589,7 @@ export default function SellCarFlow() {
       </aside>
 
       {/* Mobile sticky CTA above BottomNav. Hidden while the brand sheet is open. */}
-      {!(state.step === 1 && (state.identifyMode === 'manual' || state.editManual)) && (
+      {showPriceBar && !(state.step === 1 && (state.identifyMode === 'manual' || state.editManual)) && (
       <div className="lg:hidden fixed inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-8px_24px_rgba(15,23,42,0.08)] bottom-[calc(62px+env(safe-area-inset-bottom))]">
         <div className="flex gap-2 px-3 py-2.5">
           {state.step > 1 && (
@@ -606,8 +608,15 @@ export default function SellCarFlow() {
               (state.step === 3 && (!state.inspectionDate || !state.inspectionSlot || !(Number(state.expectedPrice) > 0))) ||
               (state.step === 5 && submitting)
             }
-            onClick={advance}
-            className="flex-1 h-11 rounded-xl bg-[#3083ff] text-white text-[14px] font-semibold disabled:opacity-50"
+            onClick={() => {
+              if (state.step === 1 && !vehicleReady(state)) {
+                document.getElementById('sell-plate')?.focus();
+                document.getElementById('sell-start')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+              }
+              advance();
+            }}
+            className="flex-1 h-10 rounded-xl bg-[#3083ff] text-white text-[13px] font-semibold disabled:opacity-50"
           >
             {nextLabel}
           </button>
