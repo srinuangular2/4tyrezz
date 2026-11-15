@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
-import { Check, FileText, Gauge, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import { AlertTriangle, Check, FileText, Gauge, ImageIcon, IndianRupee, KeyRound, MapPin, Settings2, ShieldCheck, Sparkles, Upload, Users, X } from 'lucide-react';
 import api from '../../api/axios';
 import { useVehicleBrands } from '../../hooks/useVehicleCatalog';
 import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../../lib/fetchVehicleDetailsByReg';
 import LocationAddressInput from './LocationAddressInput';
 import AiDescriptionField from './AiDescriptionField';
 import BrandModelGrid from '../sell/BrandModelGrid';
+import { useIsPhone } from '../sell/ui';
 import VehicleColorFields from './VehicleColorFields';
 
 const STEPS = [
@@ -140,8 +143,10 @@ export default function AddCarWizard({
   dealers = [],
   ownerId = '',
   onOwnerChange,
+  onExit,
 }) {
   const [step, setStep] = useState(1);
+  const phone = useIsPhone();
   const [saving, setSaving] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
   const [verified, setVerified] = useState(false);
@@ -509,10 +514,23 @@ export default function AddCarWizard({
   };
 
   const showCascade = editManual;
+  const shell = phone && variant === 'dealer';
+  useEffect(() => {
+    if (!shell) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [shell]);
+  const stepMeta = STEPS[step - 1];
+  const continueLabel = step === 4
+    ? (saving ? 'Publishing…' : editId ? 'Update listing' : 'Publish listing')
+    : 'Continue';
 
-  return (
-    <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200/80 p-5 sm:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-3 mb-7">
+  const wizard = (
+    <div className={shell ? '[&_.wizard-actions]:hidden' : 'mx-auto max-w-5xl rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xl sm:p-8'}>
+      <div className={`mb-7 flex flex-wrap items-end justify-between gap-3 ${shell ? 'hidden' : ''}`}>
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff]">
             {variant === 'dealer' ? 'Inventory listing' : 'Spinny-style listing'}
@@ -534,7 +552,7 @@ export default function AddCarWizard({
         )}
       </div>
 
-      <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1">
+      <div className={`mb-8 flex items-center gap-2 overflow-x-auto pb-1 ${shell ? 'hidden' : ''}`}>
         {STEPS.map((s, i) => (
           <div key={s.n} className="flex items-center gap-2 min-w-0">
             <button type="button" onClick={() => setStep(s.n)} className="text-left shrink-0">
@@ -559,6 +577,7 @@ export default function AddCarWizard({
       <div className="transition-all duration-300">
         {step === 1 && (
           <div className="space-y-5">
+            {!editManual && (
             <div className="rounded-2xl bg-slate-950 text-white p-5 sm:p-6 shadow-xl">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-300">RTO plate lookup</p>
               <h2 className="font-display font-black text-xl mt-1">Enter vehicle registration number</h2>
@@ -574,8 +593,9 @@ export default function AddCarWizard({
                 </button>
               </div>
             </div>
+            )}
 
-            {verified && (
+            {verified && !editManual && (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/20 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -605,17 +625,18 @@ export default function AddCarWizard({
             )}
 
             {showCascade && (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Or pick from catalogue</p>
-                  {editManual && (
-                    <button type="button" onClick={() => setEditManual(false)} className="text-xs font-bold text-slate-400 hover:text-slate-700">
-                      Hide
-                    </button>
-                  )}
+              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 sm:p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="text-[13px] font-medium text-slate-700">
+                    {form.brand ? `${form.brand}${form.year ? ` · ${form.year}` : ''}` : 'Pick the brand, then the year'}
+                  </p>
+                  <button type="button" onClick={() => setEditManual(false)} className="shrink-0 text-[12px] font-medium text-[#1853ff]">
+                    Use plate
+                  </button>
                 </div>
                 <BrandModelGrid
                   tone="light"
+                  hideActions
                   state={{ ...form, manualPhase }}
                   patch={patchIdentity}
                   onReady={() => go(2)}
@@ -634,7 +655,7 @@ export default function AddCarWizard({
               </button>
             )}
 
-            <div className="flex justify-end">
+            <div className="wizard-actions flex justify-end">
               <button type="button" onClick={() => go(2)} className={primaryBtn}>Continue to specs</button>
             </div>
           </div>
@@ -701,7 +722,7 @@ export default function AddCarWizard({
                 </div>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <span className={labelCls}>Transmission</span>
+                <span className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><Settings2 className="h-3.5 w-3.5 text-[#3083ff]" /> Transmission</span>
                 <div className="flex flex-wrap gap-2">
                   {['Manual', 'Automatic'].map((t) => (
                     <Pill key={t} active={form.transmission === t} onClick={() => set('transmission', t)}>{t}</Pill>
@@ -709,7 +730,7 @@ export default function AddCarWizard({
                 </div>
               </div>
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <span className={labelCls}>Ownership</span>
+                <span className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><Users className="h-3.5 w-3.5 text-[#3083ff]" /> Ownership</span>
                 <div className="flex flex-wrap gap-2">
                   {[1, 2, 3, 4].map((n) => (
                     <Pill key={n} active={Number(form.ownership) === n} onClick={() => set('ownership', n)}>{ownerLabel(n)}</Pill>
@@ -718,7 +739,7 @@ export default function AddCarWizard({
                 <p className="text-[11px] font-semibold text-slate-500 mt-2">Range above updates as soon as you tap.</p>
               </label>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 md:col-span-2">
-                <span className={labelCls}>Vehicle health state</span>
+                <span className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><Sparkles className="h-3.5 w-3.5 text-[#3083ff]" /> Vehicle health</span>
                 <div className="flex flex-wrap gap-2">
                   {HEALTH.map((h) => (
                     <Pill
@@ -733,7 +754,7 @@ export default function AddCarWizard({
                 <p className="text-[11px] font-semibold text-slate-500 mt-2">Better condition usually lifts the market range.</p>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 md:col-span-2">
-                <span className={labelCls}>Your selling price</span>
+                <span className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><IndianRupee className="h-3.5 w-3.5 text-[#3083ff]" /> Your selling price</span>
                 <input className={input} value={form.price} onChange={(e) => set('price', e.target.value.replace(/\D/g, ''))} placeholder="750000" />
                 <p className="mt-2 text-sm font-black text-blue-600">{formatLakh(form.price) || '₹ 0'}</p>
                 {valuation?.fairMarketValue ? (
@@ -744,11 +765,11 @@ export default function AddCarWizard({
               </div>
               <VehicleColorFields form={form} set={set} input={input} labelCls={labelCls} />
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <span className={labelCls}>Registration / RTO</span>
+                <span className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><FileText className="h-3.5 w-3.5 text-[#3083ff]" /> Registration / RTO</span>
                 <input className={input} value={form.rto} onChange={(e) => set('rto', e.target.value)} placeholder="Hyderabad / TS09" />
               </label>
               <label className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <span className={labelCls}>Showroom / listing location</span>
+                <span className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><MapPin className="h-3.5 w-3.5 text-[#3083ff]" /> Showroom location</span>
                 <LocationAddressInput
                   value={form.formattedAddress || form.pickupLocation}
                   city={form.locationCity || form.city}
@@ -778,7 +799,7 @@ export default function AddCarWizard({
               </label>
             </div>
 
-            <div className="flex justify-between gap-3">
+            <div className="wizard-actions flex justify-between gap-3">
               <button type="button" onClick={() => setStep(1)} className={ghostBtn}>Back</button>
               <button type="button" onClick={() => go(3)} className={primaryBtn}>Continue to condition</button>
             </div>
@@ -788,7 +809,7 @@ export default function AddCarWizard({
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <p className={labelCls}>Key features</p>
+              <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><Sparkles className="h-3.5 w-3.5 text-[#3083ff]" /> Key features</p>
               <div className="flex flex-wrap gap-2">
                 {FEATURES.map(([name, icon]) => (
                   <Pill
@@ -802,7 +823,7 @@ export default function AddCarWizard({
               </div>
             </div>
             <div>
-              <p className={labelCls}>Number of keys</p>
+              <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><KeyRound className="h-3.5 w-3.5 text-[#3083ff]" /> Number of keys</p>
               <div className="flex flex-wrap gap-2">
                 {[1, 2].map((n) => (
                   <Pill key={n} active={Number(form.keyCount) === n} onClick={() => set('keyCount', n)}>
@@ -813,7 +834,7 @@ export default function AddCarWizard({
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
-                <p className={labelCls}>Accidents</p>
+                <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><AlertTriangle className="h-3.5 w-3.5 text-[#3083ff]" /> Accidents</p>
                 <div className="flex flex-wrap gap-2">
                   <Pill
                     active={form.accidental === 'No'}
@@ -856,7 +877,7 @@ export default function AddCarWizard({
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <label>
-                <span className={labelCls}>Insurance type</span>
+                <span className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><ShieldCheck className="h-3.5 w-3.5 text-[#3083ff]" /> Insurance type</span>
                 <select className={input} value={form.insuranceType} onChange={(e) => set('insuranceType', e.target.value)}>
                   <option value="Comprehensive">Comprehensive</option>
                   <option value="Third Party">Third Party</option>
@@ -879,7 +900,7 @@ export default function AddCarWizard({
               <span className={labelCls}>Tyre condition {form.tyreCondition}%</span>
               <input type="range" min={10} max={100} value={form.tyreCondition} onChange={(e) => set('tyreCondition', Number(e.target.value))} className="w-full accent-blue-600" />
             </label>
-            <div className="flex justify-between gap-3">
+            <div className="wizard-actions flex justify-between gap-3">
               <button type="button" onClick={() => setStep(2)} className={ghostBtn}>Back</button>
               <button type="button" onClick={() => go(4)} className={primaryBtn}>Continue to media</button>
             </div>
@@ -893,7 +914,7 @@ export default function AddCarWizard({
               <input className={input} value={form.videoUrl} onChange={(e) => set('videoUrl', e.target.value)} placeholder="https://" />
             </label>
             <div>
-              <p className={labelCls}>360° photo slots</p>
+              <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><ImageIcon className="h-3.5 w-3.5 text-[#3083ff]" /> Photo slots</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {PHOTO_SLOTS.map(({ key, label }) => {
                   const item = slots[key];
@@ -961,7 +982,7 @@ export default function AddCarWizard({
             </div>
 
             <div>
-              <p className={labelCls}>Documents</p>
+              <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-600"><FileText className="h-3.5 w-3.5 text-[#3083ff]" /> Documents</p>
               <p className="text-[11px] text-slate-500 mb-2">Private to 4tyrezz staff — never shown in the public car gallery.</p>
               <div className="grid sm:grid-cols-3 gap-3">
                 {DOCS.map(({ key, label }) => (
@@ -987,7 +1008,7 @@ export default function AddCarWizard({
               onChange={(text) => set('description', text)}
             />
 
-            <div className="flex justify-between gap-3">
+            <div className="wizard-actions flex justify-between gap-3">
               <button type="button" onClick={() => setStep(3)} className={ghostBtn}>Back</button>
               <button type="button" disabled={saving} onClick={submit} className={primaryBtn}>
                 {saving ? 'Publishing…' : editId ? 'Update listing' : 'Publish listing'}
@@ -998,4 +1019,59 @@ export default function AddCarWizard({
       </div>
     </div>
   );
+
+  if (shell && typeof document !== 'undefined') {
+    return createPortal(
+      <div className="fixed inset-0 z-[70] flex flex-col bg-white">
+        <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => (step > 1 ? setStep(step - 1) : onExit?.())}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700"
+              aria-label="Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold text-[#3083ff]">Step {step} of {STEPS.length}</p>
+              <h3 className="truncate text-[16px] font-semibold text-slate-900">{editId ? 'Edit listing' : 'Add cars'}</h3>
+            </div>
+          </div>
+          <p className="mt-2 text-[12px] leading-snug text-slate-500">{stepMeta?.title} · {stepMeta?.hint}</p>
+          <div className="mt-3 grid grid-cols-4 gap-1.5">
+            {STEPS.map((item) => {
+              const on = item.n === step;
+              const done = item.n < step;
+              return (
+                <button
+                  key={item.n}
+                  type="button"
+                  disabled={!done}
+                  onClick={() => setStep(item.n)}
+                  className={`rounded-full px-1 py-1 text-[11px] font-semibold ${on ? 'bg-[#3083ff] text-white' : done ? 'bg-[#eaf2ff] text-[#1853ff]' : 'bg-slate-100 text-slate-400'}`}
+                >
+                  {item.title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{wizard}</div>
+        <div className="shrink-0 border-t border-slate-100 bg-white px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => (step === 4 ? submit() : go(step + 1))}
+            className="h-11 w-full whitespace-nowrap rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white disabled:opacity-50"
+          >
+            {continueLabel}
+          </button>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  return wizard;
 }

@@ -7,9 +7,9 @@ export default function Login() {
   const redirectTo = location.state?.from || '/profile/settings';
 
   return (
-    <div className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="relative min-h-[calc(100dvh-3.5rem)] overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #3083ff22 0%, transparent 50%)' }} />
-      <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+      <div className="relative mx-auto w-full min-w-0 max-w-5xl px-4 py-4 sm:px-6 sm:py-12 lg:py-20">
         <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
           <div className="hidden lg:block">
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#3083ff]">Customer access</p>
@@ -33,7 +33,7 @@ export default function Login() {
             </ul>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl shadow-[0_20px_40px_0_rgba(48,131,255,0.12)] p-7 sm:p-9">
+          <div className="min-w-0 rounded-3xl border border-white/80 bg-white/80 p-4 shadow-[0_12px_32px_rgba(48,131,255,0.1)] sm:p-9">
             <AuthFlow variant="page" onSuccess={() => navigate(redirectTo, { replace: true })} />
             <p className="text-center text-sm font-semibold text-slate-500 mt-6">
               Prefer email?{' '}

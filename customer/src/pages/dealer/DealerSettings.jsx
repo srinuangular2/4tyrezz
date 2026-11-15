@@ -5,6 +5,8 @@ import api from '../../api/axios';
 import { fetchMe, updateProfile } from '../../app/authSlice';
 import PasswordField from '../../components/PasswordField';
 import { emailError } from '../../lib/kycValidation';
+import { Building2, Hash, Lock, Mail, MapPin, ShieldCheck, User } from 'lucide-react';
+import AccountAvatar from '../../components/AccountAvatar';
 import { GlassCard, PageHeader, btnPrimary, inputCls } from '../../components/dealer/ui';
 
 function isStrongPassword(password) {
@@ -99,25 +101,50 @@ export default function DealerSettings() {
 
   return (
     <div className="space-y-6">
+      <div className="-mx-3 -mt-3 flex items-center gap-3 bg-[#3083ff] px-4 py-5 text-white lg:hidden">
+        <AccountAvatar user={live} tone="white" className="h-14 w-14 text-[20px]" />
+        <div className="min-w-0">
+          <p className="truncate text-[18px] font-semibold">{live.dealershipName || live.name || 'Showroom'}</p>
+          <p className="truncate text-[12px] text-white/80">{live.dealerCode || 'Dealer ID pending'}</p>
+          <p className="mt-1 text-[12px] text-white/80">KYC {kyc}</p>
+        </div>
+      </div>
+      <div className="hidden lg:block">
       <PageHeader kicker="Account" title="Dealer profile & settings" subtitle="Showroom identity and login security." />
-      <GlassCard className="p-5">
-        <div className="grid sm:grid-cols-2 gap-3 mb-6">
+      </div>
+      <div className="grid grid-cols-2 gap-2 lg:hidden">
+        {[
+          ['Dealer ID', live.dealerCode || '—', 'from-[#b7d9f8] to-[#dceefc]', Hash],
+          ['KYC', kyc, 'from-[#b4e8d0] to-[#d8f5e8]', ShieldCheck],
+          ['Name', live.name || '—', 'from-[#ffe09a] to-[#fff0c8]', User],
+          ['Company', live.dealershipName || profile?.businessName || '—', 'from-[#d9c6f6] to-[#eee4fc]', Building2],
+        ].map(([label, value, tone, Icon]) => (
+          <div key={label} className={`rounded-[20px] border border-white bg-gradient-to-b ${tone} p-3`}>
+            <p className="inline-flex items-center gap-1.5 text-[12px] font-normal text-slate-600">
+              <Icon className="h-3.5 w-3.5" /> {label}
+            </p>
+            <p className="mt-1 truncate text-[14px] font-medium text-slate-900">{value}</p>
+          </div>
+        ))}
+      </div>
+      <GlassCard className="p-4 sm:p-5">
+        <div className="mb-6 hidden gap-3 sm:grid-cols-2 lg:grid">
           <Info label="Dealer ID" value={live.dealerCode || '—'} mono />
           <Info label="KYC" value={kyc} />
           <Info label="Name" value={live.name || '—'} />
           <Info label="Company" value={live.dealershipName || profile?.businessName || '—'} />
         </div>
-        <form onSubmit={saveProfile} className="max-w-md space-y-4" autoComplete="off">
-          <Field label="Contact name">
+        <form onSubmit={saveProfile} className="max-w-md space-y-3 lg:space-y-4" autoComplete="off">
+          <Field label="Contact name" icon={User}>
             <input className={inputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
-          <Field label="Company / dealership">
+          <Field label="Company / dealership" icon={Building2}>
             <input className={inputCls} value={form.dealershipName} onChange={(e) => setForm({ ...form, dealershipName: e.target.value })} />
           </Field>
-          <Field label="City">
+          <Field label="City" icon={MapPin}>
             <input className={inputCls} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
           </Field>
-          <Field label="Email">
+          <Field label="Email" icon={Mail}>
             <input
               type="email"
               className={inputCls}
@@ -127,14 +154,16 @@ export default function DealerSettings() {
               autoComplete="email"
             />
           </Field>
-          <button type="submit" disabled={saving} className={btnPrimary}>
+          <button type="submit" disabled={saving} className={`${btnPrimary} w-full lg:w-auto`}>
             {saving ? 'Saving…' : 'Save profile'}
           </button>
         </form>
       </GlassCard>
 
-      <GlassCard className="p-5">
-        <h2 className="font-display font-bold text-slate-900 mb-4">Change password</h2>
+      <GlassCard className="p-4 sm:p-5">
+        <h2 className="mb-3 inline-flex items-center gap-1.5 text-[16px] font-semibold text-slate-900">
+          <Lock className="h-4 w-4 text-[#3083ff]" /> Password
+        </h2>
         <form onSubmit={savePassword} className="max-w-md space-y-4" autoComplete="off">
           <PasswordField
             label="Current password"
@@ -160,7 +189,7 @@ export default function DealerSettings() {
             onChange={(e) => setPass({ ...pass, confirm: e.target.value })}
           />
           <p className="text-xs font-semibold text-slate-500">Must be 8–12 characters. Shorter than 8 is not accepted.</p>
-          <button type="submit" disabled={savingPass} className={btnPrimary}>
+          <button type="submit" disabled={savingPass} className={`${btnPrimary} w-full lg:w-auto`}>
             {savingPass ? 'Updating…' : 'Update password'}
           </button>
         </form>
@@ -169,10 +198,13 @@ export default function DealerSettings() {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, icon: Icon, children }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</span>
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600">
+        {Icon ? <Icon className="h-3.5 w-3.5 text-[#3083ff]" /> : null}
+        {label}
+      </span>
       <div className="mt-1.5">{children}</div>
     </label>
   );
@@ -180,9 +212,9 @@ function Field({ label, children }) {
 
 function Info({ label, value, mono }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p>
-      <p className={`text-sm font-bold text-slate-900 mt-1 truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
+    <div className="bg-white px-4 py-3 lg:rounded-2xl lg:border lg:border-slate-100 lg:bg-slate-50">
+      <p className="text-[12px] text-slate-500">{label}</p>
+      <p className={`mt-0.5 truncate text-[14px] font-semibold text-slate-900 ${mono ? 'font-mono' : ''}`}>{value}</p>
     </div>
   );
 }

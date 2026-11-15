@@ -170,16 +170,17 @@ const authSlice = createSlice({
         persistAuth(state, { ...action.payload, needsProfile: false });
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
-        if (action.payload?.user) {
-          state.user = action.payload.user;
-          state.needsProfile = action.payload.needsProfile || false;
-          localStorage.setItem('user', JSON.stringify(action.payload.user));
-        }
+        if (!state.token || !action.payload?.user) return;
+        state.user = action.payload.user;
+        state.needsProfile = action.payload.needsProfile || false;
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
       })
-      .addCase(fetchMe.rejected, (state, action) => {
-        if (action.payload === 'Could not load account' && !state.token) {
-          state.user = null;
-        }
+      .addCase(fetchMe.rejected, (state) => {
+        state.user = null;
+        state.token = null;
+        state.needsProfile = false;
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       });
   },
 });

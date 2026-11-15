@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Check, ChevronLeft, Heart, ShoppingCart, UserRound } from 'lucide-react';
+import { Check, ChevronLeft, Heart, ShoppingCart } from 'lucide-react';
 import { useAuthGuard } from '../AuthGuardModal';
 import { readCart, subscribeCart } from '../../lib/cart';
-import { mediaUrl } from '../../pages/profile/hubUtils';
+import AccountAvatar from '../AccountAvatar';
 
 const STRIPES = {
   backgroundImage: 'repeating-linear-gradient(115deg, transparent 0 22px, rgba(255,255,255,0.08) 22px 44px)',
@@ -21,10 +21,10 @@ export default function LeadHero({
 }) {
   const navigate = useNavigate();
   const user = useSelector((s) => s.auth.user);
+  const signedIn = user?.role === 'customer';
   const wishlistCount = useSelector((s) => s.wishlist?.ids?.length || 0);
   const { requireAuth } = useAuthGuard();
   const [cartCount, setCartCount] = useState(() => readCart().length);
-  const avatarSrc = mediaUrl(user?.avatar);
 
   useEffect(() => subscribeCart((rows) => setCartCount(rows.length)), []);
 
@@ -34,7 +34,7 @@ export default function LeadHero({
   };
 
   const openAccount = (event, path) => {
-    if (user) return;
+    if (signedIn) return;
     event.preventDefault();
     requireAuth(() => navigate(path));
   };
@@ -54,33 +54,34 @@ export default function LeadHero({
         <p className="min-w-0 flex-1 truncate text-[13px] font-semibold">{kicker}</p>
         <div className="flex shrink-0 items-center">
           <Link
-            to={user ? '/profile/wishlist' : '/cars'}
+            to={signedIn ? '/profile/wishlist' : '/'}
             onClick={(event) => openAccount(event, '/profile/wishlist')}
             className="relative flex h-8 w-8 items-center justify-center text-white"
             aria-label="Wishlist"
           >
             <Heart className="h-[18px] w-[18px]" />
-            {wishlistCount > 0 ? (
+            {signedIn && wishlistCount > 0 ? (
               <span className="absolute right-0 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-white px-0.5 text-[8px] font-bold text-[#1853ff]">{wishlistCount}</span>
             ) : null}
           </Link>
-          <Link to="/profile/cart" className="relative flex h-8 w-8 items-center justify-center text-white" aria-label="Cart">
+          <Link
+            to={signedIn ? '/profile/cart' : '/'}
+            onClick={(event) => openAccount(event, '/profile/cart')}
+            className="relative flex h-8 w-8 items-center justify-center text-white"
+            aria-label="Cart"
+          >
             <ShoppingCart className="h-[18px] w-[18px]" />
-            {cartCount > 0 ? (
+            {signedIn && cartCount > 0 ? (
               <span className="absolute right-0 top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-white px-0.5 text-[8px] font-bold text-[#1853ff]">{cartCount}</span>
             ) : null}
           </Link>
           <Link
-            to={user ? '/profile' : '/cars'}
+            to={signedIn ? '/profile' : '/'}
             onClick={(event) => openAccount(event, '/profile')}
             className="flex h-8 w-8 items-center justify-center text-white"
             aria-label="Profile"
           >
-            {avatarSrc ? (
-              <img src={avatarSrc} alt="" className="h-6 w-6 rounded-full object-cover" />
-            ) : (
-              <UserRound className="h-[18px] w-[18px]" />
-            )}
+            <AccountAvatar user={signedIn ? user : null} tone="white" className="h-7 w-7 text-[12px]" />
           </Link>
         </div>
       </div>

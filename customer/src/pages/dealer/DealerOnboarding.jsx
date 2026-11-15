@@ -2,6 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import {
+  Building2,
+  CreditCard,
+  FileText,
+  Hash,
+  Landmark,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+} from 'lucide-react';
 import api from '../../api/axios';
 import {
   bankAccountError,
@@ -349,13 +360,13 @@ export default function DealerOnboarding() {
   }
 
   return (
-    <Shell>
+    <Shell step={step}>
       {locked && (
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
           {approved ? 'KYC is approved. You can open any step to review or update details.' : 'KYC is with admin for review. You can still open previous steps.'}
         </div>
       )}
-      <ol className="grid grid-cols-4 gap-2 mt-6">
+      <ol className="mt-1 grid grid-cols-4 gap-1.5 lg:mt-6 lg:gap-2">
         {STEPS.map((item) => {
           const active = step === item.id;
           const done = step > item.id || (locked && item.id < 4);
@@ -366,7 +377,7 @@ export default function DealerOnboarding() {
                 type="button"
                 disabled={!clickable && !active}
                 onClick={() => clickable && setStep(item.id)}
-                className={`w-full rounded-2xl px-2 py-3 text-center transition ${
+                className={`w-full rounded-2xl px-1 py-2 text-center transition lg:px-2 lg:py-3 ${
                   active
                     ? 'bg-[#3083ff] text-white shadow-md'
                     : done
@@ -374,8 +385,8 @@ export default function DealerOnboarding() {
                       : 'bg-white text-slate-400 border border-slate-200'
                 } ${clickable ? 'cursor-pointer hover:ring-2 hover:ring-blue-500/20' : 'cursor-default'}`}
               >
-                <p className="text-[10px] font-black uppercase tracking-wider">{item.id}. {item.label}</p>
-                <p className={`text-[10px] font-semibold mt-0.5 ${active ? 'text-white/80' : 'text-slate-400'}`}>{item.hint}</p>
+                <p className="text-[11px] font-semibold lg:text-[10px] lg:font-black lg:uppercase lg:tracking-wider">{item.label}</p>
+                <p className={`mt-0.5 hidden text-[10px] font-semibold lg:block ${active ? 'text-white/80' : 'text-slate-400'}`}>{item.hint}</p>
               </button>
             </li>
           );
@@ -383,23 +394,23 @@ export default function DealerOnboarding() {
       </ol>
 
       <form
-        className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm"
+        className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-8 lg:mt-6"
         onSubmit={(e) => e.preventDefault()}
         onKeyDown={onFormKeyDown}
       >
         <>
             {locked && step === 4 && (
               <div className="text-center py-4 mb-4 rounded-2xl border border-slate-200 bg-slate-50">
-                <p className="font-display font-black text-2xl text-slate-900">
+                <p className="text-[18px] font-medium text-slate-900">
                   {approved ? 'You are verified' : 'KYC sent for review'}
                 </p>
-                <p className="text-sm font-semibold text-slate-500 mt-2 max-w-md mx-auto">
+                <p className="mx-auto mt-2 max-w-md text-[13px] font-normal text-slate-500">
                   {approved
                     ? 'Use the steps above to review contact, showroom and KYC. Listings still go to admin before they go live.'
                     : 'Operations is reviewing your file. Inventory stays locked until you are approved.'}
                 </p>
-                <p className="mt-4 text-[11px] font-black uppercase tracking-wider text-amber-700">{profile?.kycStatus}</p>
-                <Link to="/dealer/dashboard" className="inline-block mt-6 bg-[#3083ff] hover:bg-[#1853ff] text-white font-black text-xs uppercase tracking-wider rounded-xl px-5 py-3">
+                <p className="mt-3 text-[12px] font-medium text-amber-700">{profile?.kycStatus}</p>
+                <Link to="/dealer/dashboard" className="mt-4 inline-block rounded-xl bg-[#3083ff] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1853ff]">
                   Go to dashboard
                 </Link>
               </div>
@@ -508,8 +519,11 @@ export default function DealerOnboarding() {
                 </div>
                 <div className="space-y-3">
                   {DOC_TYPES.map(([type, label]) => (
-                    <label key={type} className="block rounded-2xl border border-dashed border-slate-200 p-4 text-sm font-semibold">
-                      {label} <span className="text-rose-500">*</span>
+                    <label key={type} className="block rounded-2xl border border-dashed border-slate-200 p-4 text-sm font-medium">
+                      <span className="inline-flex items-center gap-1.5">
+                        <FileText className="h-4 w-4 text-[#3083ff]" />
+                        {label} <span className="text-rose-500">*</span>
+                      </span>
                       <input type="file" accept="application/pdf,image/jpeg,image/png" className="mt-2 block text-xs" onChange={(e) => uploadDoc(type, e.target.files?.[0])} />
                       {hasDoc(type) && (
                         <span className="text-emerald-600 text-xs font-black">
@@ -541,25 +555,25 @@ export default function DealerOnboarding() {
               </section>
             )}
 
-            <div className="mt-8 pt-5 border-t border-slate-100">
+            <div className="mt-6 border-t border-slate-100 pt-4 lg:mt-8 lg:pt-5">
               {nextHint ? <p className="text-xs font-semibold text-slate-500 mb-3">{nextHint}</p> : null}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-nowrap items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={goBack}
                   disabled={step === 1 || loading}
-                  className="px-5 py-3 rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="shrink-0 whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-3 py-3 text-[13px] font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Back
                 </button>
                 {step < 4 ? (
-                  <div className="flex gap-2">
+                  <div className="flex min-w-0 flex-nowrap justify-end gap-2">
                     {locked && (
                       <button
                         type="button"
                         onClick={saveCurrent}
                         disabled={loading}
-                        className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-700 text-sm font-black disabled:opacity-40"
+                        className="shrink-0 whitespace-nowrap rounded-2xl border border-slate-200 px-3 py-3 text-[13px] font-semibold text-slate-700 disabled:opacity-40"
                       >
                         {loading ? 'Saving…' : 'Save changes'}
                       </button>
@@ -568,7 +582,7 @@ export default function DealerOnboarding() {
                       type="button"
                       onClick={() => (locked ? setStep((s) => Math.min(s + 1, 4)) : goNext())}
                       disabled={locked ? loading : !canGo}
-                      className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black disabled:opacity-40 disabled:bg-slate-700 disabled:cursor-not-allowed"
+                      className="whitespace-nowrap rounded-2xl bg-[#3083ff] px-4 py-3 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {loading && !locked ? 'Saving…' : 'Next'}
                     </button>
@@ -579,7 +593,7 @@ export default function DealerOnboarding() {
                       type="button"
                       onClick={submit}
                       disabled={!canGo}
-                      className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black disabled:opacity-40 disabled:bg-slate-700 disabled:cursor-not-allowed"
+                      className="whitespace-nowrap rounded-2xl bg-[#3083ff] px-4 py-3 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {loading ? 'Submitting…' : 'Submit for approval'}
                     </button>
@@ -594,12 +608,20 @@ export default function DealerOnboarding() {
   );
 }
 
-function Shell({ children }) {
+function Shell({ children, step }) {
+  const current = STEPS.find((item) => item.id === step);
   return (
     <div className="max-w-3xl">
-      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#3083ff]">Dealer onboarding</p>
-      <h1 className="font-display font-black text-3xl text-slate-900 mt-2">Join the 4TYREZZ network</h1>
-      <p className="text-sm font-medium text-slate-500 mt-2">Open any step to review or edit. Next stays off until the required fields on this page are filled.</p>
+      <div className="-mx-3 -mt-3 bg-[#3083ff] px-4 py-4 text-white lg:hidden">
+        <p className="text-[12px] text-white/80">{current ? `Step ${current.id} of ${STEPS.length}` : 'Showroom check'}</p>
+        <h1 className="text-[20px] font-semibold">{current?.label || 'KYC'}</h1>
+        {current?.hint && <p className="mt-0.5 text-[12px] text-white/75">{current.hint}</p>}
+      </div>
+      <div className="hidden lg:block">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#3083ff]">Dealer onboarding</p>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-900">Join the 4tyrezz network</h1>
+        <p className="mt-2 text-sm font-medium text-slate-500">Open any step to review or edit. Next stays off until the required fields on this page are filled.</p>
+      </div>
       {children}
     </div>
   );
@@ -608,20 +630,54 @@ function Shell({ children }) {
 function Header({ title, body }) {
   return (
     <div>
-      <h2 className="font-display font-black text-xl text-slate-900">{title}</h2>
-      <p className="text-sm font-medium text-slate-500 mt-1">{body}</p>
+      <h2 className="text-[16px] font-medium text-slate-900">{title}</h2>
+      <p className="mt-1 text-[13px] font-normal text-slate-500">{body}</p>
     </div>
   );
+}
+
+const FIELD_ICONS = {
+  'Full name': User,
+  Mobile: Phone,
+  'Work email': Mail,
+  'Dealership name': Building2,
+  'Legal entity name': Building2,
+  'Business type': Building2,
+  Pincode: Hash,
+  Address: MapPin,
+  'Address line 2': MapPin,
+  State: MapPin,
+  City: MapPin,
+  PAN: CreditCard,
+  GSTIN: FileText,
+  'Account holder': User,
+  'Account number': Hash,
+  IFSC: Landmark,
+  'Bank name': Landmark,
+  Contact: User,
+  Email: Mail,
+  Dealership: Building2,
+  Type: Building2,
+  'PAN / GSTIN': CreditCard,
+  Bank: Landmark,
+  Documents: FileText,
+};
+
+function FieldIcon({ label }) {
+  const Icon = FIELD_ICONS[label];
+  if (!Icon) return null;
+  return <Icon className="h-3.5 w-3.5 shrink-0 text-[#3083ff]" strokeWidth={2} />;
 }
 
 function Field({ label, required, error, children, className = '' }) {
   return (
     <label className={`block ${className}`}>
-      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600">
+        <FieldIcon label={label} />
         {label} {required ? <span className="text-rose-500">*</span> : null}
       </span>
       <div className="mt-1.5">{children}</div>
-      {error ? <span className="text-[11px] font-bold text-rose-600 mt-1 block">{error}</span> : null}
+      {error ? <span className="mt-1 block text-[11px] font-medium text-rose-600">{error}</span> : null}
     </label>
   );
 }
@@ -629,8 +685,11 @@ function Field({ label, required, error, children, className = '' }) {
 function Summary({ label, value }) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p>
-      <p className="text-sm font-bold text-slate-900 mt-1">{value || '—'}</p>
+      <p className="inline-flex items-center gap-1.5 text-[12px] font-normal text-slate-500">
+        <FieldIcon label={label} />
+        {label}
+      </p>
+      <p className="mt-0.5 text-[14px] font-medium text-slate-800">{value || '—'}</p>
     </div>
   );
 }

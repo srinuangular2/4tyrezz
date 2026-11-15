@@ -8,6 +8,7 @@ export default function DealerAddCar() {
     <AddCarWizard
       variant="dealer"
       editId={id}
+      onExit={() => navigate('/dealer/dashboard/inventory')}
       afterSave={() => navigate('/dealer/dashboard/inventory')}
     />
   );

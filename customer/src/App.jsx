@@ -128,7 +128,8 @@ export default function App() {
   const location = useLocation();
   const dealerWindow = location.pathname.startsWith('/dealer');
   const accountPage = /^\/profile\/.+/.test(location.pathname);
-  const immersiveMobile = location.pathname === '/sell' || location.pathname === '/valuation' || location.pathname === '/inspection' || location.pathname === '/pdi' || location.pathname === '/cars' || location.pathname === '/buy-cars';
+  const authPage = ['/login', '/customer/login', '/customer/register', '/customer/forgot-password', '/customer/reset-password', '/customer/verify-email'].includes(location.pathname);
+  const immersiveMobile = location.pathname === '/sell' || location.pathname === '/valuation' || location.pathname === '/inspection' || location.pathname === '/pdi' || location.pathname === '/cars' || location.pathname === '/buy-cars' || /^\/cars\/[^/]+$/.test(location.pathname);
 
   useEffect(() => {
     const previous = window.history.scrollRestoration;
@@ -170,7 +171,7 @@ export default function App() {
               <Header />
             </div>
           )}
-          <main className={`flex-1 ${dealerWindow ? '' : 'pb-20 lg:pb-0'}`}>
+          <main className={`flex-1 ${dealerWindow || authPage ? '' : 'pb-20 lg:pb-0'}`}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/brands" element={<Brands />} />
@@ -286,7 +287,7 @@ export default function App() {
             </Routes>
           </main>
           {!dealerWindow && <Footer />}
-          {!dealerWindow && <BottomNav />}
+          {!dealerWindow && !authPage && <BottomNav />}
           {!dealerWindow && <CompareTray />}
           {!dealerWindow && <PwaInstallBanner />}
           {!dealerWindow && <MobileOnboarding />}

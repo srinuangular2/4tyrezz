@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, Car, ChevronLeft, Search as SearchIcon } from 'lucide-react';
+import { Calendar, Car, ChevronLeft, Fuel, Search as SearchIcon } from 'lucide-react';
 import { Skeleton } from '../PageShell';
 import { mediaUrl } from '../../pages/profile/hubUtils';
 import {
@@ -31,7 +31,7 @@ function useIsPhone() {
   return phone;
 }
 
-export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 'light', mobileSheet = false }) {
+export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 'light', mobileSheet = false, hideActions = false }) {
   const dark = tone === 'dark';
   const phone = useIsPhone();
   const sheet = mobileSheet && phone;
@@ -194,23 +194,23 @@ export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 
           </div>
         </div>
       )}
-      <div className={sheet ? 'min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4' : 'contents'}>
+      <div className={sheet ? 'min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4' : 'space-y-4'}>
       <div className={`flex items-start justify-between gap-3 ${sheet ? 'hidden' : ''}`}>
-        <div className="flex flex-wrap gap-2 min-w-0">
+        <div className="flex min-w-0 flex-wrap gap-2">
         {state.brand && (
-          <Chip onClick={() => patch({ manualPhase: 'brand', model: '', year: '', variant: '', fuel: '', transmission: '' })}>
+          <Chip icon={Car} onClick={() => patch({ manualPhase: 'brand', model: '', year: '', variant: '', fuel: '', transmission: '' })}>
             {state.brand}
           </Chip>
         )}
         {state.year && (
-          <Chip onClick={() => patch({ manualPhase: 'year', model: '', variant: '', fuel: '', transmission: '' })}>
+          <Chip icon={Calendar} onClick={() => patch({ manualPhase: 'year', model: '', variant: '', fuel: '', transmission: '' })}>
             {state.year}
           </Chip>
         )}
         {state.model && (
-          <Chip onClick={() => patch({ manualPhase: 'model', variant: '', fuel: '', transmission: '' })}>{state.model}</Chip>
+          <Chip icon={Car} onClick={() => patch({ manualPhase: 'model', variant: '', fuel: '', transmission: '' })}>{state.model}</Chip>
         )}
-        {state.fuel && phase === 'variant' && <Chip>{state.fuel}</Chip>}
+        {state.fuel && phase === 'variant' && <Chip icon={Fuel}>{state.fuel}</Chip>}
         {state.city && <Chip>{state.city}</Chip>}
         </div>
         {onClose ? (
@@ -227,13 +227,13 @@ export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 
 
       {phase === 'brand' && (
         <>
-          <h3 className={`font-display font-black ${sheet ? 'hidden' : ''} ${dark ? 'text-white' : 'text-slate-900'}`}>Select your car brand</h3>
+          <h3 className={`text-[15px] font-semibold ${sheet ? 'hidden' : ''} ${dark ? 'text-white' : 'text-slate-900'}`}>Select your car brand</h3>
           <Search value={q} onChange={setQ} placeholder="Search brand" />
           {loadingBrands ? (
             <LoaderGrid />
           ) : (
             <>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
                 {filteredBrands.map((b) => (
                   <button
                     key={b.name}
@@ -260,56 +260,41 @@ export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 
 
       {phase === 'year' && (
         <>
-          <div className={`flex items-center justify-between ${sheet ? 'hidden' : ''}`}>
-            <h3 className={`font-display font-black ${dark ? 'text-white' : 'text-slate-900'}`}>Select registration year</h3>
-            <button type="button" className="text-xs font-bold text-blue-400" onClick={() => patch({ manualPhase: 'brand' })}>
-              ← Brands
+          <div className={`flex items-center justify-between gap-3 ${sheet ? 'hidden' : ''}`}>
+            <h3 className={`text-[15px] font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>Select registration year</h3>
+            <button type="button" className="shrink-0 text-[12px] font-medium text-[#1853ff]" onClick={() => patch({ manualPhase: 'brand' })}>
+              Brands
             </button>
           </div>
           {sheet && <Search value={q} onChange={setQ} placeholder="Search year" />}
           {loadingYears ? (
             <LoaderGrid />
-          ) : sheet ? (
-            <div className="grid grid-cols-3 gap-3">
-              {years.filter((y) => !q || String(y).includes(q)).map((y) => (
-                <button
-                  key={y}
-                  type="button"
-                  onClick={() => pickYear(y)}
-                  className={`flex flex-col items-center rounded-2xl border bg-white px-2 py-3 text-center transition hover:border-[#3083ff] ${
-                    Number(state.year) === Number(y) ? 'border-[#3083ff] bg-[#f4f8ff]' : 'border-slate-200'
-                  }`}
-                >
-                  <Calendar className="h-5 w-5 text-[#3083ff]" strokeWidth={1.75} />
-                  <p className="mt-1.5 text-[14px] font-medium text-slate-800">{y}</p>
-                </button>
-              ))}
+          ) : (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {(sheet ? years.filter((y) => !q || String(y).includes(q)) : years).map((y) => {
+                const on = Number(state.year) === Number(y);
+                return (
+                  <button
+                    key={y}
+                    type="button"
+                    onClick={() => pickYear(y)}
+                    className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center transition ${
+                      on
+                        ? 'border-[#3083ff] bg-[#f4f8ff]'
+                        : dark
+                          ? 'border-slate-800 bg-slate-950/40 hover:border-[#3083ff]'
+                          : 'border-slate-200 bg-white hover:border-[#3083ff]'
+                    }`}
+                  >
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-xl ${on ? 'bg-[#3083ff] text-white' : 'bg-[#eaf2ff] text-[#3083ff]'}`}>
+                      <Calendar className="h-4 w-4" strokeWidth={1.75} />
+                    </span>
+                    <span className={`text-[14px] font-medium ${dark && !on ? 'text-slate-100' : 'text-slate-800'}`}>{y}</span>
+                  </button>
+                );
+              })}
               {!years.length && (
                 <p className="col-span-full text-sm font-medium text-slate-500">No registration years in the catalogue for this brand.</p>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {years.map((y) => (
-                <button
-                  key={y}
-                  type="button"
-                  onClick={() => pickYear(y)}
-                  className={`rounded-xl border px-3 py-3 text-sm font-extrabold ${
-                    Number(state.year) === Number(y)
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : dark
-                        ? 'bg-slate-950/50 border-slate-800 text-slate-200 hover:border-blue-500'
-                        : 'bg-white border-slate-200 text-slate-800 hover:border-[#3083ff]'
-                  }`}
-                >
-                  {y}
-                </button>
-              ))}
-              {!years.length && (
-                <p className="col-span-full text-sm font-medium text-slate-500">
-                  No registration years in the catalogue for this brand.
-                </p>
               )}
             </div>
           )}
@@ -318,56 +303,41 @@ export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 
 
       {phase === 'model' && (
         <>
-          <div className={`flex items-center justify-between ${sheet ? 'hidden' : ''}`}>
-            <h3 className={`font-display font-black ${dark ? 'text-white' : 'text-slate-900'}`}>Select your car model</h3>
-            <button type="button" className="text-xs font-bold text-blue-400" onClick={() => patch({ manualPhase: 'year' })}>
-              ← Year
+          <div className={`flex items-center justify-between gap-3 ${sheet ? 'hidden' : ''}`}>
+            <h3 className={`text-[15px] font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>Select your car model</h3>
+            <button type="button" className="shrink-0 text-[12px] font-medium text-[#1853ff]" onClick={() => patch({ manualPhase: 'year' })}>
+              Year
             </button>
           </div>
           <Search value={q} onChange={setQ} placeholder="Search model" />
           {loadingModels ? (
             <LoaderList />
-          ) : sheet ? (
-            <div className="grid grid-cols-2 gap-2.5">
-              {filteredModels.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => pickModel(name)}
-                  className={`flex items-center gap-2.5 rounded-2xl border bg-white px-3 py-3 text-left transition hover:border-[#3083ff] ${
-                    state.model === name ? 'border-[#3083ff] bg-[#f4f8ff]' : 'border-slate-200'
-                  }`}
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff]">
-                    <Car className="h-4 w-4 text-[#3083ff]" strokeWidth={1.75} />
-                  </span>
-                  <span className="text-[13px] font-medium leading-tight text-slate-800">{name}</span>
-                </button>
-              ))}
+          ) : (
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {filteredModels.map((name) => {
+                const on = state.model === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => pickModel(name)}
+                    className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition hover:border-[#3083ff] ${
+                      on
+                        ? 'border-[#3083ff] bg-[#f4f8ff]'
+                        : dark
+                          ? 'border-slate-800 bg-slate-950/40'
+                          : 'border-slate-200 bg-white'
+                    }`}
+                  >
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${on ? 'bg-[#3083ff] text-white' : 'bg-[#eaf2ff] text-[#3083ff]'}`}>
+                      <Car className="h-4 w-4" strokeWidth={1.75} />
+                    </span>
+                    <span className={`text-[13px] font-medium leading-tight ${dark && !on ? 'text-slate-100' : 'text-slate-800'}`}>{name}</span>
+                  </button>
+                );
+              })}
               {filteredModels.length === 0 && (
                 <p className="col-span-full text-sm font-medium text-slate-500">
-                  No models for {state.brand} in {state.year}. Pick another year.
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className={`rounded-2xl border overflow-hidden max-h-[420px] overflow-y-auto ${dark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-white'}`}>
-              {filteredModels.map((name, i) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => pickModel(name)}
-                  className={`w-full text-left px-4 py-3.5 text-sm font-bold ${
-                    dark ? 'text-slate-200 hover:bg-blue-500/10 hover:text-blue-300' : 'text-slate-800 hover:bg-[#EAF2FF] hover:text-[#1853ff]'
-                  } ${
-                    i ? (dark ? 'border-t border-slate-800' : 'border-t border-slate-100') : ''
-                  } ${state.model === name ? (dark ? 'bg-blue-500/15 text-blue-300' : 'bg-[#EAF2FF] text-[#1853ff]') : ''}`}
-                >
-                  {name}
-                </button>
-              ))}
-              {filteredModels.length === 0 && (
-                <p className="px-4 py-8 text-sm font-medium text-slate-500">
                   No models for {state.brand} in {state.year}. Pick another year.
                 </p>
               )}
@@ -378,10 +348,10 @@ export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 
 
       {phase === 'variant' && (
         <>
-          <div className={`flex items-center justify-between ${sheet ? 'hidden' : ''}`}>
-            <h3 className={`font-display font-black ${dark ? 'text-white' : 'text-slate-900'}`}>Select car variant</h3>
-            <button type="button" className="text-xs font-bold text-blue-400" onClick={() => patch({ manualPhase: 'model' })}>
-              ← Models
+          <div className={`flex items-center justify-between gap-3 ${sheet ? 'hidden' : ''}`}>
+            <h3 className={`text-[15px] font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>Select car variant</h3>
+            <button type="button" className="shrink-0 text-[12px] font-medium text-[#1853ff]" onClick={() => patch({ manualPhase: 'model' })}>
+              Models
             </button>
           </div>
           {loadingMeta ? (
@@ -393,82 +363,46 @@ export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 
                   <button
                     type="button"
                     onClick={() => patch({ fuel: '' })}
-                    className={`rounded-full border px-4 py-2 text-xs font-extrabold ${
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium ${
                       !state.fuel
-                        ? 'bg-blue-600 text-white border-blue-500'
+                        ? 'border-[#3083ff] bg-[#3083ff] text-white'
                         : dark
-                          ? 'bg-slate-950/50 border-slate-800 text-slate-300'
-                          : 'bg-white border-slate-200 text-slate-700'
+                          ? 'border-slate-800 bg-slate-950/50 text-slate-300'
+                          : 'border-slate-200 bg-white text-slate-700'
                     }`}
                   >
-                    All
+                    <Fuel className="h-3.5 w-3.5" /> All fuels
                   </button>
                   {fuelTypes.map((f) => (
                     <button
                       key={f}
                       type="button"
                       onClick={() => patch({ fuel: f })}
-                      className={`rounded-full border px-4 py-2 text-xs font-extrabold ${
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium ${
                         state.fuel === f
-                          ? 'bg-blue-600 text-white border-blue-500'
+                          ? 'border-[#3083ff] bg-[#3083ff] text-white'
                           : dark
-                            ? 'bg-slate-950/50 border-slate-800 text-slate-300'
-                            : 'bg-white border-slate-200 text-slate-700'
+                            ? 'border-slate-800 bg-slate-950/50 text-slate-300'
+                            : 'border-slate-200 bg-white text-slate-700'
                       }`}
                     >
-                      {f}
+                      <Fuel className="h-3.5 w-3.5" /> {f}
                     </button>
                   ))}
                 </div>
               )}
               <Search value={variantSearch} onChange={setVariantSearch} placeholder="Search variant" />
-              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+              <p className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
+                <Car className="h-3.5 w-3.5 text-[#3083ff]" />
                 {state.fuel ? `${state.fuel} variants` : 'All variants'}
               </p>
               {loadingVariants ? (
                 <LoaderList />
-              ) : sheet ? (
-                <div className="grid grid-cols-2 gap-2.5">
+              ) : (
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   {variants.map((v) => {
                     const label = v.variant || v.name;
                     const selected = variantMatches(v, state.variant, state.transmission);
-                    return (
-                      <button
-                        key={v._id || `${label}-${v.fuelType}-${v.transmission}`}
-                        type="button"
-                        onClick={() => {
-                          patch({
-                            variant: label,
-                            fuel: v.fuelType || state.fuel,
-                            transmission: v.transmission || state.transmission,
-                            bodyType: v.bodyType || state.bodyType,
-                          });
-                          onReady?.();
-                        }}
-                        className={`flex items-center gap-2.5 rounded-2xl border bg-white px-3 py-3 text-left transition hover:border-[#3083ff] ${
-                          selected ? 'border-[#3083ff] bg-[#f4f8ff]' : 'border-slate-200'
-                        }`}
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff]">
-                          <Car className="h-4 w-4 text-[#3083ff]" strokeWidth={1.75} />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-[13px] font-medium leading-tight text-slate-800">{label}</span>
-                          {v.fuelType ? <span className="mt-0.5 block text-[11px] font-normal text-slate-500">{v.fuelType}</span> : null}
-                        </span>
-                      </button>
-                    );
-                  })}
-                  {!variants.length && (
-                    <p className="col-span-full text-sm font-medium text-slate-500">
-                      No listed trims for this year. Continue if you are not sure of the variant.
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className={`rounded-2xl border overflow-hidden ${dark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-white'}`}>
-                  {variants.map((v, i) => {
-                    const label = v.variant || v.name;
                     const auto = isAutomatic(v.transmission);
                     return (
                       <button
@@ -483,45 +417,48 @@ export default function BrandModelGrid({ state, patch, onReady, onClose, tone = 
                           });
                           onReady?.();
                         }}
-                        className={`w-full text-left px-4 py-3.5 text-sm font-bold ${
-                          dark ? 'hover:bg-blue-500/10' : 'hover:bg-[#EAF2FF]'
-                        } ${
-                          i ? (dark ? 'border-t border-slate-800' : 'border-t border-slate-100') : ''
-                        } ${
-                          variantMatches(v, state.variant, state.transmission)
-                            ? dark ? 'bg-blue-500/15 text-blue-300' : 'bg-[#EAF2FF] text-[#1853ff]'
-                            : dark ? 'text-slate-200' : 'text-slate-800'
+                        className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition hover:border-[#3083ff] ${
+                          selected
+                            ? 'border-[#3083ff] bg-[#f4f8ff]'
+                            : dark
+                              ? 'border-slate-800 bg-slate-950/40'
+                              : 'border-slate-200 bg-white'
                         }`}
                       >
-                        <span className="inline-flex flex-wrap items-center gap-2">
-                          {label}
-                          {auto && (
-                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                              Automatic
-                            </span>
-                          )}
+                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-[#3083ff] text-white' : 'bg-[#eaf2ff] text-[#3083ff]'}`}>
+                          <Car className="h-4 w-4" strokeWidth={1.75} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className={`block text-[13px] font-medium leading-tight ${dark && !selected ? 'text-slate-100' : 'text-slate-800'}`}>{label}</span>
+                          <span className="mt-0.5 block text-[11px] font-normal text-slate-500">
+                            {[v.fuelType, auto ? 'Automatic' : v.transmission].filter(Boolean).join(' · ')}
+                          </span>
                         </span>
                       </button>
                     );
                   })}
                   {!variants.length && (
-                    <p className="px-4 py-8 text-sm font-medium text-slate-500">
+                    <p className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[13px] font-normal text-slate-500">
                       No listed trims for this year. Continue if you are not sure of the variant.
                     </p>
                   )}
                 </div>
               )}
-              <button
-                type="button"
-                onClick={() => onReady?.()}
-                disabled={!state.year || !state.model}
-                className={`w-full rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-3.5 text-xs font-black uppercase tracking-wider ${sheet ? 'hidden' : ''}`}
-              >
-                Continue
-              </button>
-              <button type="button" onClick={() => onReady?.()} className={`w-full text-xs font-bold text-blue-400 py-2 ${sheet ? 'hidden' : ''}`}>
-                {state.variant ? 'Keep this variant and continue' : 'I don’t know my variant'}
-              </button>
+              {!hideActions && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onReady?.()}
+                    disabled={!state.year || !state.model}
+                    className={`w-full rounded-xl bg-[#3083ff] py-3 text-[13px] font-medium text-white disabled:opacity-50 ${sheet ? 'hidden' : ''}`}
+                  >
+                    Continue
+                  </button>
+                  <button type="button" onClick={() => onReady?.()} className={`w-full py-1 text-[12px] font-medium text-[#1853ff] ${sheet ? 'hidden' : ''}`}>
+                    {state.variant ? 'Keep this variant and continue' : 'I don’t know my variant'}
+                  </button>
+                </>
+              )}
             </>
           )}
         </>
@@ -577,13 +514,14 @@ function Search({ value, onChange, placeholder }) {
   );
 }
 
-function Chip({ children, onClick }) {
+function Chip({ children, onClick, icon: Icon }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-extrabold text-slate-700 dark:text-slate-200"
+      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
     >
+      {Icon ? <Icon className="h-3.5 w-3.5 shrink-0 text-[#3083ff]" /> : null}
       {children}
     </button>
   );

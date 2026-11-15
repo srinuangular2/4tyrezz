@@ -82,6 +82,7 @@ export default function CarDetails() {
   const [driveMode, setDriveMode] = useState('dealer');
   const [emiModalTab, setEmiModalTab] = useState('breakup');
   const [tab, setTab] = useState('overview');
+  const [section, setSection] = useState('cd-overview');
   const [sent, setSent] = useState(false);
   const touchStartX = useRef(null);
 
@@ -430,8 +431,47 @@ export default function CarDetails() {
   const thingsToCheck = (insights.thingsToCheck || []).filter(Boolean);
   const highlightFeatures = (car.features || []).slice(0, 8);
 
+  const jumpSection = (id, nextTab) => {
+    setSection(id);
+    if (nextTab) setTab(nextTab);
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, nextTab ? 30 : 0);
+  };
+
   return (
-    <div className="bg-slate-50 lg:bg-cream min-h-screen overflow-x-clip w-full pb-[calc(4.5rem+4.75rem+env(safe-area-inset-bottom))] lg:pb-16">
+    <div className="bg-slate-50 lg:bg-cream min-h-screen overflow-x-clip w-full pt-[104px] pb-[calc(4.5rem+4.75rem+env(safe-area-inset-bottom))] lg:pt-0 lg:pb-16">
+      <div className="fixed inset-x-0 top-0 z-40 border-b border-slate-200 bg-white lg:hidden">
+        <div className="flex h-14 items-center gap-2 px-3">
+          <Link to="/cars" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-800" aria-label="Back to buy cars">
+            <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-semibold text-slate-900">{car.year} {car.brand?.name} {car.model?.name}</p>
+            <p className="text-[12px] font-medium text-slate-500">{formatPrice(car.price)}</p>
+          </div>
+          <button type="button" onClick={handleShare} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700" aria-label="Share">
+            <Share2 className="h-4 w-4" strokeWidth={2.2} />
+          </button>
+        </div>
+        <div className="flex gap-4 overflow-x-auto px-4">
+          {[
+            ['cd-overview', 'Overview'],
+            ['cd-condition', 'Condition'],
+            ['cd-features', 'Features', 'features'],
+            ['cd-finance', 'Finance'],
+          ].map(([id, label, nextTab]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => jumpSection(id, nextTab)}
+              className={`shrink-0 border-b-2 py-2.5 text-[13px] font-semibold ${section === id ? 'border-[#3083ff] text-[#1853ff]' : 'border-transparent text-slate-500'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="w-full overflow-x-clip lg:container-px lg:py-6 lg:max-w-7xl lg:mx-auto">
         {/* Breadcrumb — desktop only */}
         <nav className="hidden lg:flex text-sm text-slate2 mb-5 flex-wrap items-center gap-1 px-0">
@@ -466,7 +506,7 @@ export default function CarDetails() {
               >
                 <Link
                   to="/cars"
-                  className="absolute top-2.5 left-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow"
+                  className="absolute top-2.5 left-2.5 z-10 hidden h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow lg:flex"
                   aria-label="Back to buy cars"
                 >
                   <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
@@ -529,10 +569,13 @@ export default function CarDetails() {
                       <button
                         type="button"
                         onClick={handleCart}
-                        className="w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center"
+                        className="relative w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center"
                         aria-label="Add to cart"
                       >
                         <ShoppingCart className={`w-3.5 h-3.5 ${inCart ? 'text-[#3083ff]' : 'text-slate-500'}`} />
+                        {user?.role === 'customer' && readCart().length > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#3083ff] px-1 text-[9px] font-bold leading-none text-white">{readCart().length}</span>
+                        )}
                       </button>
                     </div>
                     {car.videoUrl && (
@@ -622,7 +665,7 @@ export default function CarDetails() {
             )}
 
             {/* Mobile: key info block (CarDekho-style — important data on top) */}
-            <div className="lg:hidden bg-white border-b border-slate-100 w-full max-w-full overflow-hidden">
+            <div id="cd-overview" className="scroll-mt-28 lg:hidden bg-white border-b border-slate-100 w-full max-w-full overflow-hidden">
               <div className="px-4 pt-3.5 pb-3">
                 {priceVerdict?.label && (
                   <span className={`inline-flex max-w-full truncate text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase mb-2 ${PRICE_BADGE[priceVerdict.tone] || PRICE_BADGE.fair}`}>
@@ -760,7 +803,7 @@ export default function CarDetails() {
             </section>
 
             {/* Quick insights */}
-            <section className="order-6 grid lg:grid-cols-2 gap-3 lg:gap-4">
+            <section id="cd-condition" className="order-6 scroll-mt-28 grid lg:grid-cols-2 gap-3 lg:gap-4">
               <div className="bg-white rounded-2xl border border-slate-100 lg:border-slate-200 p-4 lg:p-5 shadow-sm lg:shadow-soft">
                 <h3 className="text-[12px] lg:text-sm font-black lg:font-bold text-ink uppercase tracking-wide mb-2.5 lg:mb-3">Fit for you</h3>
                 {insights.fitForYou ? (
@@ -933,7 +976,7 @@ export default function CarDetails() {
             </section>
 
             {/* Tabs */}
-            <div className={`order-8 ${glassCard} rounded-2xl overflow-hidden w-full max-w-full`}>
+            <div id="cd-features" className={`order-8 scroll-mt-28 ${glassCard} rounded-2xl overflow-hidden w-full max-w-full`}>
               <div className="flex border-b border-slate-100 px-1 lg:px-2 overflow-x-auto no-scrollbar max-w-full">
                 {[
                   ['overview', 'Overview'],
@@ -1012,7 +1055,7 @@ export default function CarDetails() {
             </section>
 
             {/* Finance */}
-            <div className="order-11">
+            <div id="cd-finance" className="order-11 scroll-mt-28">
             <FinanceSection
               carPrice={carPrice}
               currentLoan={currentLoan}
@@ -1445,13 +1488,49 @@ function FinanceSection({
   carPrice, currentLoan, downPayment, calculatedEmi, tenureYears, interestRate,
   setLoanAmount, setTenureYears, setInterestRate, onViewBreakup, onApply,
 }) {
+  const setDownPayment = (amount) => setLoanAmount(Math.max(0, carPrice - amount));
+  const money = (value) => `₹${Math.round(value || 0).toLocaleString('en-IN')}`;
+
   return (
-    <section className="bg-white lg:bg-white/70 backdrop-blur-md border border-slate-100 lg:border-white/20 shadow-sm lg:shadow-[0_8px_24px_rgba(15,23,42,0.08)] rounded-2xl p-4 lg:p-6">
-      <div className="flex items-center justify-between mb-4 lg:mb-5 gap-2">
-        <h3 className="text-[15px] lg:font-display lg:text-lg font-black lg:font-bold text-ink">Finance this car</h3>
-        <span className="text-[10px] lg:text-xs font-bold bg-sky-50 text-sky-700 px-2.5 lg:px-3 py-1 rounded-full shrink-0">Up to 90% funded</span>
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm lg:border-white/20 lg:bg-white/70 lg:p-6 lg:shadow-[0_8px_24px_rgba(15,23,42,0.08)] lg:backdrop-blur-md">
+      <div className="lg:hidden">
+        <h3 className="text-[16px] font-semibold text-slate-900">EMI calculator</h3>
+        <p className="mt-3 text-[13px] text-slate-500">Car Price {formatPrice(carPrice)}</p>
+        <p className="mt-1 text-[32px] font-semibold leading-none tracking-tight text-slate-900">
+          {money(calculatedEmi)}<span className="text-[16px] font-medium text-slate-500">/month*</span>
+        </p>
+        <p className="mt-1 text-[12px] text-slate-500">@{interestRate}% rate of interest</p>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-2xl border border-slate-200 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[13px] font-semibold text-slate-800">Rate of interest {interestRate}% p.a.</p>
+            </div>
+            <input type="range" min="8" max="18" step="0.5" value={Math.min(18, Math.max(8, interestRate))} onChange={(e) => setInterestRate(Number(e.target.value))} className="mt-3 w-full accent-[#3083ff]" />
+          </div>
+          <div className="rounded-2xl border border-slate-200 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[13px] font-semibold text-slate-800">Down Payment</p>
+              <span className="rounded-xl border border-slate-200 px-3 py-1.5 text-[13px] font-semibold text-slate-800">{money(downPayment)}</span>
+            </div>
+            <input type="range" min="0" max={Math.max(carPrice, 1)} step="10000" value={Math.min(downPayment, carPrice)} onChange={(e) => setDownPayment(Number(e.target.value))} className="mt-3 w-full accent-[#3083ff]" />
+            <div className="mt-1 flex justify-between text-[11px] text-slate-400"><span>0</span><span>{money(carPrice)}</span></div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[13px] font-semibold text-slate-800">Duration of loan</p>
+              <span className="rounded-xl border border-slate-200 px-3 py-1.5 text-[13px] font-semibold text-slate-800">{tenureYears} years</span>
+            </div>
+            <input type="range" min="1" max="7" step="1" value={tenureYears} onChange={(e) => setTenureYears(Number(e.target.value))} className="mt-3 w-full accent-[#3083ff]" />
+            <div className="mt-1 flex justify-between text-[11px] text-slate-400"><span>1</span><span>7</span></div>
+          </div>
+        </div>
+        <button type="button" onClick={onApply} className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white">Check loan eligibility</button>
       </div>
-      <div className="grid md:grid-cols-2 gap-5">
+      <div className="mb-4 hidden items-center justify-between gap-2 lg:mb-5 lg:flex">
+        <h3 className="font-display text-lg font-bold text-ink">Finance this car</h3>
+        <span className="shrink-0 rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">Up to 90% funded</span>
+      </div>
+      <div className="hidden gap-5 lg:grid lg:grid-cols-2">
         <div className="bg-ink text-white rounded-2xl p-5 space-y-4">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-300">Monthly EMI</p>
