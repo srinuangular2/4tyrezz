@@ -16,8 +16,10 @@ export default function LeadHero({
   accent,
   points = [],
   badge,
+  subtitle,
   image,
   imageAlt = '',
+  imageClass = 'h-[104px] w-[42%] object-contain object-center',
 }) {
   const navigate = useNavigate();
   const user = useSelector((s) => s.auth.user);
@@ -85,9 +87,10 @@ export default function LeadHero({
           </Link>
         </div>
       </div>
-      <h1 className="relative z-10 mt-2.5 whitespace-nowrap text-[15px] font-semibold leading-none">
-        {title} {accent}
+      <h1 className={`relative z-10 mt-2.5 text-[15px] font-semibold ${subtitle ? 'leading-snug' : 'whitespace-nowrap leading-none'}`}>
+        {title}{accent ? ` ${accent}` : ''}
       </h1>
+      {subtitle ? <p className="relative z-10 mt-1.5 line-clamp-1 text-[12px] font-normal leading-snug text-white/90">{subtitle}</p> : null}
       <div className="relative mt-2 flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <ul className="space-y-1">
@@ -107,7 +110,7 @@ export default function LeadHero({
         <img
           src={image}
           alt={imageAlt}
-          className="pointer-events-none h-[104px] w-[42%] shrink-0 object-contain object-center"
+          className={`pointer-events-none shrink-0 ${imageClass}`}
         />
       </div>
     </section>

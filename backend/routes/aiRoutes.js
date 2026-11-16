@@ -16,7 +16,7 @@ const aiLimiter = rateLimit({
 router.post(
   '/generate-description',
   protect,
-  authorize('dealer', 'admin', 'field_agent', 'executive_agent'),
+  authorize('customer', 'dealer', 'admin', 'field_agent', 'executive_agent'),
   aiLimiter,
   ctrl.generateDescription
 );

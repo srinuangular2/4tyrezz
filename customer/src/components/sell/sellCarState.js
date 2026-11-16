@@ -27,6 +27,39 @@ export const HUBS = [
   { id: 'del-saket', city: 'Delhi', name: 'Saket Hub' },
 ];
 
+export const FUEL_OPTIONS = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
+export const TRANSMISSION_OPTIONS = ['Manual', 'Automatic'];
+export const BODY_OPTIONS = ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Luxury', 'Convertible'];
+export const HEALTH_OPTIONS = [
+  { label: 'Showroom Condition', score: 10 },
+  { label: 'Excellent', score: 9 },
+  { label: 'Good', score: 7 },
+  { label: 'Needs Minor Work', score: 5 },
+];
+export const FEATURE_OPTIONS = [
+  'Leather Seats',
+  'Sunroof',
+  'Apple CarPlay',
+  '6 Airbags',
+  '360 Camera',
+  'Alloy Wheels',
+  'ABS',
+  'Touchscreen',
+  'Power Windows',
+  'Dual Airbags',
+];
+export const ACCIDENT_TYPES = [
+  'Cosmetic scratch or dent',
+  'Bumper or panel repaired',
+  'One panel replaced',
+  'Multiple panels repaired',
+  'Structural / chassis repair',
+  'Insurance claim (minor)',
+  'Insurance claim (major)',
+];
+export const SERVICE_HISTORY_OPTIONS = ['Full dealer', 'Partial', 'No history'];
+export const INSURANCE_TYPES = ['Comprehensive', 'Third Party'];
+
 export function initialSellCarState() {
   return {
     step: 1,
@@ -52,7 +85,29 @@ export function initialSellCarState() {
     state: '',
     rto: '',
     color: '',
+    interiorColor: '',
     insuranceUpto: '',
+    insuranceType: 'Comprehensive',
+    insuranceExpiry: '',
+    pucExpiry: '',
+    engineState: 'Good',
+    serviceHistory: 'Full dealer',
+    serviceHistoryLog: '',
+    tyreCondition: 70,
+    keyCount: 2,
+    accidental: 'No',
+    accidentDetails: '',
+    floodDamage: 'No',
+    loanOnCar: 'No',
+    features: [],
+    videoUrl: '',
+    description: '',
+    parkedAddress: '',
+    locationArea: '',
+    pincode: '',
+    docFiles: {},
+    photoSlots: {},
+    slotFiles: {},
     kmDriven: 35000,
     ownership: 1,
     conditions: ['accident-free'],
@@ -97,6 +152,8 @@ export function applyLookup(state, details) {
     rto: details.rto || '',
     color: details.color || '',
     insuranceUpto: details.insuranceUpto || '',
+    insuranceExpiry: dateInputValue(details.insuranceUpto) || state.insuranceExpiry,
+    pucExpiry: dateInputValue(details.puccValidUpto) || state.pucExpiry,
     ownership: details.ownership || state.ownership,
   };
 }
@@ -193,6 +250,19 @@ export function conditionMessage(state) {
   return '';
 }
 
+export function dateInputValue(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toISOString().slice(0, 10);
+}
+
+export function healthScore(engineState) {
+  return HEALTH_OPTIONS.find((item) => item.label === engineState)?.score || 0;
+}
+
 export function compactReg(value = '') {
   return String(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
@@ -223,7 +293,8 @@ export function variantError(value = '') {
 }
 
 export function hasPhotos(state) {
-  return (state.photoFiles || []).length >= 1 || (state.photoPreviews || []).length >= 1;
+  const slotted = Object.values(state.photoSlots || {}).some((item) => item?.dataUrl);
+  return slotted || (state.photoFiles || []).length >= 1 || (state.photoPreviews || []).length >= 1;
 }
 
 export function conditionReady(state) {
@@ -259,7 +330,7 @@ export function sellStateFromValuation(form = {}, result = {}) {
     expectedPrice: fair || '',
     inspectionDate: new Date().toISOString().slice(0, 10),
     inspectionSlot: '9:00 AM – 11:00 AM',
-    step: 4,
+    step: 5,
     fromValuation: true,
     valuation: fair
       ? {
@@ -275,11 +346,15 @@ export function sellStateFromValuation(form = {}, result = {}) {
 
 export function sellStateFromRequest(row = {}, { photoOnly = false } = {}) {
   const missingCore = !row.variant || !row.plate || !row.city || !row.kmDriven;
-  const missingPrice = !(Number(row.expectedPrice) > 0) || !row.inspectionDate || !row.inspectionSlot;
-  let step = 4;
-  if (photoOnly) step = 4;
+  const missingPrice = !(Number(row.expectedPrice) > 0);
+  const photosReady = Boolean(row.hasPhotos);
+  let step = 6;
+  if (photoOnly) step = 5;
   else if (missingCore) step = 2;
-  else if (missingPrice) step = 3;
+  else if (missingPrice) step = 4;
+  else if (!photosReady) step = 5;
+  else if (!row.inspectionDate || !row.inspectionSlot) step = 6;
+  else step = 7;
   return {
     ...initialSellCarState(),
     enquiryId: row.id,
@@ -294,6 +369,31 @@ export function sellStateFromRequest(row = {}, { photoOnly = false } = {}) {
     year: row.year || '',
     fuel: row.fuel || '',
     transmission: row.transmission || '',
+    bodyType: row.bodyType || '',
+    color: row.color || '',
+    interiorColor: row.interiorColor || '',
+    rto: row.rto || '',
+    state: row.state || '',
+    month: row.month || 1,
+    insuranceType: row.insuranceType || 'Comprehensive',
+    insuranceExpiry: row.insuranceExpiry || '',
+    insuranceUpto: row.insuranceUpto || row.insuranceExpiry || '',
+    pucExpiry: row.pucExpiry || '',
+    engineState: row.engineState || 'Good',
+    serviceHistory: row.serviceHistory || 'Full dealer',
+    serviceHistoryLog: row.serviceHistoryLog || '',
+    tyreCondition: Number(row.tyreCondition) || 70,
+    keyCount: Number(row.keyCount) || 2,
+    accidental: row.accidental || 'No',
+    accidentDetails: row.accidentDetails || '',
+    floodDamage: row.floodDamage || 'No',
+    loanOnCar: row.loanOnCar || 'No',
+    features: Array.isArray(row.features) ? row.features : [],
+    videoUrl: row.videoUrl || '',
+    description: row.description || '',
+    parkedAddress: row.parkedAddress || '',
+    locationArea: row.locationArea || '',
+    pincode: row.pincode || '',
     city: row.city || '',
     kmDriven: Number(row.kmDriven) || 35000,
     ownership: Number(row.ownership) || 1,
@@ -307,9 +407,17 @@ export function sellStateFromRequest(row = {}, { photoOnly = false } = {}) {
   };
 }
 
+export const PHOTO_SLOTS = [
+  { key: 'front', label: 'Front Exterior' },
+  { key: 'rear', label: 'Rear Exterior' },
+  { key: 'dashboard', label: 'Dashboard / Console' },
+  { key: 'odometer', label: 'Odometer Reading' },
+  { key: 'tyres', label: 'Tyres / Wheels' },
+];
+
 export function resumeSellStep(saved) {
   const step = Number(saved?.step);
-  if (step >= 1 && step <= 5) return step;
+  if (step >= 1 && step <= 7) return step;
   return vehicleReady(saved) ? 2 : 1;
 }
 

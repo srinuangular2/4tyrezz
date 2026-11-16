@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -37,6 +37,7 @@ import Offers from './pages/Offers';
 import Valuation from './pages/Valuation';
 import Inspection from './pages/Inspection';
 import InspectionBook from './pages/InspectionBook';
+import { INSPECTION_URLS } from './lib/pdiPricing';
 import { About, Contact, FAQs, Blog, Careers, Terms, Privacy, CorporatePolicies } from './pages/Static';
 
 import DashboardLayout from './pages/dashboard/DashboardLayout';
@@ -122,6 +123,18 @@ function KickDealerFromMarketplace() {
   return null;
 }
 
+function InspectionBookRedirect() {
+  const [params] = useSearchParams();
+  const next = new URLSearchParams();
+  ['brand', 'model', 'plate'].forEach((key) => {
+    const value = params.get(key);
+    if (value) next.set(key, value);
+  });
+  const path = params.get('type') === 'used' ? INSPECTION_URLS.usedCar : INSPECTION_URLS.newCar;
+  const query = next.toString();
+  return <Navigate to={query ? `${path}?${query}` : path} replace />;
+}
+
 export default function App() {
   const dispatch = useDispatch();
   const { user } = useSelector((s) => s.auth);
@@ -129,7 +142,7 @@ export default function App() {
   const dealerWindow = location.pathname.startsWith('/dealer');
   const accountPage = /^\/profile\/.+/.test(location.pathname);
   const authPage = ['/login', '/customer/login', '/customer/register', '/customer/forgot-password', '/customer/reset-password', '/customer/verify-email'].includes(location.pathname);
-  const immersiveMobile = location.pathname === '/sell' || location.pathname === '/valuation' || location.pathname === '/inspection' || location.pathname === '/pdi' || location.pathname === '/cars' || location.pathname === '/buy-cars' || /^\/cars\/[^/]+$/.test(location.pathname);
+  const immersiveMobile = location.pathname === '/sell' || location.pathname === '/valuation' || location.pathname === '/inspection' || location.pathname === '/inspection/book' || location.pathname === '/pdi' || location.pathname === INSPECTION_URLS.hub || location.pathname === INSPECTION_URLS.newCar || location.pathname === INSPECTION_URLS.usedCar || location.pathname === '/finance' || location.pathname === '/insurance' || location.pathname === '/cars' || location.pathname === '/buy-cars' || /^\/cars\/[^/]+$/.test(location.pathname);
 
   useEffect(() => {
     const previous = window.history.scrollRestoration;
@@ -184,9 +197,12 @@ export default function App() {
               <Route path="/insurance" element={<Insurance />} />
               <Route path="/offers" element={<Offers />} />
               <Route path="/valuation" element={<Valuation />} />
-              <Route path="/inspection" element={<Inspection />} />
-              <Route path="/pdi" element={<Inspection />} />
-              <Route path="/inspection/book" element={<InspectionBook />} />
+              <Route path="/inspection" element={<Navigate to={INSPECTION_URLS.hub} replace />} />
+              <Route path="/pdi" element={<Navigate to={INSPECTION_URLS.hub} replace />} />
+              <Route path={INSPECTION_URLS.hub} element={<Inspection />} />
+              <Route path={INSPECTION_URLS.newCar} element={<InspectionBook />} />
+              <Route path={INSPECTION_URLS.usedCar} element={<InspectionBook />} />
+              <Route path="/inspection/book" element={<InspectionBookRedirect />} />
               <Route path="/dealers" element={<Navigate to="/cars" replace />} />
               <Route path="/dealers/:id" element={<Navigate to="/cars" replace />} />
               <Route path="/login" element={<Login />} />

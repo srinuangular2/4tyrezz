@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { Check, FileText, Gauge, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import api from '../../api/axios';
 import { useVehicleBrands } from '../../hooks/useVehicleCatalog';
-import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../../lib/fetchVehicleDetailsByReg';
+import { fetchVehicleDetailsByReg, commitPlateInput, normalizeReg } from '../../lib/fetchVehicleDetailsByReg';
 import LocationAddressInput from './LocationAddressInput';
 import AiDescriptionField from './AiDescriptionField';
 import BrandModelGrid from './BrandModelGrid';
@@ -576,10 +576,10 @@ export default function AddCarWizard({
               <h2 className="font-display font-black text-xl mt-1">Enter vehicle registration number</h2>
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
                 <input
-                  className="flex-1 bg-white text-slate-900 font-black tracking-[0.18em] text-center sm:text-left uppercase rounded-xl px-4 py-3.5 outline-none focus:ring-4 focus:ring-blue-400/40"
+                  className="flex-1 bg-white text-slate-900 font-semibold tracking-normal text-center sm:text-left uppercase rounded-xl px-4 py-3.5 outline-none focus:ring-4 focus:ring-blue-400/40"
                   value={form.plate}
                   placeholder="e.g. TS 09 AB 1234"
-                  onChange={(e) => set('plate', formatPlateInput(e.target.value))}
+                  onChange={(e) => commitPlateInput(e, form.plate, (plate) => set('plate', plate))}
                 />
                 <button type="button" disabled={lookingUp} onClick={lookup} className={primaryBtn}>
                   {lookingUp ? 'Fetching…' : '⚡ Fetch Car Details'}

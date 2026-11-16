@@ -32,13 +32,13 @@ const PROMO_BANNERS = [
   { id: 'offers', image: '/offers.png', title: 'Offers on cars you can trust', subtitle: 'Deals on live, inspected stock', href: '/offers', cta: 'View offers' },
   { id: 'sell', image: '/sell-my-car.png', title: 'Sell from your doorstep', subtitle: 'Free estimate, then a real offer', href: '/sell', cta: 'Get a price' },
   { id: 'finance', image: '/car-finance.png', title: 'EMI that matches the car', subtitle: 'Finance on inspected used cars', href: '/finance', cta: 'Check finance' },
-  { id: 'inspect', image: '/car-pdi.png', title: 'Inspect before you buy', subtitle: 'Certified report in 60 minutes', href: '/inspection', cta: 'Book inspection' },
+  { id: 'inspect', image: '/car-pdi.png', title: 'Inspect before you buy', subtitle: 'Certified report in 60 minutes', href: '/pre-delivery-inspection', cta: 'Book inspection' },
 ];
 
 const SERVICES = [
   { title: 'Buy Certified Cars', hint: 'Best pre-owned cars', to: '/cars', tone: 'from-[#f6c9a4] to-[#ffe4cf]', art: 'buy' },
+  { title: 'Car Inspection', hint: '60 min report', to: '/pre-delivery-inspection', tone: 'from-[#b4e8d0] to-[#d8f5e8]', art: 'inspect' },
   { title: 'Sell your car', hint: 'From your home', to: '/sell', tone: 'from-[#b7d9f8] to-[#dceefc]', art: 'sell' },
-  { title: 'Car Inspection', hint: '60 min report', to: '/inspection', tone: 'from-[#b4e8d0] to-[#d8f5e8]', art: 'inspect' },
   { title: 'Car Valuation', hint: 'Free price estimate', to: '/valuation', tone: 'from-[#d9c6f6] to-[#eee4fc]', art: 'value' },
   { title: 'Finance & EMI', hint: 'Plans from 8.5%', to: '/finance', tone: 'from-[#ffe09a] to-[#fff0c8]', art: 'finance' },
   { title: 'Insurance', hint: 'Renew your cover', to: '/insurance', tone: 'from-[#f7c2d2] to-[#ffdfe8]', art: 'insurance' },

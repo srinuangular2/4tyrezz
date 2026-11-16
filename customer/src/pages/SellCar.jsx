@@ -45,7 +45,7 @@ export default function SellCar() {
     <div className="bg-slate-50 pb-24 lg:pb-0">
       <SellBanner />
 
-      <Section eyebrow="Assured selling" title="Start with your registration number" className="!py-0 lg:!py-12" headerClassName="hidden lg:flex">
+      <Section eyebrow="Assured selling" title="Start with your registration number" className="relative z-10 -mt-7 rounded-t-[28px] bg-white !pb-2 !pt-5 lg:z-auto lg:mt-0 lg:rounded-none lg:bg-transparent lg:!py-12" headerClassName="hidden lg:flex">
         <SellCarFlow />
       </Section>
 

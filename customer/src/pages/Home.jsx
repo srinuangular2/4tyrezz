@@ -155,12 +155,12 @@ export default function Home() {
 
   const menuCards = [
     { label: 'Buy Used Cars', hint: 'Inspected cars near you', path: '/cars', icon: Car },
+    { label: 'Car Inspection', hint: '300+ point check', path: '/pre-delivery-inspection', icon: ClipboardCheck },
     { label: 'Sell My Car', hint: 'Doorstep evaluation', path: '/sell', icon: BadgeCheck },
     { label: 'Car Valuation', hint: 'Know a fair price', path: '/valuation', icon: Scale },
     { label: 'Compare', hint: 'See cars side by side', path: '/compare', icon: GitCompare },
     { label: 'Finance', hint: 'EMI on used cars', path: '/finance', icon: Banknote },
     { label: 'Insurance', hint: 'Paperless cover', path: '/insurance', icon: Shield },
-    { label: 'Car Inspection', hint: '300+ point check', path: '/inspection', icon: ClipboardCheck },
     { label: 'Offers', hint: 'Deals on live stock', path: '/offers', icon: Tag, badge: 'HOT' },
     { label: 'Contact', hint: 'Talk to 4tyrezz', path: '/contact', icon: Phone },
   ];

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../../lib/fetchVehicleDetailsByReg';
+import { fetchVehicleDetailsByReg, commitPlateInput, normalizeReg, rcFormatError } from '../../lib/fetchVehicleDetailsByReg';
 import { applyLookup } from './sellCarState';
 import BrandModelGrid from './BrandModelGrid';
 import BrandChipRow from '../mobile/BrandChipRow';
@@ -22,8 +22,9 @@ export default function StepIdentify({ state, setState, patch, onNext, onGuide, 
 
   const lookup = async () => {
     const reg = normalizeReg(state.plate);
-    if (reg.length < 8) {
-      setError('Enter a full registration number, e.g. TS 09 AB 1234');
+    const formatMsg = rcFormatError(reg);
+    if (formatMsg) {
+      setError(formatMsg);
       return;
     }
     if (cooldown > 0) {
@@ -70,7 +71,7 @@ export default function StepIdentify({ state, setState, patch, onNext, onGuide, 
   return (
     <div className="space-y-5 lg:space-y-6">
       {landing && (
-        <div id="sell-start" className="relative z-10 -mt-7 rounded-t-[28px] bg-white px-4 pb-3 pt-5">
+        <div id="sell-start" className="pb-3">
           <h2 className="text-[16px] font-semibold text-slate-900">Unlock your car’s best price</h2>
           <label htmlFor="sell-plate" className="mt-3 block text-[13px] font-medium text-slate-800">Enter your car plate number</label>
           <div className="mt-2 flex overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -78,11 +79,11 @@ export default function StepIdentify({ state, setState, patch, onNext, onGuide, 
             <input
               id="sell-plate"
               value={state.plate}
-              onChange={(e) => patch({ plate: formatPlateInput(e.target.value), verified: false })}
+              onChange={(e) => commitPlateInput(e, state.plate, (plate) => patch({ plate, verified: false }))}
               onKeyDown={(e) => e.key === 'Enter' && lookup()}
               placeholder="e.g. AB 12 CD 1275"
               autoCapitalize="characters"
-              className="h-11 min-w-0 flex-1 px-3 text-[13px] font-semibold uppercase tracking-wide text-slate-900 outline-none placeholder:font-medium placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400"
+              className="h-11 min-w-0 flex-1 px-3 text-[13px] font-semibold uppercase tracking-normal text-slate-900 outline-none placeholder:font-medium placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400"
             />
           </div>
           <p className="mt-2 text-[12px] font-normal text-slate-500">This is the same as your registration number</p>
@@ -137,11 +138,11 @@ export default function StepIdentify({ state, setState, patch, onNext, onGuide, 
         <div className="mt-2 flex flex-col sm:flex-row gap-2">
           <input
             value={state.plate}
-            onChange={(e) => patch({ plate: formatPlateInput(e.target.value), verified: false })}
+            onChange={(e) => commitPlateInput(e, state.plate, (plate) => patch({ plate, verified: false }))}
             onKeyDown={(e) => e.key === 'Enter' && lookup()}
             placeholder="TS 09 AB 1234"
             autoCapitalize="characters"
-            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-black tracking-[0.18em] uppercase text-slate-900 placeholder:text-slate-400 placeholder:font-medium placeholder:tracking-normal outline-none focus:border-[#3083ff] focus:ring-2 focus:ring-[#3083ff]/20 shadow-sm"
+            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold tracking-normal uppercase text-slate-900 placeholder:text-slate-400 placeholder:font-medium placeholder:tracking-normal placeholder:normal-case outline-none focus:border-[#3083ff] focus:ring-2 focus:ring-[#3083ff]/20 shadow-sm"
           />
           <button
             type="button"
