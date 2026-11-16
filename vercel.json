@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://anything-underwear-runs-dig.trycloudflare.com/api/:path*"
+      "destination": "https://measurements-roll-ideas-illustration.trycloudflare.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://anything-underwear-runs-dig.trycloudflare.com/uploads/:path*"
+      "destination": "https://measurements-roll-ideas-illustration.trycloudflare.com/uploads/:path*"
     },
     {
       "source": "/admin",
