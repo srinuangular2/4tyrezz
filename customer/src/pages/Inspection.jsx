@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   BadgeCheck,
@@ -16,11 +16,8 @@ import {
   Check,
 } from 'lucide-react';
 import LeadHero from '../components/mobile/LeadHero';
-import useReferenceData from '../hooks/useReferenceData';
-import InspectionPriceFields from '../components/pdi/InspectionPriceFields';
-import { ENGINE_PRICE, PRIMARY_CITIES, bookPath, inr, quoteInspection } from '../lib/pdiPricing';
-
-const INSPECT = '#0e7a52';
+import { ENGINE_PRICE, INSPECTION_URLS, bookPath, inr } from '../lib/pdiPricing';
+import { usePageMeta } from '../lib/pageMeta';
 
 const TRUST = [
   ['100% independent inspection', ShieldCheck],
@@ -118,13 +115,6 @@ const CHECKS = [
   },
 ];
 
-const STEPS = [
-  ['01', 'Book and schedule', 'Pick a dealer yard or a home address, then choose a date and a time slot.'],
-  ['02', 'On-site inspection', 'A certified engineer runs the 300+ point checklist and photographs anything that fails.'],
-  ['03', 'Verbal briefing', 'You get a call or a walk-through of critical findings before you sign the dealer form.'],
-  ['04', 'Digital PDF report', 'Pass and fail scores, defect photos and paint readings arrive within 60 minutes.'],
-];
-
 const FAQS = [
   ['Why inspect a brand-new car?', 'Shipping and yard storage create damage that is easy to miss at delivery. Registration locks the car to your name, so the useful moment to reject or repair it is before the RTO entry.'],
   ['What is different about a used car inspection?', 'Used car checks look for accident structure, flood history, stored OBD codes, gearbox slip and whether RC, NOC and insurance match the vehicle in front of the engineer.'],
@@ -132,6 +122,8 @@ const FAQS = [
   ['How is the price calculated?', `The inspection is ${inr(ENGINE_PRICE.UPTO_1249)} for engines up to 1249cc and ${inr(ENGINE_PRICE.ABOVE_1249)} above that. OBD scanning is ${inr(600)}. Used-car service history is ${inr(400)}.`],
   ['When do I receive the report?', 'The engineer briefs you on site or by phone, then the PDF with scores and photos is sent within 60 minutes of the inspection ending.'],
 ];
+
+const INSPECT = '#0e7a52';
 
 const INSPECT_WHY = [
   { icon: ShieldCheck, title: 'An independent check', body: 'The engineer works for you, not for the seller or the showroom.' },
@@ -154,30 +146,21 @@ const INSPECT_STEPS = [
 
 export default function Inspection() {
   const navigate = useNavigate();
-  const { cities } = useReferenceData();
-  const cityNames = useMemo(() => {
-    const fromApi = (cities || []).map((city) => city.name).filter(Boolean);
-    return Array.from(new Set([...PRIMARY_CITIES, ...fromApi]));
-  }, [cities]);
-  const [pdiType, setPdiType] = useState('NEW_CAR');
-  const [engineBand, setEngineBand] = useState('UPTO_1249');
-  const [obdScan, setObdScan] = useState(true);
-  const [serviceHistory, setServiceHistory] = useState(false);
-  const [city, setCity] = useState('Hyderabad');
+  usePageMeta({
+    title: 'Pre-Delivery Inspection | 4tyrezz',
+    description: 'Book a new car PDI or a used car inspection. 300+ checks and a report within 60 minutes.',
+    path: INSPECTION_URLS.hub,
+  });
+  const [pdiType] = useState('NEW_CAR');
+  const [engineBand] = useState('UPTO_1249');
+  const [obdScan] = useState(true);
+  const [serviceHistory] = useState(false);
+  const [city] = useState('Hyderabad');
   const [check, setCheck] = useState(CHECKS[0].key);
   const [tool, setTool] = useState(null);
   const [openFaq, setOpenFaq] = useState(0);
-  const quote = quoteInspection({ pdiType, engineBand, obdScan, serviceHistory });
-  const activeCheck = CHECKS.find((row) => row.key === check) || CHECKS[0];
-  const bookHref = bookPath({ pdiType, city, engineBand, obdScan, serviceHistory });
   const chooseType = (type) => {
-    setPdiType(type);
     navigate(bookPath({ pdiType: type, city, engineBand, obdScan, serviceHistory }));
-  };
-  const setPrice = (key, value) => {
-    if (key === 'engineBand') setEngineBand(value);
-    if (key === 'obdScan') setObdScan(value);
-    if (key === 'serviceHistory') setServiceHistory(value);
   };
 
   useEffect(() => {
@@ -190,7 +173,7 @@ export default function Inspection() {
   }, [tool]);
 
   return (
-    <div className="bg-slate-50 pb-36 lg:pb-0">
+    <div className="bg-[#f6f8fb] pb-36 lg:pb-0">
       <div className="lg:hidden">
         <LeadHero
           kicker="Car inspection"
@@ -202,38 +185,38 @@ export default function Inspection() {
           imageAlt=""
         />
       </div>
-      <section className="relative hidden overflow-hidden min-h-[280px] sm:min-h-[420px] lg:block lg:min-h-[520px]">
+      <section className="relative hidden min-h-[280px] overflow-hidden sm:min-h-[420px] lg:block lg:min-h-[520px]">
         <img
           src="/car-pdi.png"
           alt="4tyrezz engineer inspecting a car before delivery"
-          className="absolute inset-0 w-full h-full object-cover object-[78%_center] sm:object-right"
+          className="absolute inset-0 h-full w-full object-cover object-[78%_center] sm:object-right"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0b2a6e]/92 via-[#1853ff]/55 to-transparent sm:via-[#1853ff]/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent sm:hidden" />
-        <div className="relative container-px mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-20">
+        <div className="container-px relative mx-auto px-4 py-8 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="max-w-xl">
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Pre-delivery inspection</p>
-            <h1 className="mt-2 text-2xl sm:text-5xl tracking-tight font-display text-white leading-tight">
+            <h1 className="mt-2 font-display text-2xl leading-tight tracking-tight text-white sm:text-5xl">
               Planning to buy a <span className="font-bold"> new or used car</span>?
             </h1>
-            <p className="mt-3 text-sm sm:text-lg font-bold text-white leading-snug">
+            <p className="mt-3 text-sm font-bold leading-snug text-white sm:text-lg">
               Make a confident decision with 4tyrezz’s comprehensive car inspection and pre-delivery inspection (PDI) services.
             </p>
-            <p className="text-white/85 text-xs sm:text-base font-medium mt-3 leading-relaxed">
+            <p className="mt-3 text-xs font-medium leading-relaxed text-white/85 sm:text-base">
               Get a detailed inspection report and know what you’re buying before you drive away.
             </p>
-            <div className="mt-5 flex flex-col sm:flex-row gap-3">
-              <Link to={bookPath({ pdiType: 'NEW_CAR', city, engineBand, obdScan, serviceHistory: false })} className="rounded-xl bg-white text-[#1853ff] font-black text-sm px-5 py-3 text-center">
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link to={bookPath({ pdiType: 'NEW_CAR', city, engineBand, obdScan, serviceHistory: false })} className="rounded-xl bg-white px-5 py-3 text-center text-sm font-black text-[#1853ff]">
                 Book new car PDI (from {inr(ENGINE_PRICE.UPTO_1249)})
               </Link>
-              <Link to={bookPath({ pdiType: 'USED_CAR', city, engineBand, obdScan, serviceHistory })} className="rounded-xl border border-white/40 text-white font-black text-sm px-5 py-3 text-center">
+              <Link to={bookPath({ pdiType: 'USED_CAR', city, engineBand, obdScan, serviceHistory })} className="rounded-xl border border-white/40 px-5 py-3 text-center text-sm font-black text-white">
                 Book used car inspection (from {inr(ENGINE_PRICE.UPTO_1249)})
               </Link>
             </div>
             <ul className="mt-5 flex gap-2 overflow-x-auto pb-1">
               {TRUST.map(([label, Icon]) => (
-                <li key={label} className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1.5 text-[11px] font-bold text-white">
-                  <Icon className="w-3.5 h-3.5 text-blue-200" />
+                <li key={label} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white">
+                  <Icon className="h-3.5 w-3.5 text-blue-200" />
                   {label}
                 </li>
               ))}
@@ -243,33 +226,30 @@ export default function Inspection() {
       </section>
 
       <section className="lg:hidden">
-        <div id="inspect-start" className="relative z-10 -mt-7 rounded-t-[28px] bg-white px-4 pb-5 pt-5">
+        <div className="relative z-10 -mt-7 rounded-t-[28px] bg-white px-4 pb-5 pt-5">
           <h2 className="text-[16px] font-semibold text-slate-900">Choose your car type</h2>
           <div className="mt-3 grid grid-cols-2 gap-2.5">
             {[
               ['NEW_CAR', 'Brand new car', 'Factory defects and delivery damage', 'from-[#fff1f4] to-[#ffe4ea]'],
               ['USED_CAR', 'Used car', 'Accident, flood and paper checks', 'from-[#eaf2ff] to-[#dce8ff]'],
-            ].map(([id, label, body, tone]) => {
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => chooseType(id)}
-                  className={`flex min-h-[148px] flex-col rounded-2xl border border-slate-200 bg-gradient-to-b p-3 text-left ${tone}`}
-                >
-                  <p className="text-[13px] font-semibold leading-tight text-slate-900">{label}</p>
-                  <p className="mt-1 text-[11px] leading-snug text-slate-500">{body}</p>
-                  <span className="relative mt-auto flex h-14 items-end">
-                    <span className="absolute bottom-1 left-0 flex h-6 w-6 items-center justify-center rounded-full bg-[#3083ff] text-white">
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </span>
-                    <img src="/hero-car.png" alt="" className="ml-auto h-12 w-[78%] object-contain object-right" />
+            ].map(([id, label, body, tone]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => chooseType(id)}
+                className={`flex min-h-[148px] flex-col rounded-2xl border border-slate-200 bg-gradient-to-b p-3 text-left ${tone}`}
+              >
+                <p className="text-[13px] font-semibold leading-tight text-slate-900">{label}</p>
+                <p className="mt-1 text-[11px] leading-snug text-slate-500">{body}</p>
+                <span className="relative mt-auto flex h-14 items-end">
+                  <span className="absolute bottom-1 left-0 flex h-6 w-6 items-center justify-center rounded-full bg-[#3083ff] text-white">
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </span>
-                </button>
-              );
-            })}
+                  <img src="/hero-car.png" alt="" className="ml-auto h-12 w-[78%] object-contain object-right" />
+                </span>
+              </button>
+            ))}
           </div>
-
           <div className="mt-5">
             <h3 className="text-[14px] font-semibold leading-snug text-slate-900">What the inspection looks for</h3>
             <div className="mt-2.5 space-y-2">
@@ -286,9 +266,7 @@ export default function Inspection() {
               ))}
             </div>
           </div>
-
         </div>
-
         <div className="space-y-4 px-4 pb-4 pt-5">
           <h2 className="text-[16px] font-semibold text-slate-900">Why inspect with 4tyrezz?</h2>
           <div className="space-y-3">
@@ -320,7 +298,6 @@ export default function Inspection() {
             ))}
           </ol>
         </div>
-
         <div className="mx-4 mb-4 rounded-2xl bg-white p-4 shadow-md shadow-slate-200/60">
           <p className="text-[12px] font-medium text-[#3083ff]">300+ points</p>
           <h2 className="mt-1 text-base font-semibold text-slate-800">What the engineer checks</h2>
@@ -345,53 +322,113 @@ export default function Inspection() {
         </div>
       </section>
 
-      <section className="container-px hidden py-10 lg:block lg:py-14">
-        <p className="text-[13px] font-medium text-[#909294] uppercase tracking-[5px] font-display">Why it matters</p>
-        <h2 className="mt-2 text-2xl lg:text-4xl font-display text-slate-900">What a PDI protects you from</h2>
-        <div className="mt-6 grid lg:grid-cols-2 gap-4">
-          {WHY.map((card) => (
-            <article key={card.title} className="rounded-3xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-              <h3 className="text-lg font-black text-slate-900">{card.title}</h3>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed">{card.body}</p>
+      <div className="hidden lg:block">
+      <section className="container-px relative z-10 bg-[#f6f8fb] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">
+          {pdiType === 'NEW_CAR' ? 'A new car can still have serious issues' : 'Uncover a used car’s real condition'}
+        </h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          {INSPECT_FINDS.map(({ icon: Icon, title, body }) => (
+            <article key={title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf2ff] text-[#3083ff]">
+                <Icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-3 text-base font-black text-slate-900">{title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">{body}</p>
             </article>
-          ))}
-        </div>
-        <div className="mt-4 rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-          <div className="grid grid-cols-[0.8fr_1fr_1fr] bg-[#0f172a] text-white text-[11px] sm:text-xs font-black uppercase tracking-wide">
-            <div className="p-3 sm:p-4">Check</div>
-            <div className="p-3 sm:p-4">New car PDI</div>
-            <div className="p-3 sm:p-4">Used car inspection</div>
-          </div>
-          {COMPARE.map(([label, fresh, used]) => (
-            <div key={label} className="grid grid-cols-[0.8fr_1fr_1fr] border-t border-slate-100 text-xs sm:text-sm">
-              <div className="p-3 sm:p-4 font-black text-slate-900">{label}</div>
-              <div className="p-3 sm:p-4 text-slate-600">{fresh}</div>
-              <div className="p-3 sm:p-4 text-slate-600">{used}</div>
-            </div>
           ))}
         </div>
       </section>
 
-      <section className="hidden bg-white py-10 lg:block lg:py-14">
-        <div className="container-px">
-          <p className="text-[13px] font-medium text-[#909294] uppercase tracking-[5px] font-display">Equipment</p>
-          <h2 className="mt-2 text-2xl lg:text-4xl font-display text-slate-900">Tools the engineer brings</h2>
-          <p className="mt-2 text-sm text-slate-500 max-w-2xl">Tap a tool to see what the reading means on your report.</p>
-          <div className="mt-6 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 md:overflow-visible">
-            {TOOLS.map((item) => {
+      <section className="bg-white py-8 lg:py-12">
+        <div className="container-px px-4 sm:px-6 lg:px-8">
+          <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">The checklist covers 300+ checks</h2>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {CHECKS.map((row) => (
+              <button
+                key={row.key}
+                type="button"
+                onClick={() => setCheck(row.key)}
+                className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${check === row.key ? 'bg-[#3083ff] text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'}`}
+              >
+                {row.title}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {CHECKS.map((row) => (
+              <article key={row.key} className={`rounded-3xl border p-4 ${check === row.key ? 'border-[#3083ff] bg-[#f4f8ff]' : 'border-slate-200 bg-slate-50'}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-black text-slate-900">{row.title}</h3>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#3083ff]">{row.points} pts</span>
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                  {row.items.map((item) => (
+                    <li key={item} className="flex items-start gap-1.5 text-[13px] text-slate-600">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#178a45]" strokeWidth={2.5} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#0e7a52] text-white">
+        <div className="container-px flex flex-col items-start justify-between gap-4 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:px-8">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">Sample report</p>
+            <h2 className="mt-1 font-display text-2xl font-black">See what the PDF looks like before you book</h2>
+            <p className="mt-2 max-w-xl text-sm text-emerald-50">Pass and fail scores, paint readings and the photos the engineer takes.</p>
+          </div>
+          <div className="w-full max-w-sm rounded-3xl bg-white p-4 text-slate-900">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-black">Sample score</p>
+              <p className="text-2xl font-black text-[#0e7a52]">86<span className="text-sm text-slate-400">/100</span></p>
+            </div>
+            <ul className="mt-3 space-y-2 text-xs">
+              {[
+                ['Body and paint', 'Pass'],
+                ['Engine and mechanical', 'Fail'],
+                ['Documents and VIN', 'Pass'],
+              ].map(([label, status]) => (
+                <li key={label} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                  <span className="font-semibold">{label}</span>
+                  <span className={status === 'Pass' ? 'font-black text-emerald-700' : 'font-black text-red-600'}>{status}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="container-px grid gap-8 px-4 py-8 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-12">
+        <div>
+          <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">Inspection in 3 simple steps</h2>
+          <ol className="mt-5 space-y-3">
+            {INSPECT_STEPS.slice(0, 3).map(({ title, body }, index) => (
+              <li key={title} className="flex gap-3 rounded-3xl border border-slate-200 bg-white p-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3083ff] text-sm font-black text-white">{index + 1}</span>
+                <div>
+                  <p className="text-sm font-black text-slate-900">{title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-500">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div>
+          <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">What the engineer brings</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {TOOLS.slice(0, 4).map((item) => {
               const Icon = item.icon;
               return (
-                <button
-                  key={item.title}
-                  type="button"
-                  onClick={() => setTool(item)}
-                  className="snap-start shrink-0 w-[78%] sm:w-[46%] md:w-auto text-left rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm hover:border-[#3083ff]/40"
-                >
-                  <span className="w-10 h-10 rounded-2xl bg-[#3083ff]/10 text-[#3083ff] inline-flex items-center justify-center">
-                    <Icon className="w-5 h-5" />
-                  </span>
-                  <h3 className="mt-3 font-black text-slate-900 text-sm">{item.title}</h3>
-                  <p className="mt-2 text-xs text-slate-500 leading-relaxed">{item.body}</p>
+                <button key={item.title} type="button" onClick={() => setTool(item)} className="rounded-3xl border border-slate-200 bg-white p-4 text-left hover:border-[#3083ff]/40">
+                  <Icon className="h-5 w-5 text-[#3083ff]" />
+                  <h3 className="mt-2 text-sm font-black text-slate-900">{item.title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.body}</p>
                 </button>
               );
             })}
@@ -399,143 +436,60 @@ export default function Inspection() {
         </div>
       </section>
 
-      <section className="container-px hidden py-10 lg:block lg:py-14">
-        <p className="text-[13px] font-medium text-[#909294] uppercase tracking-[5px] font-display">300+ points</p>
-        <h2 className="mt-2 text-2xl lg:text-4xl font-display text-slate-900">What the checklist covers</h2>
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
-          {CHECKS.map((row) => (
-            <button
-              key={row.key}
-              type="button"
-              onClick={() => setCheck(row.key)}
-              className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${check === row.key ? 'bg-[#3083ff] text-white' : 'bg-white border border-slate-200 text-slate-700'}`}
-            >
-              {row.title}
-            </button>
+      <section className="bg-white py-8 lg:py-12">
+        <div className="container-px px-4 sm:px-6 lg:px-8">
+          <h2 className="font-display text-2xl font-black text-slate-900">What this inspection covers</h2>
+          <div className="mt-5 overflow-hidden rounded-3xl border border-slate-200">
+            <div className="grid grid-cols-[0.8fr_1fr_1fr] bg-[#071433] text-[11px] font-black uppercase tracking-wide text-white">
+              <div className="p-3">Check</div>
+              <div className="p-3">New car PDI</div>
+              <div className="p-3">Used car</div>
+            </div>
+            {COMPARE.map(([label, fresh, used]) => (
+              <div key={label} className="grid grid-cols-[0.8fr_1fr_1fr] border-t border-slate-100 text-xs sm:text-sm">
+                <div className="p-3 font-black text-slate-900">{label}</div>
+                <div className="p-3 text-slate-600">{fresh}</div>
+                <div className="p-3 text-slate-600">{used}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {WHY.map((card) => (
+              <article key={card.title} className="rounded-3xl border border-slate-200 p-5">
+                <h3 className="font-black text-slate-900">{card.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="container-px max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <h2 className="font-display text-2xl font-black text-slate-900">Frequently asked questions</h2>
+        <div className="mt-4 divide-y divide-slate-200 border-y border-slate-200">
+          {FAQS.map(([question, answer], index) => (
+            <div key={question}>
+              <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} className="flex w-full items-center justify-between gap-4 py-4 text-left">
+                <span className="text-sm font-bold text-slate-900">{question}</span>
+                <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition ${openFaq === index ? 'rotate-180' : ''}`} />
+              </button>
+              {openFaq === index && <p className="pb-4 text-sm leading-relaxed text-slate-600">{answer}</p>}
+            </div>
           ))}
         </div>
-        <div className="mt-4 rounded-3xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-          <div className="flex items-end justify-between gap-3">
-            <h3 className="text-lg font-black text-slate-900">{activeCheck.title}</h3>
-            <p className="text-sm font-black text-[#3083ff]">{activeCheck.points} points</p>
-          </div>
-          <ul className="mt-4 grid sm:grid-cols-2 gap-2">
-            {activeCheck.items.map((item) => (
-              <li key={item} className="rounded-2xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{item}</li>
-            ))}
-          </ul>
-        </div>
       </section>
-
-      <section className="hidden bg-white py-10 lg:block lg:py-14">
-        <div className="container-px grid lg:grid-cols-2 gap-6 items-start">
-          <div>
-            <p className="text-[13px] font-medium text-[#909294] uppercase tracking-[5px] font-display">After you book</p>
-            <h2 className="mt-2 text-2xl lg:text-4xl font-display text-slate-900">From slot to PDF</h2>
-            <ol className="mt-6 space-y-3">
-              {STEPS.map(([n, title, body]) => (
-                <li key={n} className="rounded-2xl border border-slate-200 p-4 flex gap-3">
-                  <span className="w-9 h-9 shrink-0 rounded-full bg-[#0f172a] text-white text-xs font-black inline-flex items-center justify-center">{n}</span>
-                  <div>
-                    <h3 className="font-black text-slate-900 text-sm">{title}</h3>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">{body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-          <article className="rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="bg-[#0f172a] text-white px-5 py-4 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-200">Sample report</p>
-                <h3 className="font-black">4tyrezz digital inspection</h3>
-              </div>
-              <p className="text-3xl font-black">86<span className="text-sm text-blue-200">/100</span></p>
-            </div>
-            <ul className="bg-white divide-y divide-slate-100">
-              {[
-                ['Body and paint', 'Pass', '118 μm on the rear door, above factory band'],
-                ['Engine and mechanical', 'Fail', 'Stored misfire code on cylinder 2'],
-                ['Electrical and interior', 'Pass', 'AC vent 8°C, windows and lamps working'],
-                ['Underbody', 'Pass', 'No sump leak, discs within limit'],
-                ['VIN and documents', 'Pass', 'Glass, pillar and invoice match'],
-              ].map(([label, status, note]) => (
-                <li key={label} className="px-5 py-3 flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-black text-slate-900">{label}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{note}</p>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase ${status === 'Pass' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
-                    {status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section id="pdi-price" className="container-px hidden py-10 lg:block lg:py-14">
-        <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-5 sm:p-8">
-          <p className="text-[13px] font-medium text-[#909294] uppercase tracking-[5px] font-display">Price</p>
-          <h2 className="mt-2 text-2xl font-black text-slate-900">Instant inspection quote</h2>
-          <p className="mt-2 text-sm text-slate-500">Choose the engine size, then add OBD scanning or service history. The total updates before you book.</p>
-          <div className="mt-5 grid sm:grid-cols-2 gap-2">
-            {[['NEW_CAR', `New car PDI · from ${inr(ENGINE_PRICE.UPTO_1249)}`], ['USED_CAR', `Used car · from ${inr(ENGINE_PRICE.UPTO_1249)}`]].map(([id, label]) => (
-              <button key={id} type="button" onClick={() => setPdiType(id)} className={`rounded-2xl px-4 py-3 text-sm font-black text-left ${pdiType === id ? 'bg-[#3083ff] text-white' : 'bg-slate-50 text-slate-800'}`}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <label className="block mt-4">
-            <span className="text-xs font-black text-slate-700">City</span>
-            <select className="mt-1.5 w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white" value={city} onChange={(event) => setCity(event.target.value)}>
-              {cityNames.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
-          </label>
-          <div className="mt-5">
-            <InspectionPriceFields
-              name="engine-desktop"
-              pdiType={pdiType}
-              engineBand={engineBand}
-              obdScan={obdScan}
-              serviceHistory={serviceHistory}
-              onChange={setPrice}
-            />
-          </div>
-          <Link to={bookHref} className="mt-5 inline-flex w-full sm:w-auto justify-center rounded-xl bg-[#3083ff] text-white font-black text-sm px-6 py-3">
-            Book this inspection
-          </Link>
-        </div>
-      </section>
-
-      <section className="hidden bg-white py-10 lg:block lg:py-14">
-        <div className="container-px max-w-3xl">
-          <h2 className="text-2xl font-black text-slate-900">Questions before you book</h2>
-          <div className="mt-4 divide-y divide-slate-100 border-y border-slate-100">
-            {FAQS.map(([question, answer], index) => (
-              <div key={question}>
-                <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} className="w-full flex items-center justify-between gap-4 py-4 text-left">
-                  <span className="font-bold text-slate-900 text-sm">{question}</span>
-                  <ChevronDown className={`w-4 h-4 shrink-0 text-slate-400 transition ${openFaq === index ? 'rotate-180' : ''}`} />
-                </button>
-                {openFaq === index && <p className="pb-4 text-sm text-slate-600 leading-relaxed">{answer}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      </div>
 
       {tool && (
-        <div className="fixed inset-0 z-[60] bg-slate-900/50 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={() => setTool(null)}>
-          <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl bg-white p-6" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-6" onClick={() => setTool(null)}>
+          <div className="w-full rounded-t-3xl bg-white p-6 sm:max-w-md sm:rounded-3xl" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="font-black text-slate-900 text-lg">{tool.title}</h3>
-              <button type="button" onClick={() => setTool(null)} className="w-8 h-8 rounded-full bg-slate-100 inline-flex items-center justify-center" aria-label="Close">
-                <X className="w-4 h-4" />
+              <h3 className="text-lg font-black text-slate-900">{tool.title}</h3>
+              <button type="button" onClick={() => setTool(null)} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100" aria-label="Close">
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="mt-3 text-sm text-slate-600 leading-relaxed">{tool.detail}</p>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">{tool.detail}</p>
           </div>
         </div>
       )}

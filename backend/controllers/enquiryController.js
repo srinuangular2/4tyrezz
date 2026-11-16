@@ -27,6 +27,27 @@ function photoPaths(files = []) {
     .map((f) => `/uploads/sell/${f.filename}`);
 }
 
+function namedFiles(files, name) {
+  if (!files) return [];
+  if (Array.isArray(files)) return name === 'photos' ? files : [];
+  return files[name] || [];
+}
+
+function textList(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map((item) => String(item).trim()).filter(Boolean);
+    } catch {
+      /* single text value */
+    }
+  }
+  return [raw];
+}
+
 async function findEligibleDealer(city) {
   const name = String(city || '').trim();
   if (!name) return null;
@@ -66,13 +87,19 @@ exports.addSellerPhotos = async (req, res) => {
 exports.updateMine = async (req, res) => {
   const doc = await Enquiry.findOne({ _id: req.params.id, user: req.user._id, type: 'seller' });
   if (!doc) return res.status(404).json({ message: 'Sell request not found' });
-  const fields = ['brand', 'model', 'variant', 'city', 'fuel', 'transmission', 'bodyType', 'color', 'registrationNumber', 'inspectionType', 'inspectionDate', 'inspectionSlot', 'rto', 'state'];
+  const fields = [
+    'brand', 'model', 'variant', 'city', 'fuel', 'transmission', 'bodyType', 'color', 'registrationNumber',
+    'inspectionType', 'inspectionDate', 'inspectionSlot', 'rto', 'state', 'interiorColor', 'insuranceType',
+    'insuranceExpiry', 'pucExpiry', 'engineState', 'serviceHistory', 'serviceHistoryLog', 'accidental',
+    'accidentDetails', 'floodDamage', 'loanOnCar', 'videoUrl', 'description', 'parkedAddress', 'locationArea', 'pincode',
+  ];
   fields.forEach((key) => {
     if (req.body[key] !== undefined && req.body[key] !== '') doc[key] = req.body[key];
   });
-  ['year', 'kmDriven', 'ownership', 'expectedPrice', 'estimatePrice', 'minPrice', 'maxPrice'].forEach((key) => {
+  ['year', 'kmDriven', 'ownership', 'expectedPrice', 'estimatePrice', 'minPrice', 'maxPrice', 'month', 'tyreCondition', 'keyCount'].forEach((key) => {
     if (req.body[key] !== undefined && req.body[key] !== '') doc[key] = num(req.body[key]);
   });
+  if (req.body.features !== undefined) doc.features = textList(req.body.features);
   await doc.save();
   res.json({ success: true, data: doc });
 };
@@ -85,7 +112,20 @@ exports.create = async (req, res) => {
   const { name, phone } = req.body;
   if (!name || !phone) return res.status(400).json({ message: 'name and phone required' });
 
-  const photos = photoPaths(req.files);
+  const slotKeys = ['front', 'rear', 'dashboard', 'odometer', 'tyres'];
+  const mediaSlots = {};
+  slotKeys.forEach((key) => {
+    mediaSlots[key] = photoPaths(namedFiles(req.files, key))[0] || '';
+  });
+  const photos = [
+    ...photoPaths(namedFiles(req.files, 'photos')),
+    ...slotKeys.map((key) => mediaSlots[key]).filter(Boolean),
+  ];
+  const listingDocuments = {
+    rcCopy: photoPaths(namedFiles(req.files, 'rcCopy'))[0] || '',
+    insurancePolicy: photoPaths(namedFiles(req.files, 'insurancePolicy'))[0] || '',
+    serviceHistory: photoPaths(namedFiles(req.files, 'serviceHistoryDoc'))[0] || '',
+  };
   let assignedTo = null;
   let status = type === 'finance' ? 'Under Review' : type === 'insurance' ? 'Submitted' : 'New';
 
@@ -120,6 +160,12 @@ exports.create = async (req, res) => {
     assignedTo: assignedTo || undefined,
     addOns: req.body.addOns || [],
     photos,
+    mediaSlots,
+    listingDocuments,
+    features: textList(req.body.features),
+    month: num(req.body.month),
+    tyreCondition: num(req.body.tyreCondition),
+    keyCount: num(req.body.keyCount),
     conditions: [].concat(req.body.conditions || []).filter(Boolean),
     expectedPrice,
     estimatePrice,

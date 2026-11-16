@@ -63,7 +63,7 @@ export default function StepAuth({ state, patch, submitting, onBack, onConfirm }
   return (
     <div className="space-y-5 lg:space-y-6">
       <StepHeading
-        step={5}
+        step={7}
         title="Confirm your mobile"
         desktopTitle="Confirm booking"
         hint="Check the car and the visit, then verify your number. The final offer comes after inspection."

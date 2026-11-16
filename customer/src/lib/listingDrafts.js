@@ -30,7 +30,7 @@ function takeLocal(key) {
 
 function sanitizeSell(state) {
   if (!state) return null;
-  const { photoFiles, ...rest } = state;
+  const { photoFiles, docFiles, slotFiles, ...rest } = state;
   return {
     ...rest,
     photoFiles: [],

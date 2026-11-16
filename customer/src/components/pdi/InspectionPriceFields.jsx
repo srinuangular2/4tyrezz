@@ -10,7 +10,7 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
   const used = pdiType === 'USED_CAR';
 
   return (
-    <div className="space-y-4">
+    <div className={cards ? 'space-y-2.5' : 'space-y-4'}>
       <fieldset>
         <legend className="text-[13px] font-semibold text-slate-900">Car type <span className="text-rose-500">*</span></legend>
         <div className={cards ? 'mt-2 grid grid-cols-2 gap-2' : 'mt-2 space-y-2.5'}>
@@ -18,7 +18,7 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
             <label
               key={id}
               className={cards
-                ? `flex cursor-pointer flex-col rounded-2xl border px-3 py-3 ${engineBand === id ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}`
+                ? `flex cursor-pointer items-center justify-between gap-2 rounded-xl border px-2.5 py-2 ${engineBand === id ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}`
                 : 'flex cursor-pointer items-center justify-between gap-3 text-[14px] text-slate-800'}
             >
               <span className={cards ? 'flex items-center gap-2 text-[13px] font-semibold text-slate-800' : 'flex items-center gap-2.5'}>
@@ -32,7 +32,7 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
                 />
                 {label}
               </span>
-              <span className={cards ? 'mt-1 pl-6 text-[13px] font-semibold text-slate-900' : 'font-medium text-slate-900'}>{inr(price)}</span>
+              <span className={cards ? 'text-[13px] font-semibold text-slate-900' : 'font-medium text-slate-900'}>{inr(price)}</span>
             </label>
           ))}
         </div>
@@ -40,7 +40,7 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
 
       <div>
         <p className="text-[13px] font-semibold text-slate-900">Recommended add-ons</p>
-        <label className={`mt-2 flex cursor-pointer items-start justify-between gap-3 ${cards ? `rounded-2xl border px-3 py-3 ${obdScan ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}` : ''}`}>
+        <label className={`mt-1.5 flex cursor-pointer items-center justify-between gap-3 ${cards ? `rounded-xl border px-2.5 py-2 ${obdScan ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}` : ''}`}>
           <span className="flex items-start gap-2.5">
             <input
               type="checkbox"
@@ -48,16 +48,9 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
               onChange={(event) => onChange('obdScan', event.target.checked)}
               className={`mt-0.5 h-4 w-4 ${cards ? 'accent-[#3083ff]' : 'accent-[#3083ff]'}`}
             />
-            <span>
-              <span className="text-[14px] font-medium text-slate-800">
-                OBD scanning
-                <span className={`ml-1.5 text-[11px] font-semibold ${cards ? 'text-[#3083ff]' : 'text-[#1853ff]'}`}>Recommended</span>
-              </span>
-              {cards ? (
-                <span className="mt-0.5 block text-[12px] font-normal leading-snug text-slate-500">
-                  Finds stored engine and sensor faults a visual check cannot see.
-                </span>
-              ) : null}
+            <span className="text-[13px] font-medium text-slate-800">
+              OBD scanning
+              <span className={`ml-1.5 text-[11px] font-semibold ${cards ? 'text-[#3083ff]' : 'text-[#1853ff]'}`}>Recommended</span>
             </span>
           </span>
           <span className="text-[14px] font-medium text-slate-900">{inr(OBD_FEE)}</span>
@@ -72,7 +65,7 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
       {used && (
         <div>
           <p className="text-[13px] font-semibold text-slate-900">Service history and analysis</p>
-          <label className={`mt-2 flex cursor-pointer items-start justify-between gap-3 ${cards ? `rounded-2xl border px-3 py-3 ${serviceHistory ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}` : ''}`}>
+          <label className={`mt-1.5 flex cursor-pointer items-center justify-between gap-3 ${cards ? `rounded-xl border px-2.5 py-2 ${serviceHistory ? 'border-[#3083ff] bg-[#eaf2ff]' : 'border-slate-200 bg-white'}` : ''}`}>
             <span className="flex items-start gap-2.5">
               <input
                 type="checkbox"
@@ -80,14 +73,7 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
                 onChange={(event) => onChange('serviceHistory', event.target.checked)}
                 className={`mt-0.5 h-4 w-4 ${cards ? 'accent-[#3083ff]' : 'accent-[#3083ff]'}`}
               />
-              <span>
-                <span className="text-[14px] font-medium text-slate-800">Service history</span>
-                {cards ? (
-                  <span className="mt-0.5 block text-[12px] font-normal leading-snug text-slate-500">
-                    Past service records, so recurring faults show up before the visit.
-                  </span>
-                ) : null}
-              </span>
+              <span className="text-[13px] font-medium text-slate-800">Service history</span>
             </span>
             <span className="text-[14px] font-medium text-slate-900">{inr(HISTORY_FEE)}</span>
           </label>
@@ -99,7 +85,7 @@ export default function InspectionPriceFields({ pdiType, engineBand, obdScan, se
         </div>
       )}
 
-      <div className={`flex items-center justify-between ${cards ? 'rounded-2xl bg-slate-900 px-4 py-3 text-white' : 'border-t border-slate-200 pt-3'}`}>
+      <div className={`flex items-center justify-between ${cards ? 'rounded-xl bg-slate-900 px-3 py-2 text-white' : 'border-t border-slate-200 pt-3'}`}>
         <span className={`text-[15px] font-semibold ${cards ? 'text-white' : 'text-slate-900'}`}>Total</span>
         <span className={`text-[18px] font-semibold ${cards ? 'text-white' : 'text-slate-900'}`}>{inr(quote.total)}</span>
       </div>

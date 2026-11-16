@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
+import { bookPath } from '../../lib/pdiPricing';
 
 export default function PdiCta({ car, compact = false }) {
-  const type = car ? 'used' : 'used';
-  const query = new URLSearchParams({ type });
-  if (car?.brand?.name) query.set('brand', car.brand.name);
-  if (car?.model?.name) query.set('model', car.model.name);
-  if (car?.city?.name || car?.location?.city) query.set('city', car.city?.name || car.location?.city);
+  const to = bookPath({
+    pdiType: 'USED_CAR',
+    brand: car?.brand?.name,
+    model: car?.model?.name,
+    city: car?.city?.name || car?.location?.city,
+  });
 
   return (
     <Link
-      to={`/inspection/book?${query.toString()}`}
+      to={to}
       className={compact
         ? 'block w-full rounded-2xl border border-[#3083ff]/30 bg-blue-50 px-4 py-3 text-left'
         : 'block w-full rounded-2xl bg-[#0c2e68] text-white px-4 py-4 text-left'}

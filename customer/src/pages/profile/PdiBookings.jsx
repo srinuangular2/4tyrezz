@@ -72,7 +72,7 @@ export default function PdiBookings() {
           <h1 className="text-xl font-black text-slate-900">Car inspection</h1>
           <p className="text-sm text-slate-500 mt-1">Track payment, the visit, and your report.</p>
         </div>
-        <Link to="/inspection" className="ml-auto text-[12px] font-semibold text-[#3083ff]">Book another</Link>
+        <Link to="/pre-delivery-inspection" className="ml-auto text-[12px] font-semibold text-[#3083ff]">Book another</Link>
       </div>
       {loading && <p className="text-sm text-slate-500">Loading your inspections…</p>}
       {!loading && !rows.length && <EmptyNote>No inspections booked yet. Book a visit and the car, slot and report will show here.</EmptyNote>}

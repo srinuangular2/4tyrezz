@@ -44,16 +44,18 @@ export function quoteSegment({ pdiType, vehicleSegment, city }) {
   return { base, visit, total: base + visit, vehicleSegment: segment, pdiType: type };
 }
 
-export function bookPath({ pdiType, city, engineBand, obdScan = true, serviceHistory = false, brand, plate }) {
-  const params = new URLSearchParams({
-    type: pdiType === 'NEW_CAR' ? 'new' : 'used',
-  });
-  if (city) params.set('city', city);
-  if (engineBand === 'ABOVE_1249') params.set('engine', 'above');
-  else if (engineBand === 'UPTO_1249') params.set('engine', 'upto');
-  if (!obdScan) params.set('obd', '0');
-  if (serviceHistory) params.set('history', '1');
+export const INSPECTION_URLS = {
+  hub: '/pre-delivery-inspection',
+  newCar: '/new-car-pre-delivery-inspection-pdi',
+  usedCar: '/used-car-inspection-services',
+};
+
+export function bookPath({ pdiType, brand, model, plate }) {
+  const params = new URLSearchParams();
   if (brand) params.set('brand', brand);
+  if (model) params.set('model', model);
   if (plate) params.set('plate', plate);
-  return `/inspection/book?${params.toString()}`;
+  const path = pdiType === 'NEW_CAR' ? INSPECTION_URLS.newCar : INSPECTION_URLS.usedCar;
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }

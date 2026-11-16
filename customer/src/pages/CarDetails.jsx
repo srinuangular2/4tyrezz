@@ -68,6 +68,8 @@ export default function CarDetails() {
   const [similarModels, setSimilarModels] = useState([]);
   const [activeImg, setActiveImg] = useState(0);
   const thumbsRef = useRef(null);
+  const overviewHeadRef = useRef(null);
+  const [titleBarPinned, setTitleBarPinned] = useState(false);
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [showContact, setShowContact] = useState(false);
@@ -94,6 +96,27 @@ export default function CarDetails() {
     const el = thumbsRef.current?.querySelector(`[data-thumb-index="${activeImg}"]`);
     if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [activeImg]);
+
+  useEffect(() => {
+    const head = overviewHeadRef.current;
+    if (!head) return undefined;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const node = overviewHeadRef.current;
+      if (!node) return;
+      setTitleBarPinned(node.getBoundingClientRect().top <= 0);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [car]);
 
   useEffect(() => {
     setActiveImg(0);
@@ -440,39 +463,41 @@ export default function CarDetails() {
   };
 
   return (
-    <div className="bg-slate-50 lg:bg-cream min-h-screen overflow-x-clip w-full pt-[104px] pb-[calc(4.5rem+4.75rem+env(safe-area-inset-bottom))] lg:pt-0 lg:pb-16">
-      <div className="fixed inset-x-0 top-0 z-40 border-b border-slate-200 bg-white lg:hidden">
-        <div className="flex h-14 items-center gap-2 px-3">
-          <Link to="/cars" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-800" aria-label="Back to buy cars">
-            <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold text-slate-900">{car.year} {car.brand?.name} {car.model?.name}</p>
-            <p className="text-[12px] font-medium text-slate-500">{formatPrice(car.price)}</p>
-          </div>
-          <button type="button" onClick={handleShare} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700" aria-label="Share">
-            <Share2 className="h-4 w-4" strokeWidth={2.2} />
-          </button>
-        </div>
-        <div className="flex gap-4 overflow-x-auto px-4">
-          {[
-            ['cd-overview', 'Overview'],
-            ['cd-condition', 'Condition'],
-            ['cd-features', 'Features', 'features'],
-            ['cd-finance', 'Finance'],
-          ].map(([id, label, nextTab]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => jumpSection(id, nextTab)}
-              className={`shrink-0 border-b-2 py-2.5 text-[13px] font-semibold ${section === id ? 'border-[#3083ff] text-[#1853ff]' : 'border-transparent text-slate-500'}`}
-            >
-              {label}
+    <div className="bg-slate-50 lg:bg-cream min-h-screen w-full pb-[calc(4.5rem+4.75rem+env(safe-area-inset-bottom))] lg:pb-16">
+      {titleBarPinned && (
+        <div className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white lg:hidden">
+          <div className="flex h-14 items-center gap-2 px-3">
+            <Link to="/cars" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-800" aria-label="Back to buy cars">
+              <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[14px] font-semibold text-slate-900">{car.year} {car.brand?.name} {car.model?.name}</p>
+              <p className="text-[12px] font-medium text-slate-500">{formatPrice(car.price)}</p>
+            </div>
+            <button type="button" onClick={handleShare} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700" aria-label="Share">
+              <Share2 className="h-4 w-4" strokeWidth={2.2} />
             </button>
-          ))}
+          </div>
+          <div className="flex gap-4 overflow-x-auto px-4">
+            {[
+              ['cd-overview', 'Overview'],
+              ['cd-condition', 'Condition'],
+              ['cd-features', 'Features', 'features'],
+              ['cd-finance', 'Finance'],
+            ].map(([id, label, nextTab]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => jumpSection(id, nextTab)}
+                className={`shrink-0 border-b-2 py-2.5 text-[13px] font-semibold ${section === id ? 'border-[#3083ff] text-[#1853ff]' : 'border-transparent text-slate-500'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="w-full overflow-x-clip lg:container-px lg:py-6 lg:max-w-7xl lg:mx-auto">
+      )}
+      <div className="w-full lg:container-px lg:py-6 lg:max-w-7xl lg:mx-auto">
         {/* Breadcrumb — desktop only */}
         <nav className="hidden lg:flex text-sm text-slate2 mb-5 flex-wrap items-center gap-1 px-0">
           <Link to="/" className="hover:text-ember transition">Home</Link>
@@ -506,7 +531,7 @@ export default function CarDetails() {
               >
                 <Link
                   to="/cars"
-                  className="absolute top-2.5 left-2.5 z-10 hidden h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow lg:flex"
+                  className="absolute top-2.5 left-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow"
                   aria-label="Back to buy cars"
                 >
                   <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
@@ -665,7 +690,7 @@ export default function CarDetails() {
             )}
 
             {/* Mobile: key info block (CarDekho-style — important data on top) */}
-            <div id="cd-overview" className="scroll-mt-28 lg:hidden bg-white border-b border-slate-100 w-full max-w-full overflow-hidden">
+            <div id="cd-overview" ref={overviewHeadRef} className="scroll-mt-28 lg:hidden bg-white border-b border-slate-100 w-full max-w-full overflow-hidden">
               <div className="px-4 pt-3.5 pb-3">
                 {priceVerdict?.label && (
                   <span className={`inline-flex max-w-full truncate text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase mb-2 ${PRICE_BADGE[priceVerdict.tone] || PRICE_BADGE.fair}`}>

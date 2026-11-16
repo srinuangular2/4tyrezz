@@ -10,7 +10,7 @@ export default function BottomNav() {
     { to: '/cars', label: 'Buy Cars', icon: CarFront },
     { to: '/sell', label: 'Sell', icon: Tag },
     { to: '/', label: 'Home', icon: Home, end: true, featured: true },
-    { to: '/inspection', label: 'Inspection', icon: ClipboardCheck },
+    { to: '/pre-delivery-inspection', label: 'Inspection', icon: ClipboardCheck },
     { to: '/valuation', label: 'Valuation', icon: Gauge },
   ];
 

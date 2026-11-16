@@ -6,6 +6,7 @@ import api from '../api/axios';
 import { useAuthGuard } from '../components/AuthGuardModal';
 import CarCard from '../components/CarCard';
 import DesignedPageBanner, { BannerActions, BannerButton } from '../components/DesignedPageBanner';
+import LeadHero from '../components/mobile/LeadHero';
 import AmountPicker, { PartnerCard } from '../components/mobile/AmountPicker';
 import StepSheet from '../components/mobile/StepSheet';
 import { isIndianMobile, digitsOnly, whatsappUrl } from '../lib/companyContact';
@@ -159,7 +160,19 @@ export default function Finance() {
 
   return (
     <div className="bg-slate-50 pb-24 lg:pb-0">
+      <div className="lg:hidden">
+        <LeadHero
+          kicker="Car finance"
+          title="Easy loans on"
+          accent="inspected cars"
+          points={['Approval in 24–48 hrs', 'Up to 90% funding', 'No hidden charges']}
+          badge="4tyrezz finance"
+          image="/hero-car.png"
+          imageAlt=""
+        />
+      </div>
       <DesignedPageBanner
+        hideOnMobile
         src="/car-finance.png"
         alt="Car finance on 4tyrezz"
         eyebrow="Car Finance"
@@ -175,19 +188,7 @@ export default function Finance() {
         </div>
       </DesignedPageBanner>
 
-      <section className="grid grid-cols-2 gap-2 px-4 pt-3 lg:hidden">
-        {BENEFITS.map(({ icon: Icon, title, body }, index) => (
-          <article key={title} className={`flex gap-2 rounded-xl px-2.5 py-2 ${['bg-[#e8f1ff]', 'bg-[#e7f8ee]', 'bg-[#fff4e8]', 'bg-[#f3e8ff]'][index % 4]}`}>
-            <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1853ff]" strokeWidth={2.25} />
-            <div className="min-w-0">
-              <h3 className="text-[12px] font-semibold leading-tight text-slate-900">{title}</h3>
-              <p className="mt-0.5 line-clamp-2 text-[11px] font-normal leading-snug text-slate-600">{body}</p>
-            </div>
-          </article>
-        ))}
-      </section>
-
-      <div id="loan-picker" className="scroll-mt-24 lg:hidden">
+      <div id="loan-picker" className="relative z-10 -mt-7 scroll-mt-24 rounded-t-[28px] bg-white pt-2 lg:hidden">
         <AmountPicker
           label="Select loan amount"
           value={loanAmount}
@@ -228,6 +229,18 @@ export default function Finance() {
           <p className="px-1 text-[12px] font-normal leading-snug text-slate-500">
             These are indicative rates. The bank confirms the final EMI after it checks your documents.
           </p>
+        </section>
+        <section className="bg-white px-4 pb-6">
+          <h2 className="text-[16px] font-semibold text-slate-900">Papers to keep ready</h2>
+          <p className="mt-1 text-[13px] font-normal leading-relaxed text-slate-500">You do not upload them here. The bank asks for these after you apply.</p>
+          <ul className="mt-3 space-y-2">
+            {DOCUMENTS.map((item) => (
+              <li key={item} className="flex items-start gap-2 text-[13px] font-medium text-slate-700">
+                <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#3083ff]" strokeWidth={2.2} />
+                {item}
+              </li>
+            ))}
+          </ul>
         </section>
       </div>
 

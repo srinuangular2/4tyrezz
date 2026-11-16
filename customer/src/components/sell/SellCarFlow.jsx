@@ -8,23 +8,27 @@ import { useAuthGuard } from '../AuthGuardModal';
 import useReferenceData from '../../hooks/useReferenceData';
 import { clearSellDraft, loadSellDraft, saveSellDraft, sellDraftReady } from '../../lib/listingDrafts';
 import { Card, formatINR } from '../PageShell';
-import { conditionScoreFromPills, filesFromPreviews, initialSellCarState, resumeSellStep, vehicleReady, conditionReady, conditionMessage, plateError, variantError } from './sellCarState';
+import { PHOTO_SLOTS, conditionScoreFromPills, filesFromPreviews, hasPhotos, healthScore, initialSellCarState, resumeSellStep, vehicleReady, conditionReady, conditionMessage, plateError, variantError } from './sellCarState';
 import ResumeListingCard from './ResumeListingCard';
 import { Stepper, useIsPhone } from './ui';
 import useShowWhenOffscreen from '../../hooks/useShowWhenOffscreen';
 
 const STEP_META = [
   { label: 'Car', title: 'Which car are you selling?', hint: 'Enter the number on the number plate, or choose the brand yourself.' },
-  { label: 'Details', title: 'Tell us about the car', hint: 'Kilometres, owners and city. Photos come after the price.' },
-  { label: 'Price', title: 'Your price and a visit slot', hint: 'This range is a guide. Pick the price you want and when we should inspect the car.' },
-  { label: 'Photos', title: 'Upload photos', hint: 'Add photos of the car, then continue to book the inspection.' },
+  { label: 'Km', title: 'Tell us about the car', hint: 'Kilometres, owners and city. Specifications come next.' },
+  { label: 'Specs', title: 'Car specifications', hint: 'Fuel, colour, insurance and condition. Price comes after this.' },
+  { label: 'Price', title: 'Your expected price', hint: 'This range is a guide. Pick the price you want. Photos come next.' },
+  { label: 'Photos', title: 'Upload photos', hint: 'Add the 360° views. The inspection slot is booked after this.' },
+  { label: 'Visit', title: 'Book the inspection', hint: 'Photos are in. Pick when we should come and see the car.' },
   { label: 'Book', title: 'Confirm your mobile', hint: 'Check the car and the visit, then verify your number. The final offer comes after inspection.' },
 ];
 import StepIdentify from './StepIdentify';
 import StepCondition from './StepCondition';
+import StepSpecs from './StepSpecs';
 import StepValuation from './StepValuation';
 import StepAuth from './StepAuth';
 import StepPhotos from './StepPhotos';
+import StepVisit from './StepVisit';
 
 const WHY = [
   { icon: Timer, title: 'Inspected in days, not months', body: 'Your request is queued for verified dealers as soon as you book inspection.' },
@@ -56,16 +60,23 @@ export default function SellCarFlow() {
       if ((location.state?.fromValuation || location.state?.editRequest) && sellDraftReady(saved)) {
         const previews = (saved.photoPreviews || []).filter((item) => item?.dataUrl);
         let photoFiles = [];
+        let slotFiles = {};
         try {
           photoFiles = filesFromPreviews(previews);
+          PHOTO_SLOTS.forEach(({ key }) => {
+            const slot = saved.photoSlots?.[key];
+            if (slot?.dataUrl) slotFiles[key] = filesFromPreviews([slot])[0];
+          });
         } catch {
           photoFiles = [];
+          slotFiles = {};
         }
         setState({
           ...initialSellCarState(),
           ...saved,
           photoPreviews: previews,
           photoFiles,
+          slotFiles,
           done: false,
           step: Number(saved.step) || (location.state?.editRequest ? 2 : 4),
         });
@@ -120,20 +131,20 @@ export default function SellCarFlow() {
         bodyType: state.bodyType,
         city: state.city,
         expectedPrice: Number(state.expectedPrice) || undefined,
-        conditionScore: conditionScoreFromPills(state.conditions),
+        conditionScore: healthScore(state.engineState) || conditionScoreFromPills(state.conditions),
       });
       setState((s) => ({
         ...s,
         valuation: data.data,
-        step: 3,
-        inspectionDate: s.inspectionDate || new Date().toISOString().slice(0, 10),
+        step: 4,
+        inspectionDate: s.inspectionDate || '',
       }));
     } catch (e) {
       toast.error(e.response?.data?.message || 'Estimate unavailable — you can still submit for inspection');
       setState((s) => ({
         ...s,
         valuation: null,
-        step: 3,
+        step: 4,
         inspectionDate: s.inspectionDate || new Date().toISOString().slice(0, 10),
       }));
     } finally {
@@ -172,6 +183,26 @@ export default function SellCarFlow() {
         bodyType: state.bodyType,
         color: state.color,
         ownership: Number(state.ownership),
+        month: Number(state.month) || '',
+        interiorColor: state.interiorColor || '',
+        insuranceType: state.insuranceType || '',
+        insuranceExpiry: state.insuranceExpiry || '',
+        pucExpiry: state.pucExpiry || '',
+        engineState: state.engineState || '',
+        serviceHistory: state.serviceHistory || '',
+        serviceHistoryLog: state.serviceHistoryLog || '',
+        tyreCondition: Number(state.tyreCondition) || '',
+        keyCount: Number(state.keyCount) || '',
+        accidental: state.accidental || '',
+        accidentDetails: state.accidentDetails || '',
+        floodDamage: state.floodDamage || '',
+        loanOnCar: state.loanOnCar || '',
+        features: JSON.stringify(state.features || []),
+        videoUrl: state.videoUrl || '',
+        description: state.description || '',
+        parkedAddress: state.parkedAddress || '',
+        locationArea: state.locationArea || '',
+        pincode: state.pincode || '',
         inspectionType: state.inspectionType,
         inspectionDate: state.inspectionDate,
         inspectionSlot: state.inspectionSlot,
@@ -202,6 +233,15 @@ export default function SellCarFlow() {
         }
       }
       photos.forEach((file) => form.append('photos', file));
+      PHOTO_SLOTS.forEach(({ key }) => {
+        const preview = state.photoSlots?.[key];
+        const file = state.slotFiles?.[key] || (preview?.dataUrl ? filesFromPreviews([preview])[0] : null);
+        if (file) form.append(key, file);
+      });
+      ['rcCopy', 'insurancePolicy', 'serviceHistoryDoc'].forEach((key) => {
+        const file = state.docFiles?.[key];
+        if (file) form.append(key, file);
+      });
 
       if (state.enquiryId && state.photoOnly) {
         if (!photos.length) {
@@ -269,6 +309,7 @@ export default function SellCarFlow() {
           </div>
         )}
         <ResumeListingCard
+          className="max-lg:rounded-none max-lg:border-0 max-lg:bg-transparent max-lg:p-0 max-lg:shadow-none"
           title={draft.done ? 'Request received' : 'Welcome back'}
           subtitle={draft.done ? 'Inspection booked' : 'Thanks for sharing the details'}
           year={draft.year}
@@ -306,28 +347,43 @@ export default function SellCarFlow() {
         toast.error(conditionMessage(state));
         return;
       }
-      requireAuth(goValuation);
+      patch({ step: 3 });
       return;
     }
     if (state.step === 3) {
-      if (!state.inspectionDate || !state.inspectionSlot) {
-        toast.error('Pick a date and time slot');
+      if (state.accidental === 'Yes' && !state.accidentDetails) {
+        toast.error('Select the accident type');
         return;
       }
+      requireAuth(goValuation);
+      return;
+    }
+    if (state.step === 4) {
       if (!(Number(state.expectedPrice) > 0)) {
         toast.error('Enter your expected price');
         return;
       }
-      patch({ step: 4 });
+      patch({ step: 5 });
       return;
     }
-    if (state.step === 4) {
+    if (state.step === 5) {
       if (state.photoOnly && state.enquiryId) {
         requireAuth(confirm);
         return;
       }
-      const hasPhotos = (state.photoFiles || []).length > 0 || (state.photoPreviews || []).length > 0;
-      patch({ step: 5, photosSkipped: !hasPhotos });
+      if (!hasPhotos(state)) {
+        toast.error('Add at least one photo before booking the inspection');
+        return;
+      }
+      patch({ step: 6, photosSkipped: false });
+      return;
+    }
+    if (state.step === 6) {
+      if (!state.inspectionDate || !state.inspectionSlot) {
+        toast.error('Pick a date and time slot');
+        return;
+      }
+      patch({ step: 7 });
       return;
     }
     requireAuth(confirm);
@@ -359,49 +415,70 @@ export default function SellCarFlow() {
           patch={patch}
           cities={cities}
           onBack={() => patch({ step: 1 })}
-          onNext={() => requireAuth(goValuation)}
+          onNext={() => patch({ step: 3 })}
         />
       )}
       {state.step === 3 && (
+        <StepSpecs
+          state={state}
+          patch={patch}
+          onBack={() => patch({ step: 2 })}
+          onNext={() => requireAuth(goValuation)}
+        />
+      )}
+      {state.step === 4 && (
         <StepValuation
           state={state}
           patch={patch}
           valuating={valuating}
-          onBack={() => patch({ step: 2 })}
+          onBack={() => patch({ step: 3 })}
           onNext={() => {
-            if (!state.inspectionDate || !state.inspectionSlot) {
-              toast.error('Pick a date and time slot');
-              return;
-            }
             if (!(Number(state.expectedPrice) > 0)) {
               toast.error('Enter your expected price');
               return;
             }
-            patch({ step: 4 });
+            patch({ step: 5 });
           }}
         />
       )}
-      {state.step === 4 && (
+      {state.step === 5 && (
         <StepPhotos
           state={state}
           patch={patch}
-          onBack={() => patch({ step: 3 })}
+          onBack={() => patch({ step: 4 })}
           onNext={() => {
             if (state.photoOnly && state.enquiryId) {
               navigate('/profile/my-vehicles');
               return;
             }
-            const hasPhotos = (state.photoFiles || []).length > 0 || (state.photoPreviews || []).length > 0;
-            patch({ step: 5, photosSkipped: !hasPhotos });
+            if (!hasPhotos(state)) {
+              toast.error('Add at least one photo before booking the inspection');
+              return;
+            }
+            patch({ step: 6, photosSkipped: false });
           }}
         />
       )}
-      {state.step === 5 && (
+      {state.step === 6 && (
+        <StepVisit
+          state={state}
+          patch={patch}
+          onBack={() => patch({ step: 5 })}
+          onNext={() => {
+            if (!state.inspectionDate || !state.inspectionSlot) {
+              toast.error('Pick a date and time slot');
+              return;
+            }
+            patch({ step: 7 });
+          }}
+        />
+      )}
+      {state.step === 7 && (
         <StepAuth
           state={state}
           patch={patch}
           submitting={submitting}
-          onBack={() => patch({ step: 4 })}
+          onBack={() => patch({ step: 6 })}
           onConfirm={() => requireAuth(confirm)}
         />
       )}
@@ -409,12 +486,12 @@ export default function SellCarFlow() {
   );
 
   const nextLabel = state.step === 1
-    ? 'Get instant car price'
-    : state.step === 2
+    ? 'Continue'
+    : state.step === 3
       ? (valuating ? 'Estimating…' : 'See estimate')
-      : state.step === 4
-        ? 'Continue'
-        : state.step === 5
+      : state.step === 5
+        ? 'Book inspection'
+        : state.step === 7
           ? (submitting ? 'Booking…' : 'Book inspection')
           : 'Continue';
 
@@ -438,12 +515,12 @@ export default function SellCarFlow() {
               <ChevronLeft className="h-5 w-5" />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold text-[#3083ff]">Step {state.step} of 5</p>
+              <p className="text-[11px] font-semibold text-[#3083ff]">Step {state.step} of 7</p>
               <h3 className="truncate text-[16px] font-semibold text-slate-900">{meta.title}</h3>
             </div>
           </div>
           <p className="mt-2 text-[12px] font-normal leading-snug text-slate-500">{meta.hint}</p>
-          <div className="mt-3 grid grid-cols-5 gap-1.5">
+          <div className="mt-3 grid grid-cols-7 gap-1">
             {STEP_META.map((item, index) => {
               const n = index + 1;
               const on = n === state.step;
@@ -493,9 +570,10 @@ export default function SellCarFlow() {
             <button
               type="button"
               disabled={
-                (state.step === 2 && valuating) ||
-                (state.step === 3 && (!state.inspectionDate || !state.inspectionSlot || !(Number(state.expectedPrice) > 0))) ||
-                (state.step === 5 && submitting)
+                (state.step === 3 && valuating) ||
+                (state.step === 4 && !(Number(state.expectedPrice) > 0)) ||
+                (state.step === 6 && (!state.inspectionDate || !state.inspectionSlot)) ||
+                (state.step === 7 && submitting)
               }
               onClick={advance}
               className="h-11 w-full rounded-xl bg-[#3083ff] text-[14px] font-semibold text-white disabled:opacity-50"
@@ -530,7 +608,7 @@ export default function SellCarFlow() {
         </div>
       )}
 
-      <Card className={`bg-white p-4 sm:p-8 border border-slate-200 rounded-2xl lg:rounded-3xl ${phone && state.step === 1 && !guided ? 'max-lg:-mx-4 max-lg:!overflow-visible max-lg:!rounded-none max-lg:!border-0 max-lg:!bg-transparent max-lg:!p-0 max-lg:!shadow-none' : 'overflow-x-clip'}`} hover={false} beam={false}>
+      <Card className={`bg-white p-4 sm:p-8 border border-slate-200 rounded-2xl lg:rounded-3xl ${phone && state.step === 1 && !guided ? 'max-lg:!overflow-visible max-lg:!rounded-none max-lg:!border-0 max-lg:!bg-transparent max-lg:!p-0 max-lg:!shadow-none' : 'overflow-x-clip'}`} hover={false} beam={false}>
         <div className={`lg:static sticky z-20 -mx-4 mb-2 border-b border-slate-100 bg-white/95 px-4 pb-3 pt-2 backdrop-blur lg:mx-0 lg:mb-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0 lg:backdrop-blur-none ${phone && state.step === 1 && !guided ? 'max-lg:hidden' : ''}`}>
           <Stepper step={state.step} />
         </div>
@@ -604,9 +682,10 @@ export default function SellCarFlow() {
           <button
             type="button"
             disabled={
-              (state.step === 2 && valuating) ||
-              (state.step === 3 && (!state.inspectionDate || !state.inspectionSlot || !(Number(state.expectedPrice) > 0))) ||
-              (state.step === 5 && submitting)
+              (state.step === 3 && valuating) ||
+              (state.step === 4 && !(Number(state.expectedPrice) > 0)) ||
+              (state.step === 6 && (!state.inspectionDate || !state.inspectionSlot)) ||
+              (state.step === 7 && submitting)
             }
             onClick={() => {
               if (state.step === 1 && !vehicleReady(state)) {

@@ -19,7 +19,8 @@ export const sellChipIdle =
   'bg-white border-slate-200 text-slate-700 hover:border-[#3083ff]';
 
 export function Stepper({ step }) {
-  const labels = ['Car', 'Details', 'Price', 'Photos', 'Book'];
+  const labels = ['Car', 'Km', 'Specs', 'Price', 'Photos', 'Visit', 'Book'];
+  const desktop = ['Identify', 'Condition', 'Specs', 'Estimate', 'Photos', 'Visit', 'Confirm'];
   return (
     <div className="mb-4 lg:mb-8">
       <div className="flex items-center gap-1.5 lg:gap-2">
@@ -32,7 +33,7 @@ export function Stepper({ step }) {
               <div className={`h-1.5 rounded-full ${done || active ? 'bg-[#3083ff]' : 'bg-slate-200'}`} />
               <p className={`mt-1.5 text-center text-[10px] font-medium leading-tight lg:mt-2 lg:text-left lg:text-[10px] lg:font-black lg:uppercase lg:tracking-wider ${active ? 'font-semibold text-[#3083ff]' : done ? 'text-slate-600 lg:text-slate-400' : 'text-slate-400'}`}>
                 <span className="lg:hidden">{label}</span>
-                <span className="hidden lg:inline">{n}. {['Identify', 'Condition', 'Estimate', 'Photos', 'Confirm'][i]}</span>
+                <span className="hidden lg:inline">{n}. {desktop[i]}</span>
               </p>
             </div>
           );
@@ -46,11 +47,11 @@ export function StepHeading({ step, title, desktopTitle, hint, desktopHint }) {
   return (
     <div>
       <div className="step-mobile-heading lg:hidden">
-        <p className="text-[12px] font-semibold text-[#3083ff]">Step {step} of 5</p>
+        <p className="text-[12px] font-semibold text-[#3083ff]">Step {step} of 7</p>
         <h2 className="mt-1 text-[18px] font-semibold leading-snug text-slate-900">{title}</h2>
         <p className="mt-1.5 text-[13px] font-normal leading-snug text-slate-500">{hint}</p>
       </div>
-      <p className="hidden text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff] lg:block">Step {step} of 5</p>
+      <p className="hidden text-[11px] font-black uppercase tracking-[0.18em] text-[#3083ff] lg:block">Step {step} of 7</p>
       <h2 className="mt-1 hidden font-display text-3xl font-black leading-snug text-slate-900 lg:block">{desktopTitle || title}</h2>
       <p className="mt-2 hidden text-sm font-medium text-slate-500 lg:block">{desktopHint || hint}</p>
     </div>

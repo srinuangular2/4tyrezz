@@ -17,7 +17,7 @@ import {
   useVehicleVariants,
   useVehicleYears,
 } from '../hooks/useVehicleCatalog';
-import { fetchVehicleDetailsByReg, formatPlateInput, normalizeReg } from '../lib/fetchVehicleDetailsByReg';
+import { fetchVehicleDetailsByReg, commitPlateInput, normalizeReg, rcFormatError } from '../lib/fetchVehicleDetailsByReg';
 import {
   clearValuationDraft,
   loadValuationDraft,
@@ -379,8 +379,9 @@ export default function Valuation() {
 
   const lookupAndFill = async () => {
     const reg = normalizeReg(form.plate);
-    if (reg.length < 8) {
-      toast.error('Enter a full registration number, e.g. TS 09 AB 1234');
+    const formatMsg = rcFormatError(reg);
+    if (formatMsg) {
+      toast.error(formatMsg);
       return null;
     }
     setLookingUp(true);
@@ -602,9 +603,10 @@ export default function Valuation() {
     <div className="bg-slate-50 pb-24 lg:pb-0">
       <ValuationBanner />
 
-      <Section eyebrow="SmartPrice" title="Used car price calculator" className="!pb-4 !pt-0 lg:!py-12" headerClassName="hidden lg:flex">
+      <Section eyebrow="SmartPrice" title="Used car price calculator" className="relative z-10 -mt-7 rounded-t-[28px] bg-white !pb-4 !pt-5 lg:z-auto lg:mt-0 lg:rounded-none lg:bg-transparent lg:!py-12" headerClassName="hidden lg:flex">
         {gate === 'resume' && valuationDraftReady(draft) ? (
           <ResumeListingCard
+            className="max-lg:rounded-none max-lg:border-0 max-lg:bg-transparent max-lg:p-0 max-lg:shadow-none"
             subtitle="Thanks for sharing the details"
             year={draft.form.year}
             brand={draft.form.brand}
@@ -621,7 +623,7 @@ export default function Valuation() {
           />
         ) : gate === 'form' ? (
           <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-4 lg:gap-6 items-start">
-          <Card id="valuation-form" className={`rounded-2xl p-4 sm:p-7 lg:rounded-3xl ${phone && !guided ? 'max-lg:relative max-lg:z-10 max-lg:-mx-4 max-lg:-mt-7 max-lg:!rounded-b-none max-lg:!rounded-t-[28px] max-lg:!border-0 max-lg:!bg-white max-lg:!p-4 max-lg:!pt-5 max-lg:!shadow-none' : ''}`} highlighted={!(phone && !guided)} beam={!(phone && !guided)}>
+          <Card id="valuation-form" className={`rounded-2xl p-4 sm:p-7 lg:rounded-3xl ${phone && !guided ? 'max-lg:!rounded-none max-lg:!border-0 max-lg:!bg-transparent max-lg:!p-0 max-lg:!shadow-none' : ''}`} highlighted={!(phone && !guided)} beam={!(phone && !guided)}>
             {phone && !guided && (
               <div id="value-start" className="space-y-3">
                 <h2 className="text-[16px] font-semibold text-slate-900">Unlock your car’s best price</h2>
@@ -631,10 +633,10 @@ export default function Valuation() {
                   <input
                     id="value-plate"
                     value={form.plate}
-                    onChange={(e) => set('plate', formatPlateInput(e.target.value))}
+                    onChange={(e) => commitPlateInput(e, form.plate, (plate) => set('plate', plate))}
                     placeholder="e.g. AB 12 CD 1275"
                     autoCapitalize="characters"
-                    className="h-11 min-w-0 flex-1 px-3 text-[13px] font-semibold uppercase tracking-wide text-slate-900 outline-none placeholder:font-medium placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400"
+                    className="h-11 min-w-0 flex-1 px-3 text-[13px] font-semibold uppercase tracking-normal text-slate-900 outline-none placeholder:font-medium placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400"
                   />
                 </div>
                 <p className="text-[12px] font-normal text-slate-500">This is the same as your registration number</p>
@@ -853,7 +855,7 @@ export default function Valuation() {
               <input
                 className={inputClass}
                 value={form.plate}
-                onChange={(e) => set('plate', formatPlateInput(e.target.value))}
+                onChange={(e) => commitPlateInput(e, form.plate, (plate) => set('plate', plate))}
                 placeholder="Enter Your Car No. (TS 09 AB 1234)"
               />
             </Field>

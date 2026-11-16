@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { formatPlateInput } from '../../lib/fetchVehicleDetailsByReg';
+import { commitPlateInput } from '../../lib/fetchVehicleDetailsByReg';
 import {
   CONDITION_PILLS,
   HUBS,
@@ -40,8 +40,8 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
         step={2}
         title="Tell us about the car"
         desktopTitle="Condition and location"
-        hint="Kilometres, owners and city. Photos come after the price."
-        desktopHint="Kilometres, owners, city and registration. Photos are the next step."
+        hint="Kilometres, owners and city. Specifications come next."
+        desktopHint="Kilometres, owners, city and registration."
       />
 
       <section>
@@ -132,7 +132,7 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
           <span className="text-[13px] font-semibold text-slate-700 lg:text-[11px] lg:font-black lg:uppercase lg:tracking-wider lg:text-slate-500">Registration number</span>
           <input
             value={state.plate}
-            onChange={(e) => patch({ plate: formatPlateInput(e.target.value) })}
+            onChange={(e) => commitPlateInput(e, state.plate, (plate) => patch({ plate }))}
             placeholder="TS 09 AB 1234"
             className={`mt-1.5 ${sellFieldClass} ${state.plate && plateMsg ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200' : ''}`}
           />
@@ -204,7 +204,7 @@ export default function StepCondition({ state, patch, cities, onBack, onNext }) 
           }}
           className="flex-1 rounded-xl bg-[#3083ff] hover:bg-[#1853ff] disabled:opacity-50 text-white py-3.5 text-xs font-black uppercase tracking-wider"
         >
-          Get valuation
+          Continue
         </button>
       </div>
     </div>

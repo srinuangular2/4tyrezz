@@ -98,6 +98,15 @@ function normalizeReg(regNumber = '') {
   return String(regNumber).toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+const RC_STANDARD = /^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}$/;
+const RC_BHARAT = /^\d{2}BH\d{4}[A-Z]{1,2}$/;
+const RC_FORMAT_MESSAGE = 'After the district number, use letters and then 4 digits. For example AP 39 C 3736.';
+
+function assertRcFormat(reg) {
+  if (RC_STANDARD.test(reg) || RC_BHARAT.test(reg)) return;
+  throw lookupError(RC_FORMAT_MESSAGE, 400);
+}
+
 function formatReg(reg) {
   const c = normalizeReg(reg);
   const m = c.match(/^([A-Z]{2})(\d{1,2})([A-Z]{1,3})(\d{1,4})$/);
@@ -496,10 +505,21 @@ async function fromProvider(reg) {
     const payload = err.response?.data;
     console.warn('[rto] provider failed:', p, err.message, payload || '');
     const status = err.response?.status;
-    const providerMsg = payload?.message || payload?.msg || payload?.error || err.message || '';
+    const providerMsg = /valid Indian vehicle registration/i.test(
+      String(payload?.message || payload?.msg || payload?.error || '')
+    )
+      ? RC_FORMAT_MESSAGE
+      : (payload?.message || payload?.msg || payload?.error || err.message || '');
 
-    if (status === 429 || /quota|monthly|plan|upgrade|subscription|credit|wallet|balance|insufficient/i.test(String(providerMsg))) {
-      if (/quota|monthly|plan|upgrade|subscription|credit|wallet|balance|insufficient/i.test(String(providerMsg))) {
+    if (status === 402 || payload?.message_code === 'INSUFFICIENT_BALANCE') {
+      throw lookupError(
+        'Way2API wallet is empty. The trial credits on the catalogue are not applied to this call. Add wallet money, then try once.',
+        402
+      );
+    }
+
+    if (status === 429 || /quota|monthly|plan|upgrade|subscription/i.test(String(providerMsg))) {
+      if (/quota|monthly|plan|upgrade|subscription/i.test(String(providerMsg))) {
         throw lookupError(
           'RC lookup credits are used up. Add Way2API wallet credit, then try once.',
           429,
@@ -571,6 +591,7 @@ async function enrichCatalog(details) {
 async function fetchVehicleDetailsByReg(regNumber) {
   const reg = normalizeReg(regNumber);
   if (reg.length < 6) throw lookupError('Enter a valid registration number', 400);
+  assertRcFormat(reg);
 
   const rto = resolveRto(reg);
   const formatted = formatReg(reg);

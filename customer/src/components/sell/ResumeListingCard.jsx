@@ -15,6 +15,7 @@ export default function ResumeListingCard({
   newLabel = 'Start a new listing',
   onResume,
   onNew,
+  className = '',
 }) {
   const headline = [year, brand, model, variant].filter(Boolean).join(' ');
   const meta = [
@@ -25,7 +26,7 @@ export default function ResumeListingCard({
   ].filter(Boolean);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:rounded-3xl sm:p-8">
+    <div className={`rounded-2xl border border-slate-200 bg-white p-4 sm:rounded-3xl sm:p-8 ${className}`}>
       <p className="text-[12px] font-medium text-[#3083ff]">{title}</p>
       <h2 className="mt-1 text-[18px] font-semibold text-slate-900 sm:font-display sm:text-3xl sm:font-black">{subtitle}</h2>
       <div className="mt-4 flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3.5 py-3 sm:mt-6 sm:gap-4 sm:px-4 sm:py-4">

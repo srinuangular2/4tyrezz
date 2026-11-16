@@ -122,9 +122,9 @@ export default function Header() {
 
   const navLinks = [
     { label: 'Buy Used Cars', path: '/cars', icon: Car, primary: true },
+    { label: 'Car Inspection', path: '/pre-delivery-inspection', icon: ClipboardCheck, primary: true },
     { label: 'Sell My Car', path: '/sell', icon: IndianRupee, primary: true },
     { label: 'Car Valuation', path: '/valuation', icon: Gauge, primary: true },
-    { label: 'Car Inspection', path: '/inspection', icon: ClipboardCheck, primary: true },
     { label: 'Compare', path: '/compare', icon: Columns2 },
     { label: 'Finance', path: '/finance', icon: Landmark },
     { label: 'Insurance', path: '/insurance', icon: ShieldCheck },

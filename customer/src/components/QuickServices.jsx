@@ -139,6 +139,24 @@ const SERVICES = [
     ),
   },
   {
+    id: 'inspection',
+    title: 'Car Inspection',
+    subtitle: 'Book a new or used car inspection. 300+ point check from ₹1,999, report in 60 minutes.',
+    badge: '60 Min Report',
+    badgeStyle: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+    cta: 'Book Inspection',
+    link: '/pre-delivery-inspection',
+    cardBg: 'bg-gradient-to-b from-cyan-50/80 to-white hover:from-cyan-100/80',
+    borderColor: 'border-cyan-100 hover:border-cyan-300',
+    iconBg: 'bg-[#0c2e68] text-white shadow-[#0c2e68]/20',
+    accentDot: 'bg-[#0c2e68]',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
     id: 'sell',
     title: 'Sell Your Car',
     subtitle: 'Free door-step evaluation and same-day payment at the guaranteed best price.',
@@ -153,24 +171,6 @@ const SERVICES = [
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-      </svg>
-    ),
-  },
-  {
-    id: 'inspection',
-    title: 'Car Inspection',
-    subtitle: 'Book a new or used car inspection. 300+ point check from ₹1,999, report in 60 minutes.',
-    badge: '60 Min Report',
-    badgeStyle: 'bg-cyan-50 text-cyan-800 border-cyan-200',
-    cta: 'Book Inspection',
-    link: '/inspection',
-    cardBg: 'bg-gradient-to-b from-cyan-50/80 to-white hover:from-cyan-100/80',
-    borderColor: 'border-cyan-100 hover:border-cyan-300',
-    iconBg: 'bg-[#0c2e68] text-white shadow-[#0c2e68]/20',
-    accentDot: 'bg-[#0c2e68]',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
       </svg>
     ),
   },
