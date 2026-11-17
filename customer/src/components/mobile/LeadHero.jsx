@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Check, ChevronLeft, Heart, ShoppingCart } from 'lucide-react';
+import { Check, ChevronLeft, Heart, Search, ShoppingCart } from 'lucide-react';
 import { useAuthGuard } from '../AuthGuardModal';
+import HeaderSearchBar from '../common/HeaderSearchBar';
 import { readCart, subscribeCart } from '../../lib/cart';
 import AccountAvatar from '../AccountAvatar';
 
@@ -16,6 +17,8 @@ export default function LeadHero({
   accent,
   points = [],
   badge,
+  action,
+  footer,
   subtitle,
   image,
   imageAlt = '',
@@ -27,6 +30,15 @@ export default function LeadHero({
   const wishlistCount = useSelector((s) => s.wishlist?.ids?.length || 0);
   const { requireAuth } = useAuthGuard();
   const [cartCount, setCartCount] = useState(() => readCart().length);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const city = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('4tyrezz:place') || 'null');
+      return saved?.label || 'Hyderabad';
+    } catch {
+      return 'Hyderabad';
+    }
+  })();
 
   useEffect(() => subscribeCart((rows) => setCartCount(rows.length)), []);
 
@@ -42,7 +54,7 @@ export default function LeadHero({
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#3083ff] px-3 pb-12 pt-[max(10px,env(safe-area-inset-top))] text-white lg:hidden">
+    <section className={`relative overflow-hidden bg-[#3083ff] px-3 pt-[max(10px,env(safe-area-inset-top))] text-white lg:hidden ${footer ? 'pb-4' : 'pb-12'}`}>
       <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60" style={STRIPES} />
       <div className="relative flex items-center gap-2">
         <button
@@ -55,6 +67,14 @@ export default function LeadHero({
         </button>
         <p className="min-w-0 flex-1 truncate text-[13px] font-semibold">{kicker}</p>
         <div className="flex shrink-0 items-center">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="flex h-8 w-8 items-center justify-center text-white"
+            aria-label="Search cars"
+          >
+            <Search className="h-[18px] w-[18px]" />
+          </button>
           <Link
             to={signedIn ? '/profile/wishlist' : '/'}
             onClick={(event) => openAccount(event, '/profile/wishlist')}
@@ -101,6 +121,7 @@ export default function LeadHero({
               </li>
             ))}
           </ul>
+          {action}
           {badge ? (
             <p className="mt-2.5 inline-flex rounded-full border border-white/25 bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white">
               {badge}
@@ -113,6 +134,8 @@ export default function LeadHero({
           className={`pointer-events-none shrink-0 ${imageClass}`}
         />
       </div>
+      {footer ? <div className="relative z-10 mt-3">{footer}</div> : null}
+      <HeaderSearchBar variant="modal" open={searchOpen} onClose={() => setSearchOpen(false)} city={city} />
     </section>
   );
 }

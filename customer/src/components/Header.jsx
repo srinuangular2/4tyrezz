@@ -24,7 +24,7 @@ import HeaderSearchBar, { MobileSearchButton } from './common/HeaderSearchBar';
 import api from '../api/axios';
 import NotificationBell from './NotificationBell';
 import AccountAvatar from './AccountAvatar';
-import { SHOW_TEST_DRIVE } from '../lib/featureFlags';
+import { AccountIcon, accountGroups } from '../lib/accountNav';
 
 export default function Header() {
   const { user } = useSelector((s) => s.auth);
@@ -278,28 +278,40 @@ export default function Header() {
                   </button>
 
                   {userMenu && (
-                    <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 w-56 py-2 z-50 animate-fadeUp">
+                    <div className="absolute right-0 top-full z-50 mt-2 w-[320px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.16)] animate-fadeUp">
                       {isUser && (
                         <>
-                          <Link to="/profile/settings" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Profile</Link>
-                          <Link to="/profile/orders" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Orders</Link>
-                          <Link to="/profile/my-vehicles" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Vehicles</Link>
-                          <Link to="/profile/cart" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                            My Cart {cartCount > 0 ? `(${cartCount})` : ''}
-                          </Link>
-                          <Link to="/profile/enquiries" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Enquiries</Link>
-                          <Link to="/profile/wishlist" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                            Wishlist {wishlistCount > 0 ? `(${wishlistCount})` : ''}
-                          </Link>
-                          <Link to="/profile/saved-searches" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Saved Searches</Link>
-                          <Link to="/profile/comparisons" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Comparisons</Link>
-                          {SHOW_TEST_DRIVE && (
-                            <Link to="/profile/test-drives" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">My Test Drives</Link>
-                          )}
-                          <Link to="/profile/finance-applications" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Finance Applications</Link>
-                          <Link to="/profile/insurance-enquiries" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Insurance Enquiries</Link>
-                          <Link to="/profile/notifications" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Notifications</Link>
-                          <Link to="/profile/support-tickets" onClick={() => setUserMenu(false)} className="block px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">Support Tickets</Link>
+                          <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                            <AccountAvatar user={user} className="h-10 w-10 text-[15px]" />
+                            <div className="min-w-0">
+                              <p className="truncate text-[14px] font-semibold text-slate-900">{user.name || 'Your account'}</p>
+                              <p className="truncate text-[12px] text-slate-500">{user.mobile || user.email || 'Customer'}</p>
+                            </div>
+                          </div>
+                          <div className="h-[280px] overflow-y-auto px-2 py-2">
+                            {accountGroups().map((group) => (
+                              <div key={group.label} className="mb-2">
+                                <p className="px-2 pb-1 pt-1 text-[12px] font-semibold text-slate-400">{group.label}</p>
+                                {group.items.map(({ to, label, icon, tone }) => {
+                                  const count = to === '/profile/cart' ? cartCount : to === '/profile/wishlist' ? wishlistCount : 0;
+                                  return (
+                                    <Link
+                                      key={to}
+                                      to={to}
+                                      onClick={() => setUserMenu(false)}
+                                      className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-slate-50"
+                                    >
+                                      <AccountIcon icon={icon} tone={tone} />
+                                      <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-slate-800">{label}</span>
+                                      {count > 0 ? (
+                                        <span className="rounded-full bg-[#e8f1ff] px-2 py-0.5 text-[11px] font-semibold text-[#1853ff]">{count}</span>
+                                      ) : null}
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            ))}
+                          </div>
                         </>
                       )}
                       <button
@@ -308,9 +320,9 @@ export default function Header() {
                           setUserMenu(false);
                           navigate('/');
                         }}
-                        className="w-full text-left px-4 py-2 text-xs font-bold text-[#3083ff] hover:bg-slate-50"
+                        className="flex w-full items-center gap-2 border-t border-slate-100 px-4 py-3 text-left text-[13px] font-semibold text-rose-600 hover:bg-rose-50"
                       >
-                        Logout
+                        Log out
                       </button>
                     </div>
                   )}

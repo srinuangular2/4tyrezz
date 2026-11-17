@@ -1,3 +1,4 @@
+import { CarFront } from 'lucide-react';
 import { formatINR } from '../../components/PageShell';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -123,7 +124,7 @@ function statusColor(value) {
 export function StatusPill({ value }) {
   return (
     <span
-      className="inline-flex max-w-[76px] shrink-0 items-center justify-center rounded-tr-[22px] px-1.5 py-1 text-center text-[9px] font-semibold uppercase leading-tight tracking-wide text-white"
+      className="inline-flex max-w-[76px] shrink-0 items-center justify-center rounded-tr-[22px] px-1.5 py-1 text-center text-[9px] font-semibold uppercase leading-tight tracking-wide text-white lg:max-w-none lg:rounded-full lg:px-2.5 lg:py-1 lg:text-[11px] lg:font-semibold lg:normal-case lg:tracking-normal"
       style={{ backgroundColor: statusColor(value) }}
     >
       {value || '—'}
@@ -147,21 +148,23 @@ export function cardTone(index = 0) {
 
 export function VehicleCard({ image, title, price, facts, when, note, status, children }) {
   return (
-    <article className="relative overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
-      {status ? <div className="absolute top-0 right-0 z-10">{status}</div> : null}
-      <div className="flex gap-3 p-3 lg:gap-4 lg:p-4">
-        <div className="w-[104px] h-[78px] lg:w-[148px] lg:h-[108px] rounded-xl bg-slate-100 overflow-hidden shrink-0">
+    <article className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)] lg:rounded-2xl">
+      {status ? <div className="absolute top-0 right-0 z-10 lg:static lg:flex lg:justify-end lg:px-4 lg:pt-4">{status}</div> : null}
+      <div className="flex gap-3 p-3 lg:gap-4 lg:px-4 lg:pb-4 lg:pt-3">
+        <div className="w-[104px] h-[78px] lg:w-[168px] lg:h-[112px] rounded-xl bg-slate-100 overflow-hidden shrink-0">
           {image ? (
             <img src={mediaUrl(image)} alt="" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[22px]">🚗</div>
+            <div className="flex h-full w-full items-center justify-center text-slate-300">
+              <CarFront className="h-7 w-7" />
+            </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className={`text-[13px] font-semibold text-slate-900 leading-snug line-clamp-2 ${status ? 'pr-16' : ''}`}>{title}</p>
-          {price ? <p className="text-[13px] font-bold text-[#1853ff] mt-0.5">{price}</p> : null}
-          {facts ? <p className="text-[12px] font-normal text-slate-500 mt-0.5 leading-snug">{facts}</p> : null}
-          {when ? <p className="text-[11px] font-normal text-slate-400 mt-1">{when}</p> : null}
+          <p className={`text-[13px] font-semibold leading-snug text-slate-900 line-clamp-2 lg:text-[16px] ${status ? 'pr-16 lg:pr-0' : ''}`}>{title}</p>
+          {price ? <p className="mt-0.5 text-[13px] font-semibold text-[#1853ff] lg:text-[15px]">{price}</p> : null}
+          {facts ? <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500 lg:text-[13px]">{facts}</p> : null}
+          {when ? <p className="mt-1 text-[11px] font-normal text-slate-400 lg:text-[12px]">{when}</p> : null}
         </div>
       </div>
       {note ? <p className="px-3 pb-2 text-[12px] font-normal text-slate-600 leading-relaxed">{note}</p> : null}

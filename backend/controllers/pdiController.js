@@ -4,7 +4,7 @@ const Payment = require('../models/Payment');
 const paymentService = require('../services/integrations/paymentService');
 const { TIME_SLOTS, blankChecklist, scoreChecklist, REPAINT_PANELS } = require('../utils/pdiChecklist');
 const pricing = require('../utils/pdiPricing');
-const { catalogImages, pickCatalog } = require('../utils/modelPhoto');
+const { catalogImages, pickCatalog, brandLogos } = require('../utils/modelPhoto');
 
 function quote(input) {
   if (input.vehicleSegment) return pricing.quoteSegment(input).total;
@@ -184,10 +184,12 @@ exports.list = async (req, res) => {
   const reports = await PdiReport.find({ booking: { $in: data.map((row) => row._id) } }).select('booking score').lean();
   const scoreByBooking = Object.fromEntries(reports.map((row) => [String(row.booking), row.score]));
   const catalog = await catalogImages(data.map((row) => ({ brand: row.brand, model: row.model })));
+  const logos = await brandLogos(data.map((row) => row.brand));
   res.json({
     data: data.map((row) => ({
       ...row,
       image: row.car?.images?.[0] || pickCatalog(catalog, row.brand, row.model, row.car?.year),
+      brandLogo: logos.get(String(row.brand || '').trim().toLowerCase()) || '',
       score: scoreByBooking[String(row._id)] ?? null,
     })),
   });

@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   Droplets,
   FileCheck2,
@@ -34,6 +35,40 @@ import { usePageMeta } from '../lib/pageMeta';
 import { useIsPhone } from '../components/sell/ui';
 import LeadHero from '../components/mobile/LeadHero';
 
+const ICON_TONES = {
+  blue: 'from-[#6cb2ff] to-[#1853ff]',
+  orange: 'from-[#ffc14d] to-[#ff7a18]',
+  emerald: 'from-[#5ee08a] to-[#0e9f55]',
+  violet: 'from-[#c4a1ff] to-[#7c3aed]',
+  rose: 'from-[#ff9bb5] to-[#e11d48]',
+  cyan: 'from-[#7eebff] to-[#0891b2]',
+  amber: 'from-[#ffe08a] to-[#f59e0b]',
+  indigo: 'from-[#b7c2ff] to-[#4f46e5]',
+};
+
+function SampleReportButton({ className = '', wide = false }) {
+  return (
+    <a
+      href="/inspection_report.pdf"
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center gap-2.5 bg-white font-semibold text-[#1853ff] ${wide ? 'h-12 w-full justify-between rounded-2xl px-3.5 text-[14px] shadow-[0_8px_18px_rgba(7,20,51,0.16)]' : 'h-11 justify-center rounded-full px-5 text-[13px] shadow-[0_8px_20px_rgba(7,20,51,0.2)]'} ${className}`}
+    >
+      <span className="flex items-center gap-2.5">
+        {wide ? (
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#e8f1ff]">
+            <FileText className="h-4 w-4" />
+          </span>
+        ) : (
+          <FileText className="h-4 w-4" />
+        )}
+        View sample report
+      </span>
+      {wide ? <ChevronRight className="h-4 w-4 text-[#3083ff]" /> : null}
+    </a>
+  );
+}
+
 const SLOTS = ['09:00–11:00', '11:00–13:00', '14:00–16:00', '16:00–18:00'];
 
 const BOOK_STEPS = [
@@ -57,9 +92,9 @@ const LOOK = {
     issuesTitle: 'A new car can still have serious issues',
     issuesLead: 'Showroom lights hide what a gauge and a scanner pick up.',
     issues: [
-      { icon: Wrench, title: 'Engine defects', body: 'Leaks, rough idle and fault codes that a handover walkaround will not show.' },
-      { icon: Paintbrush, title: 'Transit and paint damage', body: 'Chips, uneven gaps and touch-up that happened on the way to the yard.' },
-      { icon: Zap, title: 'Electrical faults', body: 'Warning lamps, a drained battery and features that were never switched on.' },
+      { icon: Wrench, tone: 'orange', title: 'Engine defects', body: 'Leaks, rough idle and fault codes that a handover walkaround will not show.' },
+      { icon: Paintbrush, tone: 'rose', title: 'Transit and paint damage', body: 'Chips, uneven gaps and touch-up that happened on the way to the yard.' },
+      { icon: Zap, tone: 'amber', title: 'Electrical faults', body: 'Warning lamps, a drained battery and features that were never switched on.' },
     ],
     checksTitle: 'The PDI checklist covers 300+ checks',
     stepsTitle: 'A new car, checked in 3 steps',
@@ -80,9 +115,9 @@ const LOOK = {
     issuesTitle: 'Uncover a used car’s true condition',
     issuesLead: 'The listing photo and the test drive leave the expensive faults out.',
     issues: [
-      { icon: CarFront, title: 'Accident repairs', body: 'Filler, replaced panels and structure damage sitting under a fresh coat of paint.' },
-      { icon: Droplets, title: 'Flood and leaks', body: 'Silt, corrosion and wet connectors that a dry cabin on the day of viewing can hide.' },
-      { icon: FileText, title: 'Papers that do not match', body: 'RC, insurance, NOC and the chassis number checked against the car, not the advertisement.' },
+      { icon: CarFront, tone: 'orange', title: 'Accident repairs', body: 'Filler, replaced panels and structure damage sitting under a fresh coat of paint.' },
+      { icon: Droplets, tone: 'cyan', title: 'Flood and leaks', body: 'Silt, corrosion and wet connectors that a dry cabin on the day of viewing can hide.' },
+      { icon: FileText, tone: 'indigo', title: 'Papers that do not match', body: 'RC, insurance, NOC and the chassis number checked against the car, not the advertisement.' },
     ],
     checksTitle: 'The report covers 300+ quality checks',
     stepsTitle: 'A used car, checked in 3 steps',
@@ -96,25 +131,25 @@ const LOOK = {
 };
 
 const CHECKS = [
-  { key: 'engine', title: 'Engine and mechanical', points: 70, icon: Gauge, items: ['Fluid level and leaks', 'Idle and road noise', 'OBD fault codes', 'Gear shift feel'] },
-  { key: 'body', title: 'Body and paint', points: 60, icon: Paintbrush, items: ['Paint thickness on every panel', 'Panel gap and hinges', 'Glass stamps', 'Weather seals'] },
-  { key: 'electrical', title: 'Electrical and cabin', points: 80, icon: Zap, items: ['AC vent temperature', 'Warning lamps', 'Windows and infotainment', 'Battery health'] },
-  { key: 'under', title: 'Underbody and brakes', points: 50, icon: Wrench, items: ['Rust and sump leaks', 'Suspension bushes', 'Brake disc condition', 'Exhaust mounts'] },
-  { key: 'docs', title: 'Documents and VIN', points: 40, icon: FileText, items: ['VIN on glass, bay and pillar', 'Invoice or RC match', 'Insurance and NOC', 'Chassis to engine match'] },
-  { key: 'tyres', title: 'Tyres and battery', points: 30, icon: BatteryCharging, items: ['Tread depth', 'DOT age against the car', 'Cold cranking health', 'Charging voltage'] },
+  { key: 'engine', title: 'Engine and mechanical', points: 70, icon: Gauge, tone: 'emerald', items: ['Fluid level and leaks', 'Idle and road noise', 'OBD fault codes', 'Gear shift feel'] },
+  { key: 'body', title: 'Body and paint', points: 60, icon: Paintbrush, tone: 'rose', items: ['Paint thickness on every panel', 'Panel gap and hinges', 'Glass stamps', 'Weather seals'] },
+  { key: 'electrical', title: 'Electrical and cabin', points: 80, icon: Zap, tone: 'amber', items: ['AC vent temperature', 'Warning lamps', 'Windows and infotainment', 'Battery health'] },
+  { key: 'under', title: 'Underbody and brakes', points: 50, icon: Wrench, tone: 'orange', items: ['Rust and sump leaks', 'Suspension bushes', 'Brake disc condition', 'Exhaust mounts'] },
+  { key: 'docs', title: 'Documents and VIN', points: 40, icon: FileText, tone: 'indigo', items: ['VIN on glass, bay and pillar', 'Invoice or RC match', 'Insurance and NOC', 'Chassis to engine match'] },
+  { key: 'tyres', title: 'Tyres and battery', points: 30, icon: BatteryCharging, tone: 'cyan', items: ['Tread depth', 'DOT age against the car', 'Cold cranking health', 'Charging voltage'] },
 ];
 
 const HOW = [
-  { icon: CalendarCheck, title: 'Book the visit', body: 'Share the car, the place and a time. A new car is checked at the yard. A used car is checked where it is parked.' },
-  { icon: ClipboardCheck, title: 'The engineer checks it', body: 'A certified engineer runs the checklist with a paint gauge, a scanner and a camera, and photographs anything that fails.' },
-  { icon: FileCheck2, title: 'You get the report', body: 'You hear the findings first. The PDF with scores and photos arrives within 60 minutes.' },
+  { icon: CalendarCheck, tone: 'violet', title: 'Book the visit', body: 'Share the car, the place and a time. A new car is checked at the yard. A used car is checked where it is parked.' },
+  { icon: ClipboardCheck, tone: 'emerald', title: 'The engineer checks it', body: 'A certified engineer runs the checklist with a paint gauge, a scanner and a camera, and photographs anything that fails.' },
+  { icon: FileCheck2, tone: 'blue', title: 'You get the report', body: 'You hear the findings first. The PDF with scores and photos arrives within 60 minutes.' },
 ];
 
 const INSIGHTS = [
-  { icon: ShieldCheck, title: 'Independent of the seller', body: 'The engineer is booked by you. The showroom and the seller do not write the score.' },
-  { icon: ScanLine, title: 'Tools, not a walkaround', body: 'Paint thickness, fault codes, battery health and vent temperature are recorded as numbers.' },
-  { icon: BadgeCheck, title: 'A report you can use', body: 'Pass and fail by section, with photos, so you can ask for a repair or walk away.' },
-  { icon: FileCheck2, title: 'Ready in 60 minutes', body: 'The briefing happens on site or by phone. The PDF follows the same day.' },
+  { icon: ShieldCheck, tone: 'blue', title: 'Independent of the seller', body: 'The engineer is booked by you. The showroom and the seller do not write the score.' },
+  { icon: ScanLine, tone: 'cyan', title: 'Tools, not a walkaround', body: 'Paint thickness, fault codes, battery health and vent temperature are recorded as numbers.' },
+  { icon: BadgeCheck, tone: 'emerald', title: 'A report you can use', body: 'Pass and fail by section, with photos, so you can ask for a repair or walk away.' },
+  { icon: FileCheck2, tone: 'violet', title: 'Ready in 60 minutes', body: 'The briefing happens on site or by phone. The PDF follows the same day.' },
 ];
 
 const PAGE_FAQS = {
@@ -430,12 +465,15 @@ export default function InspectionBook() {
           badge="A 4tyrezz inspection"
           image="/hero-car.png"
           imageAlt=""
+          footer={(
+            <>
+              <SampleReportButton wide />
+              <Link to={look.other.to} className="mt-2.5 block text-center text-[12px] font-medium text-white/90">
+                Looking for a {look.other.label.toLowerCase()}?
+              </Link>
+            </>
+          )}
         />
-        <div className="bg-[#3083ff] px-4 pb-8 lg:hidden">
-          <Link to={look.other.to} className="-mt-6 block text-[12px] font-medium text-white">
-            Looking for a {look.other.label.toLowerCase()}?
-          </Link>
-        </div>
       </div>
       <section className="relative hidden overflow-hidden text-white lg:block">
         <img src={look.banner} alt="" className="absolute inset-0 h-full w-full object-cover object-[18%_center]" />
@@ -460,15 +498,17 @@ export default function InspectionBook() {
                 </li>
               ))}
             </ul>
-            <Link to={look.other.to} className="mt-4 inline-flex text-[13px] font-medium text-blue-200 underline-offset-2 hover:underline">
+            <SampleReportButton className="mt-5" />
+            <Link to={look.other.to} className="mt-3 flex text-[13px] font-medium text-blue-200 underline-offset-2 hover:underline">
               Looking for a {look.other.label.toLowerCase()}?
             </Link>
           </div>
 
           {!phone && (
-          <form id="book-form" onSubmit={submit} className="rounded-3xl bg-white p-5 text-slate-900 shadow-2xl shadow-slate-900/20 sm:p-6">
-            <p className="text-[13px] font-medium text-[#3083ff]">{look.kicker}</p>
-            <div className="mt-3 grid grid-cols-4 gap-1.5">
+          <form id="book-form" onSubmit={submit} className="relative overflow-hidden rounded-[28px] border border-white/70 bg-white p-5 text-slate-900 shadow-[0_28px_70px_rgba(7,20,51,0.28)] ring-1 ring-slate-900/5 sm:p-6">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#6cb2ff] via-[#3083ff] to-[#1853ff]" />
+            <p className="text-[13px] font-semibold text-[#3083ff]">{look.kicker}</p>
+            <div className="mt-3 grid grid-cols-4 gap-1.5 rounded-2xl bg-[#f4f7fb] p-1">
               {BOOK_STEPS.map((item, index) => {
                 const n = index + 1;
                 const on = n === step;
@@ -603,11 +643,11 @@ export default function InspectionBook() {
                 </button>
               )}
               {step < 4 ? (
-                <button type="button" onClick={goNext} className="h-12 flex-1 rounded-2xl bg-[#3083ff] text-sm font-semibold text-white hover:bg-[#1853ff]">
+                <button type="button" onClick={goNext} className="h-12 flex-1 rounded-2xl bg-[#3083ff] text-sm font-semibold text-white shadow-[0_10px_22px_rgba(48,131,255,0.35)] hover:bg-[#1853ff]">
                   Continue
                 </button>
               ) : (
-                <button type="submit" disabled={saving} className="h-12 flex-1 rounded-2xl bg-[#3083ff] text-sm font-semibold text-white hover:bg-[#1853ff] disabled:opacity-50">
+                <button type="submit" disabled={saving} className="h-12 flex-1 rounded-2xl bg-[#3083ff] text-sm font-semibold text-white shadow-[0_10px_22px_rgba(48,131,255,0.35)] hover:bg-[#1853ff] disabled:opacity-50">
                   {saving ? 'Please wait…' : `Pay ${inr(quote.total)}`}
                 </button>
               )}
@@ -617,14 +657,14 @@ export default function InspectionBook() {
         </div>
       </section>
 
-      <section className="relative z-10 -mt-7 mx-auto max-w-6xl rounded-t-[28px] bg-[#f6f8fb] px-4 pb-8 pt-5 lg:mt-0 lg:rounded-none lg:bg-transparent lg:px-8 lg:py-12">
+      <section id="pdi-issues" className="relative z-10 mx-auto max-w-6xl rounded-t-[28px] bg-[#f6f8fb] px-4 pb-8 pt-6 lg:rounded-none lg:bg-transparent lg:px-8 lg:py-12">
         <h2 className="max-w-xl text-[18px] font-semibold leading-snug text-slate-900 lg:text-3xl">{look.issuesTitle}</h2>
         <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-slate-500 lg:text-sm">{look.issuesLead}</p>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {look.issues.map(({ icon: Icon, title, body }) => (
-            <article key={title} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf2ff] text-[#3083ff]">
-                <Icon className="h-5 w-5" strokeWidth={2.1} />
+          {look.issues.map(({ icon: Icon, tone, title, body }) => (
+            <article key={title} className="rounded-2xl border border-slate-200 bg-white p-4 transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
+              <span className={`flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${ICON_TONES[tone]} text-white shadow-[0_10px_18px_rgba(24,83,255,0.18)]`}>
+                <Icon className="h-6 w-6" strokeWidth={2.1} />
               </span>
               <h3 className="mt-3 text-[15px] font-semibold text-slate-900">{title}</h3>
               <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{body}</p>
@@ -633,7 +673,7 @@ export default function InspectionBook() {
         </div>
       </section>
 
-      <section className="bg-white py-8 lg:py-12">
+      <section id="pdi-checks" className="scroll-mt-24 bg-white py-8 lg:py-12">
         <div className="mx-auto max-w-6xl px-4 lg:px-8">
           <p className="text-[12px] font-medium text-[#3083ff]">300+ checks</p>
           <h2 className="mt-1 max-w-xl text-[18px] font-semibold leading-snug text-slate-900 lg:text-3xl">{look.checksTitle}</h2>
@@ -641,10 +681,10 @@ export default function InspectionBook() {
             {CHECKS.map((row) => {
               const Icon = row.icon;
               return (
-                <article key={row.key} className="rounded-2xl border border-slate-200 bg-[#f7f9fc] p-4">
+                <article key={row.key} className="rounded-2xl border border-slate-200 bg-[#f7f9fc] p-4 transition duration-200 hover:-translate-y-1 hover:bg-white hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#3083ff] shadow-sm">
-                      <Icon className="h-5 w-5" strokeWidth={2.1} />
+                    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br ${ICON_TONES[row.tone]} text-white shadow-[0_10px_18px_rgba(24,83,255,0.18)]`}>
+                      <Icon className="h-6 w-6" strokeWidth={2.1} />
                     </span>
                     <div className="min-w-0">
                       <h3 className="text-[14px] font-semibold text-slate-900">{row.title}</h3>
@@ -666,14 +706,14 @@ export default function InspectionBook() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8 lg:px-8 lg:py-12">
+      <section id="pdi-steps" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-8 lg:px-8 lg:py-12">
         <h2 className="text-[18px] font-semibold text-slate-900 lg:text-3xl">{look.stepsTitle}</h2>
         <ol className="mt-4 grid gap-3 md:grid-cols-3">
-          {HOW.map(({ icon: Icon, title, body }, index) => (
-            <li key={title} className="rounded-2xl border border-slate-200 bg-white p-4">
+          {HOW.map(({ icon: Icon, tone, title, body }, index) => (
+            <li key={title} className="rounded-2xl border border-slate-200 bg-white p-4 transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#071433] text-white">
-                  <Icon className="h-5 w-5" />
+                <span className={`flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${ICON_TONES[tone]} text-white shadow-[0_10px_18px_rgba(24,83,255,0.18)]`}>
+                  <Icon className="h-6 w-6" />
                 </span>
                 <span className="text-[12px] font-semibold text-[#3083ff]">Step {index + 1}</span>
               </div>
@@ -684,7 +724,7 @@ export default function InspectionBook() {
         </ol>
       </section>
 
-      <section className="bg-[#eef5ff] py-8 lg:py-12">
+      <section id="pdi-score" className="scroll-mt-24 bg-[#eef5ff] py-8 lg:py-12">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-[12px] font-medium text-[#3083ff]">How the check is done</p>
@@ -709,10 +749,10 @@ export default function InspectionBook() {
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {INSIGHTS.map(({ icon: Icon, title, body }) => (
-              <article key={title} className="rounded-2xl border border-[#d5e4ff] bg-white p-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#3083ff]">
-                  <Icon className="h-5 w-5" />
+            {INSIGHTS.map(({ icon: Icon, tone, title, body }) => (
+              <article key={title} className="rounded-2xl border border-[#d5e4ff] bg-white p-4 transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
+                <span className={`flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br ${ICON_TONES[tone]} text-white shadow-[0_10px_18px_rgba(24,83,255,0.18)]`}>
+                  <Icon className="h-6 w-6" />
                 </span>
                 <h3 className="mt-3 text-[14px] font-semibold text-slate-900">{title}</h3>
                 <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{body}</p>
@@ -776,7 +816,7 @@ export default function InspectionBook() {
               </button>
             </div>
             <p className="mt-2 text-[12px] leading-snug text-slate-500">{meta.hint}</p>
-            <div className="mt-3 grid grid-cols-4 gap-1.5">
+            <div className="mt-3 grid grid-cols-4 gap-1.5 rounded-2xl bg-[#f4f7fb] p-1">
               {BOOK_STEPS.map((item, index) => {
                 const n = index + 1;
                 const on = n === step;

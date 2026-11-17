@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
+import { customerNotificationLink } from '../lib/customerNotificationLink';
 
 const SOUND_KEY = '4tyrezz:alertSound';
 const EVENTS = [
@@ -281,11 +282,9 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
       seenRef.current.add(key);
       toastAlert(payload, dark);
       playChime(payload);
-      if (payload?.notification) {
-        setItems((prev) => [payload.notification, ...prev].slice(0, 40));
-      } else {
-        setItems((prev) => [
-          {
+      const incoming = payload?.notification
+        ? { ...payload.notification, event: payload.notification.event || payload?.event }
+        : {
             _id: `live-${Date.now()}`,
             title: payload?.title,
             body: payload?.message || payload?.body,
@@ -293,13 +292,13 @@ export function RealtimeAlertsProvider({ children, token, enabled, variant = 'ad
             type: payload?.type,
             event: payload?.event,
             link: variant === 'dealer' ? payload?.dealerLink || payload?.link : payload?.link,
+            recipientRole: variant === 'customer' ? 'customer' : variant,
             isRead: false,
             read: false,
             createdAt: payload?.createdAt || new Date().toISOString(),
-          },
-          ...prev,
-        ].slice(0, 40));
-      }
+          };
+      if (variant === 'customer') incoming.link = customerNotificationLink(incoming);
+      setItems((prev) => [incoming, ...prev].slice(0, 40));
       refresh();
     };
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
 import { useRealtimeAlerts } from '../hooks/useRealtimeAlerts';
+import { customerNotificationLink } from '../lib/customerNotificationLink';
 
 function timeAgo(date) {
   if (!date) return '';
@@ -98,7 +99,8 @@ export default function NotificationBell({ variant = 'admin' }) {
                   onClick={() => {
                     if (n._id && !String(n._id).startsWith('live-')) alerts.markRead({ id: n._id });
                     setOpen(false);
-                    if (n.link) navigate(n.link);
+                    const href = alerts.variant === 'customer' ? customerNotificationLink(n) : n.link;
+                    if (href) navigate(href);
                   }}
                   className={`w-full text-left px-4 py-3 border-b last:border-0 transition ${
                     dark

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Calendar, CarFront, MapPin } from 'lucide-react';
 import api from '../../api/axios';
 import PdiHealthReport from '../../components/pdi/PdiHealthReport';
 import { EmptyNote } from './ProfileLayout';
-import { formatDateLabel, mediaUrl, StatusPill } from './hubUtils';
+import { formatDateLabel, mediaUrl } from './hubUtils';
 
 const STEPS = [
   { key: 'PAYMENT_PENDING', label: 'Payment' },
@@ -67,12 +68,8 @@ export default function PdiBookings() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <div className="hidden lg:block">
-          <h1 className="text-xl font-black text-slate-900">Car inspection</h1>
-          <p className="text-sm text-slate-500 mt-1">Track payment, the visit, and your report.</p>
-        </div>
-        <Link to="/pre-delivery-inspection" className="ml-auto text-[12px] font-semibold text-[#3083ff]">Book another</Link>
+      <div className="flex justify-end">
+        <Link to="/pre-delivery-inspection" className="text-[13px] font-semibold text-[#3083ff]">Book another</Link>
       </div>
       {loading && <p className="text-sm text-slate-500">Loading your inspections…</p>}
       {!loading && !rows.length && <EmptyNote>No inspections booked yet. Book a visit and the car, slot and report will show here.</EmptyNote>}
@@ -82,39 +79,55 @@ export default function PdiBookings() {
         const booking = openId === row._id ? detail?.data || row : row;
         const address = [booking.address, booking.city, booking.pincode].filter(Boolean).join(', ');
         const segment = booking.vehicleSegment === 'SUV_LUXURY' ? 'SUV / Luxury' : booking.vehicleSegment === 'HATCH_SEDAN' ? 'Hatchback / Sedan' : '';
+        const photo = row.image ? mediaUrl(row.image) : '';
+        const logo = row.brandLogo ? mediaUrl(row.brandLogo) : '';
+        const title = `${row.brand || ''} ${row.model || ''}`.trim() || 'Inspection';
         return (
-          <article key={row._id} className="relative overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
-            <div className="absolute top-0 right-0 z-10">
-              <StatusPill value={STATUS_COPY[row.status] || row.status} />
-            </div>
-            <div className="flex gap-3 p-3">
-              <div className="h-[78px] w-[104px] shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                {row.image ? <img src={mediaUrl(row.image)} alt="" className="h-full w-full object-cover" /> : null}
+          <article key={row._id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)]">
+            <div className="flex flex-col sm:flex-row">
+              <div className="flex h-40 w-full shrink-0 items-center justify-center overflow-hidden bg-[#f3f7fc] sm:w-52">
+                {photo ? (
+                  <img src={photo} alt="" className="h-full w-full object-cover" />
+                ) : logo ? (
+                  <img src={logo} alt="" className="h-20 w-20 object-contain" />
+                ) : (
+                  <CarFront className="h-10 w-10 text-slate-300" />
+                )}
               </div>
-              <div className="min-w-0 flex-1 pr-16">
-                <p className="text-[13px] font-semibold leading-snug text-slate-900">{`${row.brand || ''} ${row.model || ''}`.trim() || 'Inspection'}</p>
-                <p className="mt-0.5 text-[12px] font-normal text-slate-500">{row.pdiType === 'NEW_CAR' ? 'New car PDI' : 'Used car inspection'}{segment ? ` · ${segment}` : ''}</p>
-                <p className="mt-0.5 text-[13px] font-bold text-[#1853ff]">{inr(row.amount)}{row.razorpayPaymentId ? ' · Paid' : ''}</p>
-                <p className="mt-1 text-[11px] font-normal text-slate-400">{when(row)}</p>
+              <div className="min-w-0 flex-1 p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold text-[#3083ff]">{row.pdiType === 'NEW_CAR' ? 'New car PDI' : 'Used car inspection'}{segment ? ` · ${segment}` : ''}</p>
+                    <h3 className="mt-1 text-[18px] font-semibold leading-snug text-slate-900">{title}</h3>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold ${cancelled ? 'bg-rose-50 text-rose-600' : row.status === 'PAYMENT_PENDING' ? 'bg-amber-50 text-amber-700' : row.status === 'IN_PROGRESS' ? 'bg-[#e8f1ff] text-[#1853ff]' : 'bg-[#e8f8ef] text-[#0e7a52]'}`}>
+                    {STATUS_COPY[row.status] || row.status}
+                  </span>
+                </div>
+                <p className="mt-2 text-[16px] font-semibold text-[#1853ff]">{inr(row.amount)}{row.razorpayPaymentId ? ' · Paid' : row.status === 'PAYMENT_PENDING' ? ' · Payment pending' : ''}</p>
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-slate-500">
+                  <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{when(row)}</span>
+                  <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{row.city || 'City not set'}</span>
+                </div>
               </div>
             </div>
             {cancelled ? (
-              <p className="px-3.5 pb-3 text-[12px] font-medium text-rose-500">This inspection was cancelled.</p>
+              <p className="px-5 pb-4 text-[13px] font-medium text-rose-500">This inspection was cancelled.</p>
             ) : (
-              <ol className="grid grid-cols-4 gap-1 px-3.5">
+              <ol className="grid grid-cols-4 gap-2 px-4 pb-1 sm:px-5">
                 {STEPS.map((step, stepAt) => (
-                  <li key={step.key} className="text-center">
-                    <span className={`mx-auto block h-1.5 rounded-full ${stepAt <= current ? 'bg-[#3083ff]' : 'bg-slate-200'}`} />
-                    <span className={`mt-1 block text-[11px] font-medium ${stepAt === current ? 'text-[#1853ff]' : stepAt < current ? 'text-slate-700' : 'text-slate-400'}`}>{step.label}</span>
+                  <li key={step.key}>
+                    <span className={`block h-1.5 rounded-full ${stepAt <= current ? 'bg-[#3083ff]' : 'bg-slate-200'}`} />
+                    <span className={`mt-1.5 block text-[12px] font-medium ${stepAt === current ? 'text-[#1853ff]' : stepAt < current ? 'text-slate-700' : 'text-slate-400'}`}>{step.label}</span>
                   </li>
                 ))}
               </ol>
             )}
-            <button type="button" onClick={() => open(row._id)} className="mx-3.5 mb-3 mt-3 text-[12px] font-semibold text-[#3083ff]">
+            <button type="button" onClick={() => open(row._id)} className="mx-4 mb-4 mt-3 h-10 rounded-xl border border-slate-200 px-4 text-[13px] font-semibold text-[#1853ff] hover:bg-[#f4f7fb] sm:mx-5">
               {openId === row._id ? 'Hide details' : 'Booking details'}
             </button>
             {openId === row._id && (
-              <dl className="mx-3.5 mb-3 grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-3">
+              <dl className="mx-4 mb-4 grid grid-cols-2 gap-3 rounded-2xl bg-[#f4f7fb] p-4 sm:mx-5">
                 <div className="col-span-2">
                   <dt className="text-[11px] font-medium text-slate-400">Address</dt>
                   <dd className="mt-0.5 text-[13px] font-medium text-slate-800">{address || '—'}</dd>
@@ -130,7 +143,7 @@ export default function PdiBookings() {
               </dl>
             )}
             {openId === row._id && detail?.report && (
-              <div className="mx-3.5 mb-3">
+              <div className="mx-4 mb-4 sm:mx-5">
                 <PdiHealthReport booking={detail.data} report={detail.report} />
               </div>
             )}

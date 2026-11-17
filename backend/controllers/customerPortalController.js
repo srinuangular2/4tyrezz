@@ -215,24 +215,34 @@ exports.listSellRequests = async (req, res) => {
 
 exports.listEnquiries = async (req, res) => {
   const userId = req.user._id;
-  const [leads, enquiries] = await Promise.all([
+  const carFields = 'title price year images fuel transmission kmDriven';
+  const [sentLeads, receivedLeads, enquiries] = await Promise.all([
     Lead.find({ $or: [{ email: req.user.email || '__none__' }, { phone: req.user.mobile || '__none__' }] })
-      .populate('car', 'title price year images fuel transmission kmDriven')
+      .populate('car', carFields)
+      .sort('-createdAt')
+      .lean(),
+    Lead.find({ seller: userId })
+      .populate('car', carFields)
       .sort('-createdAt')
       .lean(),
     Enquiry.find({ user: userId, type: { $nin: ['finance', 'insurance', 'seller'] } })
-      .populate('vehicle', 'title price year images fuel transmission kmDriven')
+      .populate('vehicle', carFields)
       .sort('-createdAt')
       .lean(),
   ]);
+  const leads = new Map();
+  sentLeads.forEach((row) => leads.set(String(row._id), { ...row, received: false }));
+  receivedLeads.forEach((row) => leads.set(String(row._id), { ...row, received: true }));
   const photo = (car) => car?.images?.[0] || '';
   const catalog = await catalogImages(enquiries.map((row) => ({ brand: row.brand, model: row.model })));
   const data = [
-    ...leads.map((l) => ({
+    ...[...leads.values()].map((l) => ({
       id: l._id,
-      kind: 'vehicle',
+      kind: l.received ? 'received' : 'vehicle',
       title: l.car?.title || 'Vehicle enquiry',
-      message: l.message,
+      message: l.received
+        ? [l.name, l.phone, l.message].filter(Boolean).join(' · ')
+        : l.message,
       status: enquiryStatus(l.status),
       createdAt: l.createdAt,
       image: photo(l.car),

@@ -1,40 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  ArrowLeft,
-  Bell,
-  BadgeCheck,
-  ClipboardList,
-  ClipboardCheck,
-  Gauge,
-  GitCompare,
-  Heart,
-  Landmark,
-  Package,
-  Search,
-  Shield,
-  ShoppingCart,
-  User,
-} from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
 import { logout } from '../../app/authSlice';
-import { SHOW_TEST_DRIVE } from '../../lib/featureFlags';
+import AccountAvatar from '../../components/AccountAvatar';
+import { AccountIcon, accountGroups, accountLinks, findAccountLink } from '../../lib/accountNav';
 
-const LINKS = [
-  { to: '/profile/settings', label: 'My Profile', description: 'Your name, contact details and preferences', icon: User, emoji: '👤', tone: 'from-[#dbeafe] to-[#f4f9ff]' },
-  { to: '/profile/orders', label: 'My Orders', description: 'Token bookings and car purchases', icon: Package, emoji: '🧾', tone: 'from-[#ffe8d6] to-[#fff6ee]' },
-  { to: '/profile/my-vehicles', label: 'My Vehicles', description: 'Cars you are selling, photos and edits', icon: BadgeCheck, emoji: '🚗', tone: 'from-[#d8f6ea] to-[#f3fff8]' },
-  { to: '/profile/cart', label: 'My Cart', description: 'Cars you added and are ready to buy', icon: ShoppingCart, emoji: '🛒', tone: 'from-[#dbeafe] to-[#eef6ff]' },
-  { to: '/profile/enquiries', label: 'My Enquiries', description: 'Questions you sent about cars for sale', icon: ClipboardList, emoji: '📋', tone: 'from-[#ffe8d6] to-[#fff6ee]' },
-  { to: '/profile/wishlist', label: 'My Wishlist', description: 'Cars you shortlisted to revisit', icon: Heart, emoji: '❤️', tone: 'from-[#ffe0ea] to-[#fff7f9]' },
-  { to: '/profile/saved-searches', label: 'Saved Searches', description: 'Saved filters and new-match alerts', icon: Search, emoji: '🔍', tone: 'from-[#d8f6ea] to-[#f3fff8]' },
-  { to: '/profile/comparisons', label: 'Comparisons', description: 'Cars you saved side by side', icon: GitCompare, emoji: '⚖️', tone: 'from-[#efe4ff] to-[#faf7ff]' },
-  ...(SHOW_TEST_DRIVE ? [{ to: '/profile/test-drives', label: 'My Test Drives', description: 'Home and dealership drives you booked', icon: Gauge, emoji: '🚘', tone: 'from-[#d9ecff] to-[#f3f9ff]' }] : []),
-  { to: '/profile/pdi', label: 'Car Inspection', description: 'Visit status and inspection reports', icon: ClipboardCheck, emoji: '✅', tone: 'from-[#ccfbf1] to-[#f0fdfa]' },
-  { to: '/profile/finance-applications', label: 'Finance', description: 'Loan requests and their progress', icon: Landmark, emoji: '💰', tone: 'from-[#fef3c7] to-[#fffbeb]' },
-  { to: '/profile/insurance-enquiries', label: 'Insurance', description: 'Quotes, add-ons and cover requests', icon: Shield, emoji: '🛡️', tone: 'from-[#fce7f3] to-[#fff7fb]' },
-  { to: '/profile/notifications', label: 'Notifications', description: 'Price drops, matches and account alerts', icon: Bell, emoji: '🔔', tone: 'from-[#e0e7ff] to-[#f5f7ff]' },
-];
+const LINKS = accountLinks();
+const GROUPS = accountGroups();
 
 function useIsDesktop() {
   const [desktop, setDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
@@ -63,11 +36,11 @@ function MobileAccountHub({ user, onLogout }) {
       </div>
 
       <div className="grid grid-cols-3 gap-2 mt-3">
-        {LINKS.map(({ to, label, emoji, tone }) => (
+        {LINKS.map(({ to, label, emoji, tile }) => (
           <Link
             key={to}
             to={to}
-            className={`h-[108px] rounded-2xl bg-gradient-to-b ${tone} border border-white shadow-[0_8px_20px_rgba(15,23,42,0.06)] px-1.5 py-2.5 flex flex-col items-center justify-center gap-1.5 text-center active:scale-[0.98] transition-transform`}
+            className={`h-[108px] rounded-2xl bg-gradient-to-b ${tile} border border-white shadow-[0_8px_20px_rgba(15,23,42,0.06)] px-1.5 py-2.5 flex flex-col items-center justify-center gap-1.5 text-center active:scale-[0.98] transition-transform`}
           >
             <span className="text-[26px] leading-none">{emoji}</span>
             <span className="text-[11px] font-black text-slate-900 leading-tight">{label}</span>
@@ -105,33 +78,44 @@ export default function ProfileLayout() {
   };
 
   return (
-    <div className="bg-[#f6f7fb] lg:bg-slate-50 min-h-[calc(100vh-72px)] overflow-x-hidden pb-4">
-      <div className="max-w-[1240px] mx-auto px-0 lg:px-8 lg:py-10 grid lg:grid-cols-[240px_1fr] gap-4 lg:gap-8">
-        <aside className="hidden lg:block lg:sticky lg:top-28 h-max rounded-3xl border border-white/80 bg-white/80 backdrop-blur-xl p-4 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] overflow-hidden">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#3083ff] px-3 mb-2 lg:mb-3">My account</p>
-          <p className="px-3 pb-3 lg:pb-4 font-black text-slate-900 text-sm truncate">{user?.name || user?.mobile || 'Your profile'}</p>
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar lg:overflow-visible pb-1 -mx-1 px-1">
-            {LINKS.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-xs font-bold transition shrink-0 ${
-                    isActive ? 'bg-[#3083ff] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
-                  }`
-                }
-              >
-                <Icon className="w-4 h-4 shrink-0" strokeWidth={2.25} />
-                {label}
-              </NavLink>
+    <div className="bg-[#f6f7fb] lg:bg-[#f4f7fb] min-h-[calc(100vh-72px)] pb-4">
+      <div className="max-w-[1240px] mx-auto grid gap-4 px-0 lg:grid-cols-[280px_1fr] lg:items-start lg:gap-8 lg:px-8 lg:pb-8 lg:pt-5">
+        <aside className="hidden lg:sticky lg:top-[148px] lg:z-30 lg:block lg:max-h-[calc(100vh-164px)] lg:self-start lg:overflow-y-auto rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+          <div className="mb-4 flex shrink-0 items-center gap-3 border-b border-slate-100 px-1 pb-4">
+            <AccountAvatar user={user} className="h-12 w-12 text-[16px]" />
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-slate-900">{user?.name || 'Your account'}</p>
+              <p className="truncate text-[12px] text-slate-500">{user?.mobile || user?.email || 'Customer profile'}</p>
+            </div>
+          </div>
+          <nav className="space-y-4 pr-1">
+            {GROUPS.map((group) => (
+              <div key={group.label}>
+                <p className="px-2.5 pb-1.5 text-[12px] font-semibold text-slate-400">{group.label}</p>
+                <div className="space-y-0.5">
+                  {group.items.map(({ to, label, icon, tone }) => (
+                    <NavLink key={to} to={to} className="block">
+                      {({ isActive }) => (
+                        <span className={`flex items-center gap-3 rounded-2xl px-2 py-1.5 transition ${isActive ? 'bg-[#eef5ff]' : 'hover:bg-slate-50'}`}>
+                          <AccountIcon icon={icon} tone={tone} />
+                          <span className={`text-[14px] font-semibold ${isActive ? 'text-[#1853ff]' : 'text-slate-800'}`}>{label}</span>
+                        </span>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
           <button
             type="button"
             onClick={signOut}
-            className="mt-4 w-full text-left px-3 py-2.5 text-xs font-black text-[#3083ff] hover:bg-slate-50 rounded-xl"
+            className="mt-3 flex w-full items-center gap-3 rounded-2xl px-2 py-1.5 text-left hover:bg-rose-50"
           >
-            Logout
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+              <LogOut className="h-[18px] w-[18px]" strokeWidth={2.1} />
+            </span>
+            <span className="text-[14px] font-semibold text-rose-600">Log out</span>
           </button>
         </aside>
         <div className="min-w-0 max-w-full overflow-x-hidden">
@@ -156,6 +140,15 @@ export default function ProfileLayout() {
                 </div>
               </div>
               <div className="px-4 pb-4 pt-[calc(5.5rem+env(safe-area-inset-top))] lg:p-0">
+                {current ? (
+                  <div className="mb-5 hidden items-center gap-4 lg:flex">
+                    <AccountIcon icon={current.icon} tone={current.tone} size="lg" />
+                    <div>
+                      <h1 className="text-[26px] font-semibold leading-tight text-slate-900">{current.label}</h1>
+                      <p className="mt-1 text-[14px] text-slate-500">{current.description}</p>
+                    </div>
+                  </div>
+                ) : null}
                 <Outlet />
               </div>
             </>
@@ -167,16 +160,25 @@ export default function ProfileLayout() {
 }
 
 export function ProfileCard({ title, eyebrow, children, action }) {
+  const { pathname } = useLocation();
+  const page = findAccountLink(pathname);
+  const isPageTitle = Boolean(page?.titles?.includes(String(title || '').trim().toLowerCase()));
+  const showSectionTitle = !isPageTitle && Boolean(title || eyebrow);
+
   return (
-    <div className="lg:rounded-3xl lg:border lg:border-white/80 lg:bg-white/80 lg:backdrop-blur-xl lg:p-6 lg:shadow-[0_8px_32px_0_rgba(31,38,135,0.06)]">
-      <div className="hidden lg:flex items-start justify-between gap-3 mb-5">
-        <div>
-          {eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#3083ff]">{eyebrow}</p>}
-          {title && <h1 className="font-display font-black text-2xl text-slate-900 tracking-tight mt-1">{title}</h1>}
+    <div className="lg:rounded-3xl lg:border lg:border-slate-200 lg:bg-white lg:p-6 lg:shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
+      {(showSectionTitle || action) ? (
+        <div className="mb-5 hidden items-start justify-between gap-3 lg:flex">
+          {showSectionTitle ? (
+            <div>
+              {eyebrow ? <p className="text-[12px] font-semibold text-[#3083ff]">{eyebrow}</p> : null}
+              {title ? <h2 className="mt-0.5 text-[18px] font-semibold text-slate-900">{title}</h2> : null}
+            </div>
+          ) : <span />}
+          {action}
         </div>
-        {action}
-      </div>
-      {action ? <div className="lg:hidden flex justify-end mb-3">{action}</div> : null}
+      ) : null}
+      {action ? <div className="mb-3 flex justify-end lg:hidden">{action}</div> : null}
       {children}
     </div>
   );

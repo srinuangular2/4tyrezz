@@ -46,36 +46,42 @@ const COMPARE = [
 const TOOLS = [
   {
     icon: Gauge,
+    tone: 'emerald',
     title: 'Digital ultrasonic paint gauge',
     body: 'Reads paint thickness in microns on every panel to flag filler, respray and transit touch-up.',
     detail: 'Factory paint sits in a tight micron band. A repaired panel jumps well above that band even when the colour looks perfect. The inspector logs a reading for each panel so the report shows which ones were refinished.',
   },
   {
     icon: ScanLine,
+    tone: 'cyan',
     title: 'Professional OBD2 scanner',
     body: 'Plugs into the ECU for active and cleared fault codes, misfires, airbag errors and odometer flags.',
     detail: 'A cleared code can still leave a freeze-frame. The scan covers engine, transmission, ABS and airbag modules, then the report lists each code in plain language.',
   },
   {
     icon: BatteryCharging,
+    tone: 'amber',
     title: 'Battery and alternator analyser',
     body: 'Measures cold cranking amps, battery health percentage and charging voltage.',
     detail: 'A new car can sit in a yard long enough to weaken the battery. The analyser checks whether the battery can crank and whether the alternator holds charge under load.',
   },
   {
     icon: Thermometer,
+    tone: 'rose',
     title: 'AC temperature and airflow meter',
     body: 'Records vent temperature and airflow so cooling is a number, not a guess.',
     detail: 'The inspector measures vent output after a set idle and notes whether the cabin reaches a proper drop. Weak airflow points to a blower, filter or leak before you accept the car.',
   },
   {
     icon: CircleDot,
+    tone: 'orange',
     title: 'Tread depth and tyre age check',
     body: 'Measures tread and reads the DOT date against the invoice or registration month.',
     detail: 'Tyres can be replaced with older stock. The DOT week and year are compared with the car’s build or invoice date, and tread depth is recorded per tyre.',
   },
   {
     icon: Camera,
+    tone: 'indigo',
     title: 'Borescope inspection camera',
     body: 'Looks into engine bays and underbody areas for leaks and corrosion you cannot see standing up.',
     detail: 'The camera reaches sump seams, subframe corners and hose joints. Photos of any wetness or rust go into the PDF with the panel they belong to.',
@@ -125,16 +131,35 @@ const FAQS = [
 
 const INSPECT = '#0e7a52';
 
+const ICON_TONES = {
+  blue: 'from-[#6cb2ff] to-[#1853ff]',
+  orange: 'from-[#ffc14d] to-[#ff7a18]',
+  emerald: 'from-[#5ee08a] to-[#0e9f55]',
+  violet: 'from-[#c4a1ff] to-[#7c3aed]',
+  rose: 'from-[#ff9bb5] to-[#e11d48]',
+  cyan: 'from-[#7eebff] to-[#0891b2]',
+  amber: 'from-[#ffe08a] to-[#f59e0b]',
+  indigo: 'from-[#b7c2ff] to-[#4f46e5]',
+};
+
+function PdiIcon({ icon: Icon, tone = 'blue', className = 'h-12 w-12' }) {
+  return (
+    <span className={`flex ${className} shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br ${ICON_TONES[tone]} text-white shadow-[0_10px_18px_rgba(24,83,255,0.18)]`}>
+      <Icon className="h-6 w-6" strokeWidth={2.1} />
+    </span>
+  );
+}
+
 const INSPECT_WHY = [
-  { icon: ShieldCheck, title: 'An independent check', body: 'The engineer works for you, not for the seller or the showroom.' },
-  { icon: FileCheck2, title: 'A report in 60 minutes', body: 'Scores, photos and paint readings arrive after the visit.' },
-  { icon: BadgeCheck, title: 'Decide before you pay', body: 'Use the report before registration, or before you transfer the money.' },
+  { icon: ShieldCheck, tone: 'blue', title: 'An independent check', body: 'The engineer works for you, not for the seller or the showroom.' },
+  { icon: FileCheck2, tone: 'violet', title: 'A report in 60 minutes', body: 'Scores, photos and paint readings arrive after the visit.' },
+  { icon: BadgeCheck, tone: 'emerald', title: 'Decide before you pay', body: 'Use the report before registration, or before you transfer the money.' },
 ];
 
 const INSPECT_FINDS = [
-  { icon: Gauge, title: 'Engine defects', body: 'Idle, leaks, fault codes and gearbox slip a walkaround will miss.' },
-  { icon: ShieldCheck, title: 'Paint and factory issues', body: 'Panel gaps, respray and damage picked up on the way to you.' },
-  { icon: FileCheck2, title: 'Hidden accident history', body: 'Structure, flood signs, and papers that do not match the car.' },
+  { icon: Gauge, tone: 'orange', title: 'Engine defects', body: 'Idle, leaks, fault codes and gearbox slip a walkaround will miss.' },
+  { icon: ShieldCheck, tone: 'rose', title: 'Paint and factory issues', body: 'Panel gaps, respray and damage picked up on the way to you.' },
+  { icon: FileCheck2, tone: 'indigo', title: 'Hidden accident history', body: 'Structure, flood signs, and papers that do not match the car.' },
 ];
 
 const INSPECT_STEPS = [
@@ -195,27 +220,27 @@ export default function Inspection() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent sm:hidden" />
         <div className="container-px relative mx-auto px-4 py-8 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="max-w-xl">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Pre-delivery inspection</p>
-            <h1 className="mt-2 font-display text-2xl leading-tight tracking-tight text-white sm:text-5xl">
-              Planning to buy a <span className="font-bold"> new or used car</span>?
+            <p className="text-[12px] font-medium tracking-wide text-blue-200">Pre-delivery inspection</p>
+            <h1 className="mt-2 max-w-xl font-display text-[28px] font-semibold leading-tight text-white lg:text-4xl">
+              Planning to buy a new or used car?
             </h1>
-            <p className="mt-3 text-sm font-bold leading-snug text-white sm:text-lg">
+            <p className="mt-3 max-w-md text-sm font-normal leading-relaxed text-blue-100">
               Make a confident decision with 4tyrezz’s comprehensive car inspection and pre-delivery inspection (PDI) services.
             </p>
-            <p className="mt-3 text-xs font-medium leading-relaxed text-white/85 sm:text-base">
+            <p className="mt-3 max-w-md text-[13px] font-normal leading-relaxed text-white/85 lg:text-sm">
               Get a detailed inspection report and know what you’re buying before you drive away.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Link to={bookPath({ pdiType: 'NEW_CAR', city, engineBand, obdScan, serviceHistory: false })} className="rounded-xl bg-white px-5 py-3 text-center text-sm font-black text-[#1853ff]">
+              <Link to={bookPath({ pdiType: 'NEW_CAR', city, engineBand, obdScan, serviceHistory: false })} className="rounded-xl bg-white px-5 py-3 text-center text-sm font-semibold text-[#1853ff]">
                 Book new car PDI (from {inr(ENGINE_PRICE.UPTO_1249)})
               </Link>
-              <Link to={bookPath({ pdiType: 'USED_CAR', city, engineBand, obdScan, serviceHistory })} className="rounded-xl border border-white/40 px-5 py-3 text-center text-sm font-black text-white">
+              <Link to={bookPath({ pdiType: 'USED_CAR', city, engineBand, obdScan, serviceHistory })} className="rounded-xl border border-white/40 px-5 py-3 text-center text-sm font-semibold text-white">
                 Book used car inspection (from {inr(ENGINE_PRICE.UPTO_1249)})
               </Link>
             </div>
             <ul className="mt-5 flex gap-2 overflow-x-auto pb-1">
               {TRUST.map(([label, Icon]) => (
-                <li key={label} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white">
+                <li key={label} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white">
                   <Icon className="h-3.5 w-3.5 text-blue-200" />
                   {label}
                 </li>
@@ -227,7 +252,7 @@ export default function Inspection() {
 
       <section className="lg:hidden">
         <div className="relative z-10 -mt-7 rounded-t-[28px] bg-white px-4 pb-5 pt-5">
-          <h2 className="text-[16px] font-semibold text-slate-900">Choose your car type</h2>
+          <h2 className="text-[18px] font-semibold text-slate-900">Choose your car type</h2>
           <div className="mt-3 grid grid-cols-2 gap-2.5">
             {[
               ['NEW_CAR', 'Brand new car', 'Factory defects and delivery damage', 'from-[#fff1f4] to-[#ffe4ea]'],
@@ -253,11 +278,9 @@ export default function Inspection() {
           <div className="mt-5">
             <h3 className="text-[14px] font-semibold leading-snug text-slate-900">What the inspection looks for</h3>
             <div className="mt-2.5 space-y-2">
-              {INSPECT_FINDS.map(({ icon: Icon, title, body }) => (
+              {INSPECT_FINDS.map(({ icon, tone, title, body }) => (
                 <article key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200 px-3 py-2.5">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#3083ff]">
-                    <Icon className="h-5 w-5" strokeWidth={2.1} />
-                  </span>
+                  <PdiIcon icon={icon} tone={tone} className="h-11 w-11" />
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-slate-900">{title}</p>
                     <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{body}</p>
@@ -268,13 +291,11 @@ export default function Inspection() {
           </div>
         </div>
         <div className="space-y-4 px-4 pb-4 pt-5">
-          <h2 className="text-[16px] font-semibold text-slate-900">Why inspect with 4tyrezz?</h2>
+          <h2 className="text-[18px] font-semibold text-slate-900">Why inspect with 4tyrezz?</h2>
           <div className="space-y-3">
-            {INSPECT_WHY.map(({ icon: Icon, title, body }) => (
+            {INSPECT_WHY.map(({ icon, tone, title, body }) => (
               <article key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#d7f5e8] text-[#0e7a52]">
-                  <Icon className="h-5 w-5" strokeWidth={2.1} />
-                </span>
+                <PdiIcon icon={icon} tone={tone} />
                 <div className="min-w-0">
                   <h3 className="text-[13px] font-semibold leading-snug text-slate-900">{title}</h3>
                   <p className="mt-0.5 text-[12px] font-normal leading-snug text-slate-500">{body}</p>
@@ -282,12 +303,12 @@ export default function Inspection() {
               </article>
             ))}
           </div>
-          <h2 className="text-[16px] font-semibold text-slate-900">Book an inspection in 4 easy steps</h2>
+          <h2 className="text-[18px] font-semibold text-slate-900">Book an inspection in 4 easy steps</h2>
           <ol>
             {INSPECT_STEPS.map(({ title, body }, index) => (
               <li key={title} className="flex gap-3">
                 <div className="flex flex-col items-center">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ backgroundColor: INSPECT }}>{index + 1}</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white" style={{ backgroundColor: INSPECT }}>{index + 1}</span>
                   {index < INSPECT_STEPS.length - 1 ? <span className="my-1 w-px flex-1 bg-[#0e7a52]/25" /> : null}
                 </div>
                 <div className={index < INSPECT_STEPS.length - 1 ? 'pb-4' : ''}>
@@ -300,7 +321,7 @@ export default function Inspection() {
         </div>
         <div className="mx-4 mb-4 rounded-2xl bg-white p-4 shadow-md shadow-slate-200/60">
           <p className="text-[12px] font-medium text-[#3083ff]">300+ points</p>
-          <h2 className="mt-1 text-base font-semibold text-slate-800">What the engineer checks</h2>
+          <h2 className="mt-1 text-[18px] font-semibold leading-snug text-slate-900">What the engineer checks</h2>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {CHECKS.map((row) => (
               <article key={row.key} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
@@ -324,17 +345,15 @@ export default function Inspection() {
 
       <div className="hidden lg:block">
       <section className="container-px relative z-10 bg-[#f6f8fb] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">
+        <h2 className="max-w-xl text-[18px] font-semibold leading-snug text-slate-900 lg:text-3xl">
           {pdiType === 'NEW_CAR' ? 'A new car can still have serious issues' : 'Uncover a used car’s real condition'}
         </h2>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          {INSPECT_FINDS.map(({ icon: Icon, title, body }) => (
-            <article key={title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf2ff] text-[#3083ff]">
-                <Icon className="h-5 w-5" />
-              </span>
-              <h3 className="mt-3 text-base font-black text-slate-900">{title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-slate-500">{body}</p>
+          {INSPECT_FINDS.map(({ icon, tone, title, body }) => (
+            <article key={title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
+              <PdiIcon icon={icon} tone={tone} />
+              <h3 className="mt-3 text-[15px] font-semibold text-slate-900">{title}</h3>
+              <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{body}</p>
             </article>
           ))}
         </div>
@@ -342,14 +361,14 @@ export default function Inspection() {
 
       <section className="bg-white py-8 lg:py-12">
         <div className="container-px px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">The checklist covers 300+ checks</h2>
+          <h2 className="max-w-xl text-[18px] font-semibold leading-snug text-slate-900 lg:text-3xl">The checklist covers 300+ checks</h2>
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
             {CHECKS.map((row) => (
               <button
                 key={row.key}
                 type="button"
                 onClick={() => setCheck(row.key)}
-                className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${check === row.key ? 'bg-[#3083ff] text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'}`}
+                className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold ${check === row.key ? 'bg-[#3083ff] text-white' : 'border border-slate-200 bg-slate-50 text-slate-700'}`}
               >
                 {row.title}
               </button>
@@ -359,8 +378,8 @@ export default function Inspection() {
             {CHECKS.map((row) => (
               <article key={row.key} className={`rounded-3xl border p-4 ${check === row.key ? 'border-[#3083ff] bg-[#f4f8ff]' : 'border-slate-200 bg-slate-50'}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-black text-slate-900">{row.title}</h3>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#3083ff]">{row.points} pts</span>
+                  <h3 className="text-[14px] font-semibold text-slate-900">{row.title}</h3>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-[#3083ff]">{row.points} pts</span>
                 </div>
                 <ul className="mt-3 space-y-1.5">
                   {row.items.map((item) => (
@@ -379,16 +398,16 @@ export default function Inspection() {
       <section className="bg-[#0e7a52] text-white">
         <div className="container-px flex flex-col items-start justify-between gap-4 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:px-8">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-emerald-100">Sample report</p>
-            <h2 className="mt-1 font-display text-2xl font-black">See what the PDF looks like before you book</h2>
-            <p className="mt-2 max-w-xl text-sm text-emerald-50">Pass and fail scores, paint readings and the photos the engineer takes.</p>
+            <p className="text-[12px] font-medium text-emerald-100">Sample report</p>
+            <h2 className="mt-1 text-[18px] font-semibold leading-snug lg:text-3xl">See what the PDF looks like before you book</h2>
+            <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-emerald-50 lg:text-sm">Pass and fail scores, paint readings and the photos the engineer takes.</p>
           </div>
           <div className="w-full max-w-sm rounded-3xl bg-white p-4 text-slate-900">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-black">Sample score</p>
-              <p className="text-2xl font-black text-[#0e7a52]">86<span className="text-sm text-slate-400">/100</span></p>
+              <p className="text-[13px] font-semibold">Sample score</p>
+              <p className="text-2xl font-semibold text-[#0e7a52]">86<span className="text-sm font-medium text-slate-400">/100</span></p>
             </div>
-            <ul className="mt-3 space-y-2 text-xs">
+            <ul className="mt-3 space-y-2 text-[13px]">
               {[
                 ['Body and paint', 'Pass'],
                 ['Engine and mechanical', 'Fail'],
@@ -396,7 +415,7 @@ export default function Inspection() {
               ].map(([label, status]) => (
                 <li key={label} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
                   <span className="font-semibold">{label}</span>
-                  <span className={status === 'Pass' ? 'font-black text-emerald-700' : 'font-black text-red-600'}>{status}</span>
+                  <span className={status === 'Pass' ? 'font-semibold text-emerald-700' : 'font-semibold text-red-600'}>{status}</span>
                 </li>
               ))}
             </ul>
@@ -406,48 +425,45 @@ export default function Inspection() {
 
       <section className="container-px grid gap-8 px-4 py-8 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-12">
         <div>
-          <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">Inspection in 3 simple steps</h2>
+          <h2 className="text-[18px] font-semibold text-slate-900 lg:text-3xl">Inspection in 3 simple steps</h2>
           <ol className="mt-5 space-y-3">
             {INSPECT_STEPS.slice(0, 3).map(({ title, body }, index) => (
               <li key={title} className="flex gap-3 rounded-3xl border border-slate-200 bg-white p-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3083ff] text-sm font-black text-white">{index + 1}</span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3083ff] text-[13px] font-semibold text-white">{index + 1}</span>
                 <div>
-                  <p className="text-sm font-black text-slate-900">{title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-500">{body}</p>
+                  <p className="text-[15px] font-semibold text-slate-900">{title}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{body}</p>
                 </div>
               </li>
             ))}
           </ol>
         </div>
         <div>
-          <h2 className="font-display text-2xl font-black text-slate-900 sm:text-3xl">What the engineer brings</h2>
+          <h2 className="text-[18px] font-semibold text-slate-900 lg:text-3xl">What the engineer brings</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {TOOLS.slice(0, 4).map((item) => {
-              const Icon = item.icon;
-              return (
-                <button key={item.title} type="button" onClick={() => setTool(item)} className="rounded-3xl border border-slate-200 bg-white p-4 text-left hover:border-[#3083ff]/40">
-                  <Icon className="h-5 w-5 text-[#3083ff]" />
-                  <h3 className="mt-2 text-sm font-black text-slate-900">{item.title}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.body}</p>
+            {TOOLS.slice(0, 4).map((item) => (
+                <button key={item.title} type="button" onClick={() => setTool(item)} className="rounded-3xl border border-slate-200 bg-white p-4 text-left transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
+                  <PdiIcon icon={item.icon} tone={item.tone} />
+                  <h3 className="mt-3 text-[14px] font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{item.body}</p>
                 </button>
-              );
-            })}
+            ))}
           </div>
         </div>
       </section>
 
       <section className="bg-white py-8 lg:py-12">
         <div className="container-px px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-2xl font-black text-slate-900">What this inspection covers</h2>
+          <h2 className="text-[18px] font-semibold text-slate-900 lg:text-3xl">What this inspection covers</h2>
           <div className="mt-5 overflow-hidden rounded-3xl border border-slate-200">
-            <div className="grid grid-cols-[0.8fr_1fr_1fr] bg-[#071433] text-[11px] font-black uppercase tracking-wide text-white">
+            <div className="grid grid-cols-[0.8fr_1fr_1fr] bg-[#071433] text-[12px] font-semibold text-white">
               <div className="p-3">Check</div>
               <div className="p-3">New car PDI</div>
               <div className="p-3">Used car</div>
             </div>
             {COMPARE.map(([label, fresh, used]) => (
-              <div key={label} className="grid grid-cols-[0.8fr_1fr_1fr] border-t border-slate-100 text-xs sm:text-sm">
-                <div className="p-3 font-black text-slate-900">{label}</div>
+              <div key={label} className="grid grid-cols-[0.8fr_1fr_1fr] border-t border-slate-100 text-[13px]">
+                <div className="p-3 font-semibold text-slate-900">{label}</div>
                 <div className="p-3 text-slate-600">{fresh}</div>
                 <div className="p-3 text-slate-600">{used}</div>
               </div>
@@ -456,8 +472,8 @@ export default function Inspection() {
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {WHY.map((card) => (
               <article key={card.title} className="rounded-3xl border border-slate-200 p-5">
-                <h3 className="font-black text-slate-900">{card.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.body}</p>
+                <h3 className="text-[15px] font-semibold text-slate-900">{card.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-slate-600 lg:text-sm">{card.body}</p>
               </article>
             ))}
           </div>
@@ -465,15 +481,15 @@ export default function Inspection() {
       </section>
 
       <section className="container-px max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        <h2 className="font-display text-2xl font-black text-slate-900">Frequently asked questions</h2>
+        <h2 className="text-[18px] font-semibold text-slate-900 lg:text-3xl">Frequently asked questions</h2>
         <div className="mt-4 divide-y divide-slate-200 border-y border-slate-200">
           {FAQS.map(([question, answer], index) => (
             <div key={question}>
               <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} className="flex w-full items-center justify-between gap-4 py-4 text-left">
-                <span className="text-sm font-bold text-slate-900">{question}</span>
+                <span className="text-[14px] font-medium text-slate-900">{question}</span>
                 <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition ${openFaq === index ? 'rotate-180' : ''}`} />
               </button>
-              {openFaq === index && <p className="pb-4 text-sm leading-relaxed text-slate-600">{answer}</p>}
+              {openFaq === index && <p className="pb-4 text-[13px] leading-relaxed text-slate-500">{answer}</p>}
             </div>
           ))}
         </div>
@@ -484,12 +500,12 @@ export default function Inspection() {
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-6" onClick={() => setTool(null)}>
           <div className="w-full rounded-t-3xl bg-white p-6 sm:max-w-md sm:rounded-3xl" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="text-lg font-black text-slate-900">{tool.title}</h3>
+              <h3 className="text-[16px] font-semibold text-slate-900">{tool.title}</h3>
               <button type="button" onClick={() => setTool(null)} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100" aria-label="Close">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">{tool.detail}</p>
+            <p className="mt-3 text-[13px] leading-relaxed text-slate-600">{tool.detail}</p>
           </div>
         </div>
       )}

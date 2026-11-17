@@ -8,6 +8,7 @@ import { formatWhen, StatusPill, VehicleCard } from './hubUtils';
 const KIND_LABEL = {
   seller: 'Sell request',
   vehicle: 'Car enquiry',
+  received: 'Buyer enquiry',
   dealer: 'Dealer enquiry',
   exchange: 'Exchange',
 };

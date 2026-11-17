@@ -4,7 +4,7 @@ const TestDrive = require('../models/TestDrive');
 const Booking = require('../models/Booking');
 const Car = require('../models/Car');
 const DealerProfile = require('../models/DealerProfile');
-const { serializeDoc } = require('../services/notifyService');
+const { serializeDoc, customerPageFor, isStaffLink } = require('../services/notifyService');
 
 const LEAD_TYPES = ['LEAD', 'lead', 'enquiry', 'finance', 'insurance'];
 const TEST_DRIVE_TYPES = ['TEST_DRIVE', 'test_drive'];
@@ -40,8 +40,16 @@ exports.listMine = async (req, res) => {
     Notification.countDocuments({ user: req.user._id, read: false }),
   ]);
 
+  const customer = req.user?.role === 'customer';
   res.json({
-    data: data.map(serializeDoc),
+    data: data.map((row) => {
+      const note = serializeDoc(row);
+      const ownerAlert = note.recipientRole === 'dealer' || note.recipientRole === 'admin' || isStaffLink(note.link);
+      if (customer && ownerAlert) {
+        note.link = customerPageFor(note, true);
+      }
+      return note;
+    }),
     page,
     limit,
     total,

@@ -1,4 +1,4 @@
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthFlow from '../components/AuthFlow';
 
 export default function Login() {
@@ -35,16 +35,6 @@ export default function Login() {
 
           <div className="min-w-0 rounded-3xl border border-white/80 bg-white/80 p-4 shadow-[0_12px_32px_rgba(48,131,255,0.1)] sm:p-9">
             <AuthFlow variant="page" onSuccess={() => navigate(redirectTo, { replace: true })} />
-            <p className="text-center text-sm font-semibold text-slate-500 mt-6">
-              Prefer email?{' '}
-              <Link to="/customer/login" className="text-[#3083ff] font-black hover:underline">Sign in</Link>
-              {' · '}
-              <Link to="/customer/register" className="text-[#3083ff] font-black hover:underline">Create account</Link>
-            </p>
-            <p className="text-center text-sm font-semibold text-slate-500 mt-3">
-              Dealer or showroom?{' '}
-              <Link to="/dealer/login" className="text-[#3083ff] font-black hover:underline">Sign in with Dealer ID</Link>
-            </p>
           </div>
         </div>
       </div>

@@ -47,6 +47,15 @@ async function catalogImages(pairs) {
   return map;
 }
 
+async function brandLogos(names) {
+  const unique = [...new Set(names.map((name) => String(name || '').trim()).filter(Boolean))];
+  if (!unique.length) return new Map();
+  const docs = await Brand.find({
+    $or: unique.map((name) => ({ name: new RegExp(`^${escapeRe(name)}$`, 'i') })),
+  }).select('name logo').lean();
+  return new Map(docs.map((brand) => [brand.name.toLowerCase(), brand.logo || '']));
+}
+
 function pickCatalog(map, brand, model, year) {
   const list = map.get(pairKey(brand, model));
   if (!list?.length) return '';
@@ -70,4 +79,4 @@ async function photosByValuation(userId, valuationIds) {
   return map;
 }
 
-module.exports = { catalogImages, pickCatalog, photosByValuation };
+module.exports = { catalogImages, pickCatalog, brandLogos, photosByValuation };

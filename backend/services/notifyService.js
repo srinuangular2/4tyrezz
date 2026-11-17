@@ -83,6 +83,34 @@ async function adminRecipients() {
   }).select('_id role');
 }
 
+function customerPageFor(note = {}, listingOwner = false) {
+  const event = note.event || note.meta?.event || '';
+  const type = String(note.type || '').toLowerCase();
+  const carId = note.meta?.carId ? String(note.meta.carId) : '';
+  if (event === 'NEW_LEAD' || type === 'lead' || type === 'enquiry') return '/profile/enquiries';
+  if (listingOwner) return carId ? `/cars/${carId}` : '/profile/my-vehicles';
+  if (event === 'NEW_FINANCE' || type === 'finance') return '/profile/finance-applications';
+  if (event === 'NEW_INSURANCE' || type === 'insurance') return '/profile/insurance-enquiries';
+  if (event === 'NEW_BOOKING' || type === 'booking') return '/profile/orders';
+  if (event === 'NEW_TEST_DRIVE' || type === 'test_drive' || type === 'testdrive') return '/profile/test-drives';
+  const link = String(note.link || '');
+  if (link.startsWith('/cars/')) return link;
+  return '/profile/notifications';
+}
+
+function isStaffLink(link) {
+  const path = String(link || '');
+  return path.startsWith('/dealer')
+    || path.startsWith('/leads')
+    || path.startsWith('/approvals')
+    || path.startsWith('/bookings')
+    || path.startsWith('/test-drives')
+    || path.startsWith('/listings')
+    || path === '/finance'
+    || path === '/insurance'
+    || path.startsWith('/dealers');
+}
+
 function withId(link, entityId) {
   if (!link) return '';
   if (!entityId) return link;
@@ -142,14 +170,16 @@ async function dispatch({
   if (dealerKey && !onlyAdmins) {
     const already = rows.some((r) => String(r.user) === dealerKey);
     if (!already) {
+      const owner = await User.findById(dealerKey).select('role');
+      const customerOwner = owner?.role === 'customer';
       rows.push({
         user: dealerKey,
-        recipientRole: 'dealer',
+        recipientRole: customerOwner ? 'customer' : 'dealer',
         title: heading,
         body: text,
         type: mappedType,
         event,
-        link: dLink,
+        link: customerOwner ? customerPageFor({ event, type: mappedType, meta }, true) : dLink,
         read: false,
         meta: { ...meta, event, soundKey, entityId, dealerId: dealerKey },
       });
@@ -166,7 +196,7 @@ async function dispatch({
       body: text,
       type: mappedType,
       event,
-      link: dLink || aLink,
+      link: customerPageFor({ event, type: mappedType }),
       read: false,
       meta: { ...meta, event, soundKey, entityId },
     });
@@ -244,4 +274,6 @@ module.exports = {
   dispatchSafe,
   notifyListingDecision,
   serializeDoc,
+  customerPageFor,
+  isStaffLink,
 };
